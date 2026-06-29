@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import type { Range, Stats } from "./api.js";
-import { fetchStats } from "./api.js";
+import type { Range, Site, Stats } from "./api.js";
+import { fetchSites, fetchStats } from "./api.js";
 import { TallyMarks } from "./components/TallyMarks.js";
 import { Chart } from "./components/Chart.js";
 import { StatList } from "./components/StatList.js";
@@ -8,13 +8,28 @@ import { StatList } from "./components/StatList.js";
 const RANGES: Range[] = ["24h", "7d", "30d"];
 
 export function App() {
-  const [site] = useState("demo");
+  const [sites, setSites] = useState<Site[]>([]);
+  const [site, setSite] = useState<string | null>(null);
   const [range, setRange] = useState<Range>("7d");
   const [data, setData] = useState<Stats | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Pull the list of sites once, then default to the most active one.
   useEffect(() => {
+    fetchSites()
+      .then((list) => {
+        setSites(list);
+        setSite((current) => current ?? list[0]?.site ?? null);
+        if (list.length === 0) setLoading(false); // nothing to fetch stats for
+      })
+      .catch(() => {
+        /* the stats fetch below surfaces the error; nothing to add here */
+      });
+  }, []);
+
+  useEffect(() => {
+    if (!site) return;
     const ctrl = new AbortController();
     setLoading(true);
     setError(null);
@@ -47,7 +62,22 @@ export function App() {
         <div className="controls">
           <span className="site-pill">
             <span className="eyebrow">site</span>
-            <span className="num">{site}</span>
+            {sites.length > 1 ? (
+              <select
+                className="site-select num"
+                value={site ?? ""}
+                onChange={(e) => setSite(e.target.value)}
+                aria-label="Site"
+              >
+                {sites.map((s) => (
+                  <option key={s.site} value={s.site}>
+                    {s.site}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="num">{site ?? "—"}</span>
+            )}
           </span>
 
           <div className="segmented" role="group" aria-label="Time range">
