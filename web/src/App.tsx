@@ -1,14 +1,37 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { Range, Stats } from "./api.js";
+import { fetchStats } from "./api.js";
 import { TallyMarks } from "./components/TallyMarks.js";
+import { Chart } from "./components/Chart.js";
+import { StatList } from "./components/StatList.js";
 
-const RANGES = ["24h", "7d", "30d"] as const;
-type Range = (typeof RANGES)[number];
+const RANGES: Range[] = ["24h", "7d", "30d"];
 
 export function App() {
-  // site is hard-coded for now; once the server grows multi-site auth this
-  // becomes a real picker fed by the API.
   const [site] = useState("demo");
   const [range, setRange] = useState<Range>("7d");
+  const [data, setData] = useState<Stats | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    setLoading(true);
+    setError(null);
+    fetchStats(site, range)
+      .then((s) => setData(s))
+      .catch((e: unknown) => {
+        if (!ctrl.signal.aborted) setError(e instanceof Error ? e.message : "something went wrong");
+      })
+      .finally(() => {
+        if (!ctrl.signal.aborted) setLoading(false);
+      });
+    return () => ctrl.abort();
+  }, [site, range]);
+
+  const totals = data?.totals;
+  const hasData = !!totals && totals.pageviews > 0;
+  const perVisitor = totals && totals.visitors > 0 ? totals.pageviews / totals.visitors : 0;
 
   return (
     <div className="shell">
@@ -42,10 +65,76 @@ export function App() {
         </div>
       </header>
 
-      <main className="content">
-        <p className="eyebrow">range · {range}</p>
-        <p className="ink-soft">Dashboard panels land in the next commit.</p>
-      </main>
+      {error && (
+        <div className="notice notice-error">
+          <strong>Couldn't load stats.</strong> {error}
+          <div className="ink-soft">Is the server running on :3000?</div>
+        </div>
+      )}
+
+      {!error && !hasData && !loading && (
+        <div className="empty">
+          <TallyMarks count={4} className="empty-mark" />
+          <h2>No counts yet</h2>
+          <p className="ink-soft">
+            Embed the tracker on your site, open a page, then reload. Events for{" "}
+            <span className="num">{site}</span> in the last {range} will show up here.
+          </p>
+        </div>
+      )}
+
+      {!error && (hasData || loading) && (
+        <main className={`content ${data ? "fade-in" : ""}`} aria-busy={loading}>
+          <section className="ledger">
+            <Metric label="Pageviews" value={totals?.pageviews ?? 0} />
+            <Metric label="Unique visitors" value={totals?.visitors ?? 0} />
+            <Metric label="Views / visitor" value={perVisitor} decimals={1} />
+          </section>
+
+          <section className="panel chart-panel">
+            <div className="panel-head">
+              <h2 className="panel-title">Traffic</h2>
+              <span className="eyebrow">last {range}</span>
+            </div>
+            {data && <Chart series={data.series} range={range} />}
+          </section>
+
+          <div className="grid-two">
+            <StatList
+              title="Top pages"
+              unit="views"
+              empty="No pages recorded."
+              rows={(data?.topPages ?? []).map((p) => ({ label: p.path, value: p.views }))}
+            />
+            <StatList
+              title="Referrers"
+              unit="views"
+              empty="All traffic came in direct."
+              rows={(data?.topReferrers ?? []).map((r) => ({ label: r.source, value: r.views }))}
+            />
+          </div>
+
+          <StatList
+            title="Browsers"
+            unit="views"
+            empty="No browser data."
+            rows={(data?.browsers ?? []).map((b) => ({ label: b.name, value: b.views }))}
+          />
+        </main>
+      )}
+    </div>
+  );
+}
+
+function Metric({ label, value, decimals = 0 }: { label: string; value: number; decimals?: number }) {
+  const shown = value.toLocaleString("en-US", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+  return (
+    <div className="metric">
+      <div className="metric-value num">{shown}</div>
+      <div className="metric-label eyebrow">{label}</div>
     </div>
   );
 }

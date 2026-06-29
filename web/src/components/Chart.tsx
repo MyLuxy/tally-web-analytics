@@ -1,0 +1,121 @@
+import { useRef, useState } from "react";
+import type { Range, Stats } from "../api.js";
+
+// A small hand-drawn area+line chart. No charting library on purpose -- the
+// shapes we need are simple, and a few lines of SVG keep the bundle honest and
+// the styling fully ours.
+
+type Point = Stats["series"][number];
+
+const W = 720;
+const H = 260;
+const PAD = { top: 16, right: 14, bottom: 26, left: 40 };
+
+// Fixed to en-US so the data reads consistently regardless of the viewer's
+// locale -- the rest of the UI is in English too.
+const fmt = (n: number) => n.toLocaleString("en-US");
+
+function tickLabel(ms: number, range: Range): string {
+  const d = new Date(ms);
+  if (range === "24h") {
+    return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+  }
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+export function Chart({ series, range }: { series: Point[]; range: Range }) {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [hover, setHover] = useState<number | null>(null);
+
+  const n = series.length;
+  const innerW = W - PAD.left - PAD.right;
+  const innerH = H - PAD.top - PAD.bottom;
+  const maxY = Math.max(1, ...series.map((p) => p.pageviews));
+
+  const xFor = (i: number) => PAD.left + (n <= 1 ? innerW / 2 : (i / (n - 1)) * innerW);
+  const yFor = (v: number) => PAD.top + (1 - v / maxY) * innerH;
+  const baseline = PAD.top + innerH;
+
+  const linePath = (key: "pageviews" | "visitors") =>
+    series.map((p, i) => `${i === 0 ? "M" : "L"} ${xFor(i)} ${yFor(p[key])}`).join(" ");
+
+  const areaPath =
+    n > 0
+      ? `M ${xFor(0)} ${baseline} ` +
+        series.map((p, i) => `L ${xFor(i)} ${yFor(p.pageviews)}`).join(" ") +
+        ` L ${xFor(n - 1)} ${baseline} Z`
+      : "";
+
+  // three horizontal guides, labelled with rounded counts
+  const guides = [0.25, 0.5, 0.75, 1].map((f) => Math.round(maxY * f));
+
+  // pick ~5 evenly spaced x ticks so labels never collide
+  const tickStep = Math.max(1, Math.ceil(n / 5));
+  const ticks = series.map((p, i) => ({ p, i })).filter(({ i }) => i % tickStep === 0);
+
+  function onMove(e: React.MouseEvent) {
+    const rect = svgRef.current?.getBoundingClientRect();
+    if (!rect || n === 0) return;
+    const frac = (e.clientX - rect.left) / rect.width;
+    const i = Math.round(frac * (n - 1));
+    setHover(Math.min(n - 1, Math.max(0, i)));
+  }
+
+  const active = hover != null ? series[hover] : undefined;
+
+  return (
+    <div className="chart">
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${W} ${H}`}
+        className="chart-svg"
+        onMouseMove={onMove}
+        onMouseLeave={() => setHover(null)}
+      >
+        {guides.map((g) => (
+          <g key={g}>
+            <line className="chart-grid" x1={PAD.left} x2={W - PAD.right} y1={yFor(g)} y2={yFor(g)} />
+            <text className="chart-axis" x={PAD.left - 8} y={yFor(g) + 4} textAnchor="end">
+              {fmt(g)}
+            </text>
+          </g>
+        ))}
+
+        <path className="chart-area" d={areaPath} />
+        <path className="chart-line-views" d={linePath("pageviews")} />
+        <path className="chart-line-visitors" d={linePath("visitors")} />
+
+        {ticks.map(({ p, i }) => (
+          <text key={i} className="chart-axis" x={xFor(i)} y={H - 6} textAnchor="middle">
+            {tickLabel(p.bucket, range)}
+          </text>
+        ))}
+
+        {hover != null && active && (
+          <g>
+            <line className="chart-cursor" x1={xFor(hover)} x2={xFor(hover)} y1={PAD.top} y2={baseline} />
+            <circle className="chart-dot-views" cx={xFor(hover)} cy={yFor(active.pageviews)} r={4} />
+            <circle className="chart-dot-visitors" cx={xFor(hover)} cy={yFor(active.visitors)} r={4} />
+          </g>
+        )}
+      </svg>
+
+      {hover != null && active && (
+        <div className="chart-tip" style={{ left: `${(xFor(hover) / W) * 100}%` }}>
+          <div className="chart-tip-when">{tickLabel(active.bucket, range)}</div>
+          <div className="chart-tip-row">
+            <span className="dot dot-views" /> <span className="num">{fmt(active.pageviews)}</span> views
+          </div>
+          <div className="chart-tip-row">
+            <span className="dot dot-visitors" /> <span className="num">{fmt(active.visitors)}</span> visitors
+          </div>
+        </div>
+      )}
+
+      <div className="chart-legend">
+        <span className="legend-item"><span className="dot dot-views" /> Pageviews</span>
+        <span className="legend-item"><span className="dot dot-visitors" /> Visitors</span>
+      </div>
+    </div>
+  );
+}
