@@ -7,8 +7,8 @@ Tally is a lightweight alternative to Google Analytics that you run yourself.
 The tracking script is tiny, visitors aren't followed across sites, and no
 IP addresses or persistent identifiers ever hit the database.
 
-> Status: work in progress. The ingestion backend and a basic stats API are
-> working; the dashboard is next.
+> Status: work in progress. The tracker, ingestion backend, stats API and a
+> dashboard are all working. Next up: multi-site auth and a production build.
 
 ## Why another analytics tool?
 
@@ -29,18 +29,28 @@ tracking. (Same trick Plausible and Fathom use.)
 - **Storage** — SQLite (via `better-sqlite3`), kept behind a thin module so it
   can move to Postgres/Timescale later without touching the routes
 - **Tracker** — ~1kb of vanilla JS, no dependencies
-- **Dashboard** — React + Vite *(coming next)*
+- **Dashboard** — React + Vite, with a hand-rolled SVG chart (no charting lib)
+  and self-hosted fonts so it makes no third-party requests
 
 ## Quick start
 
+Two processes: the API server and the dashboard.
+
 ```bash
+# 1. API server (port 3000)
 cd server
+npm install
+npm run seed     # optional: fill the db with demo traffic
+npm run dev
+
+# 2. dashboard (port 5173), in a second terminal
+cd web
 npm install
 npm run dev
 ```
 
-Then open http://localhost:3000/demo.html and click around — you'll see events
-land via `GET /api/stats?site=demo`.
+Open http://localhost:5173 for the dashboard, or
+http://localhost:3000/demo.html to generate live events with the tracker.
 
 ## Layout
 
@@ -51,7 +61,11 @@ server/         ingest + stats API, serves the tracker script
     db.ts       schema + connection
     privacy.ts  visitor hashing, daily salt, UA parsing, DNT
   public/       tracker.js + a demo page
-web/            dashboard (todo)
+  scripts/      seed.ts — demo data generator
+web/            React dashboard (Vite)
+  src/
+    api.ts      typed client for /api/stats
+    components/ Chart, StatList, TallyMarks
 ```
 
 ## License
