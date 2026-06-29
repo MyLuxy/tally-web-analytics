@@ -1,0 +1,14 @@
+node_modules/
+dist/
+*.log
+
+# local data + secrets
+*.sqlite
+*.sqlite-*
+.env
+.env.local
+
+# editor / os junk
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
