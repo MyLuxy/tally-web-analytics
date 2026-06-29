@@ -14,6 +14,15 @@ export type Stats = {
   series: { bucket: number; pageviews: number; visitors: number }[];
 };
 
+export type Site = { site: string; events: number; lastSeen: number };
+
+export async function fetchSites(): Promise<Site[]> {
+  const res = await fetch("/api/sites");
+  if (!res.ok) throw new Error(`could not load sites (${res.status})`);
+  const body = await res.json();
+  return body.sites;
+}
+
 export async function fetchStats(site: string, range: Range): Promise<Stats> {
   const res = await fetch(`/api/stats?site=${encodeURIComponent(site)}&range=${range}`);
   if (!res.ok) {

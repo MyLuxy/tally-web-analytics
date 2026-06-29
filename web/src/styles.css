@@ -137,6 +137,21 @@ a {
   font-weight: 500;
 }
 
+/* a bare select that inherits the pill's look instead of the browser default */
+.site-select {
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.site-select:focus {
+  outline: none;
+}
+
 /* segmented range control */
 .segmented {
   display: inline-flex;

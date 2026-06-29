@@ -14,6 +14,19 @@ const RANGES: Record<string, number> = {
 type Query = { site?: string; range?: string };
 
 export async function statsRoutes(app: FastifyInstance) {
+  // The dashboard asks for this on load to populate its site picker, instead of
+  // hard-coding which sites exist. Most active first.
+  app.get("/api/sites", async () => {
+    const db = openDb();
+    const sites = db
+      .prepare(
+        `SELECT site_id AS site, COUNT(*) AS events, MAX(ts) AS lastSeen
+         FROM events GROUP BY site_id ORDER BY lastSeen DESC`,
+      )
+      .all();
+    return { sites };
+  });
+
   app.get("/api/stats", async (req, reply) => {
     const { site, range = "7d" } = req.query as Query;
     if (!site) {
