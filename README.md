@@ -7,8 +7,9 @@ Tally is a lightweight alternative to Google Analytics that you run yourself.
 The tracking script is tiny, visitors aren't followed across sites, and no
 IP addresses or persistent identifiers ever hit the database.
 
-> Status: work in progress. The tracker, ingestion backend, stats API and a
-> dashboard are all working. Next up: multi-site auth and a production build.
+> Status: work in progress. The tracker, ingestion backend, stats API and the
+> dashboard are all working, and a production build serves everything from a
+> single port. Next up: multi-site auth.
 
 ## Why another analytics tool?
 
@@ -51,6 +52,19 @@ npm run dev
 
 Open http://localhost:5173 for the dashboard, or
 http://localhost:3000/demo.html to generate live events with the tracker.
+
+## Production
+
+In production there's just one process. Vite builds the dashboard into
+`server/web-dist` and Fastify serves it from the same port as the API, with a
+SPA fallback so client-side routes resolve.
+
+```bash
+cd server
+npm run build:web   # builds the dashboard into server/web-dist
+npm run build       # compile the server
+npm start           # serves API + dashboard on port 3000
+```
 
 ## Layout
 
