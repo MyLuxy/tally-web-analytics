@@ -1,5 +1,7 @@
 # Tally
 
+[![CI](https://github.com/MyLuxy/tally-web-analytics/actions/workflows/ci.yml/badge.svg)](https://github.com/MyLuxy/tally-web-analytics/actions/workflows/ci.yml)
+
 Privacy-first, self-hosted web analytics. No cookies, no personal data, one
 small script tag.
 
