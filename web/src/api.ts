@@ -13,6 +13,7 @@ export type Stats = {
   browsers: { name: string; views: number }[];
   systems: { name: string; views: number }[];
   devices: { name: string; views: number }[];
+  countries: { name: string; views: number }[];
   series: { bucket: number; pageviews: number; visitors: number }[];
 };
 

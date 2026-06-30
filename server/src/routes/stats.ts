@@ -98,6 +98,14 @@ export async function statsRoutes(app: FastifyInstance) {
       )
       .all(site, since);
 
+    const countries = db
+      .prepare(
+        `SELECT country AS name, COUNT(*) AS views
+         FROM events WHERE site_id = ? AND ts >= ? AND country IS NOT NULL
+         GROUP BY country ORDER BY views DESC LIMIT 10`,
+      )
+      .all(site, since);
+
     // timeseries: floor each event's ts to its bucket and count per bucket
     const series = db
       .prepare(
@@ -122,6 +130,7 @@ export async function statsRoutes(app: FastifyInstance) {
       browsers,
       systems,
       devices,
+      countries,
       series,
     };
   });

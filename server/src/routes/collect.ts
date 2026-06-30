@@ -43,6 +43,18 @@ function clientIp(req: FastifyRequest): string {
   return req.ip;
 }
 
+// Let the edge tell us the country. Cloudflare, Vercel and Fastly all resolve
+// it from the IP at their edge and pass a 2-letter code header, so we get
+// country without ever looking at -- let alone storing -- the IP ourselves.
+function country(req: FastifyRequest): string | null {
+  const h = req.headers;
+  const raw = h["cf-ipcountry"] ?? h["x-vercel-ip-country"] ?? h["x-country-code"];
+  const code = (typeof raw === "string" ? raw : "").trim().toUpperCase();
+  // Cloudflare sends "XX" for unknown and "T1"/"A1" for Tor/anonymous proxies
+  if (!/^[A-Z]{2}$/.test(code) || code === "XX") return null;
+  return code;
+}
+
 export async function collectRoutes(app: FastifyInstance) {
   app.post("/api/collect", async (req, reply) => {
     if (optedOut(req.headers)) {
@@ -68,6 +80,7 @@ export async function collectRoutes(app: FastifyInstance) {
       browser,
       os,
       device,
+      country: country(req),
       ts: Date.now(),
     });
 

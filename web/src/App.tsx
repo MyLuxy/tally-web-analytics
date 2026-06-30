@@ -7,6 +7,21 @@ import { StatList } from "./components/StatList.js";
 
 const RANGES: Range[] = ["24h", "7d", "30d"];
 
+// Turn a 2-letter country code into "🇮🇹 Italy". The flag is just the two
+// regional-indicator codepoints; the name comes from Intl so we don't ship a
+// country table. Falls back to the raw code if anything's off.
+const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
+function countryLabel(code: string): string {
+  const flag = [...code].map((ch) => String.fromCodePoint(0x1f1a5 + ch.charCodeAt(0))).join("");
+  let name = code;
+  try {
+    name = regionNames.of(code) ?? code;
+  } catch {
+    /* invalid code -- just show what we got */
+  }
+  return `${flag} ${name}`;
+}
+
 export function App() {
   const [sites, setSites] = useState<Site[]>([]);
   const [site, setSite] = useState<string | null>(null);
@@ -168,7 +183,7 @@ export function App() {
             />
           </div>
 
-          <div className="grid-three">
+          <div className="breakdowns">
             <StatList
               title="Browsers"
               unit="views"
@@ -186,6 +201,12 @@ export function App() {
               unit="views"
               empty="No device data."
               rows={(data?.devices ?? []).map((d) => ({ label: d.name, value: d.views }))}
+            />
+            <StatList
+              title="Countries"
+              unit="views"
+              empty="No country data."
+              rows={(data?.countries ?? []).map((c) => ({ label: countryLabel(c.name), value: c.views }))}
             />
           </div>
         </main>
