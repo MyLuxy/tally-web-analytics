@@ -144,12 +144,26 @@ export function App() {
             />
           </div>
 
-          <StatList
-            title="Browsers"
-            unit="views"
-            empty="No browser data."
-            rows={(data?.browsers ?? []).map((b) => ({ label: b.name, value: b.views }))}
-          />
+          <div className="grid-three">
+            <StatList
+              title="Browsers"
+              unit="views"
+              empty="No browser data."
+              rows={(data?.browsers ?? []).map((b) => ({ label: b.name, value: b.views }))}
+            />
+            <StatList
+              title="Operating systems"
+              unit="views"
+              empty="No OS data."
+              rows={(data?.systems ?? []).map((s) => ({ label: s.name, value: s.views }))}
+            />
+            <StatList
+              title="Devices"
+              unit="views"
+              empty="No device data."
+              rows={(data?.devices ?? []).map((d) => ({ label: d.name, value: d.views }))}
+            />
+          </div>
         </main>
       )}
     </div>

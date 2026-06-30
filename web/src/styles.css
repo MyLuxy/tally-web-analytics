@@ -261,6 +261,13 @@ a {
   margin-top: var(--gap);
 }
 
+.grid-three {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--gap);
+  margin-top: var(--gap);
+}
+
 /* ---- stat list rows ---- */
 .rows {
   list-style: none;
@@ -459,7 +466,8 @@ a {
   .ledger {
     grid-template-columns: 1fr;
   }
-  .grid-two {
+  .grid-two,
+  .grid-three {
     grid-template-columns: 1fr;
   }
   .metric-value {
