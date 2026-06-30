@@ -449,6 +449,44 @@ a {
   max-width: 30rem;
 }
 
+/* token gate -- shown when the server runs with TALLY_TOKEN set */
+.token-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.token-input {
+  padding: 8px 14px;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  min-width: 16rem;
+}
+
+.token-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.token-submit {
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--paper);
+  background: var(--accent);
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.token-submit:hover {
+  background: var(--accent-ink);
+}
+
 .notice {
   margin-top: 24px;
   padding: 16px 18px;

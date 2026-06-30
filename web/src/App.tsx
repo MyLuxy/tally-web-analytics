@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Range, Site, Stats } from "./api.js";
-import { fetchSites, fetchStats } from "./api.js";
+import { fetchSites, fetchStats, getToken, setToken, Unauthorized } from "./api.js";
 import { TallyMarks } from "./components/TallyMarks.js";
 import { Chart } from "./components/Chart.js";
 import { StatList } from "./components/StatList.js";
@@ -14,19 +14,26 @@ export function App() {
   const [data, setData] = useState<Stats | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [locked, setLocked] = useState(false); // server wants a token
+  const [reload, setReload] = useState(0); // bumped to retry after unlocking
 
   // Pull the list of sites once, then default to the most active one.
   useEffect(() => {
     fetchSites()
       .then((list) => {
+        setLocked(false);
         setSites(list);
         setSite((current) => current ?? list[0]?.site ?? null);
         if (list.length === 0) setLoading(false); // nothing to fetch stats for
       })
-      .catch(() => {
-        /* the stats fetch below surfaces the error; nothing to add here */
+      .catch((e: unknown) => {
+        if (e instanceof Unauthorized) {
+          setLocked(true);
+          setLoading(false);
+        }
+        // other errors surface through the stats fetch below
       });
-  }, []);
+  }, [reload]);
 
   useEffect(() => {
     if (!site) return;
@@ -34,15 +41,30 @@ export function App() {
     setLoading(true);
     setError(null);
     fetchStats(site, range)
-      .then((s) => setData(s))
+      .then((s) => {
+        setLocked(false);
+        setData(s);
+      })
       .catch((e: unknown) => {
-        if (!ctrl.signal.aborted) setError(e instanceof Error ? e.message : "something went wrong");
+        if (ctrl.signal.aborted) return;
+        if (e instanceof Unauthorized) {
+          setLocked(true);
+          return;
+        }
+        setError(e instanceof Error ? e.message : "something went wrong");
       })
       .finally(() => {
         if (!ctrl.signal.aborted) setLoading(false);
       });
     return () => ctrl.abort();
-  }, [site, range]);
+  }, [site, range, reload]);
+
+  function unlock(token: string) {
+    setToken(token);
+    setLocked(false);
+    setLoading(true);
+    setReload((n) => n + 1);
+  }
 
   const totals = data?.totals;
   const hasData = !!totals && totals.pageviews > 0;
@@ -95,14 +117,16 @@ export function App() {
         </div>
       </header>
 
-      {error && (
+      {locked && <TokenGate onSubmit={unlock} />}
+
+      {!locked && error && (
         <div className="notice notice-error">
           <strong>Couldn't load stats.</strong> {error}
           <div className="ink-soft">Is the server running on :3000?</div>
         </div>
       )}
 
-      {!error && !hasData && !loading && (
+      {!locked && !error && !hasData && !loading && (
         <div className="empty">
           <TallyMarks count={4} className="empty-mark" />
           <h2>No counts yet</h2>
@@ -113,7 +137,7 @@ export function App() {
         </div>
       )}
 
-      {!error && (hasData || loading) && (
+      {!locked && !error && (hasData || loading) && (
         <main className={`content ${data ? "fade-in" : ""}`} aria-busy={loading}>
           <section className="ledger">
             <Metric label="Pageviews" value={totals?.pageviews ?? 0} />
@@ -166,6 +190,41 @@ export function App() {
           </div>
         </main>
       )}
+    </div>
+  );
+}
+
+function TokenGate({ onSubmit }: { onSubmit: (token: string) => void }) {
+  const [value, setValue] = useState(getToken());
+  return (
+    <div className="empty">
+      <TallyMarks count={4} className="empty-mark" />
+      <h2>This dashboard is locked</h2>
+      <p className="ink-soft">
+        The server is running with an access token. Enter it to view stats.
+      </p>
+      <form
+        className="token-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const t = value.trim();
+          if (t) onSubmit(t);
+        }}
+      >
+        <input
+          className="token-input num"
+          type="password"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder="access token"
+          aria-label="Access token"
+          autoComplete="off"
+          autoFocus
+        />
+        <button className="token-submit" type="submit">
+          Unlock
+        </button>
+      </form>
     </div>
   );
 }
