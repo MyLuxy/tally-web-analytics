@@ -118,9 +118,13 @@ export function Chart({ series, range }: { series: Point[]; range: Range }) {
   const visitorsY = yFor(snap ? (near?.visitors ?? 0) : valueAt(cx, "visitors"));
 
   // place the tip above the (upper) views dot; flip below when it's near the top
-  const tipLeft = Math.min(92, Math.max(8, (dotX / W) * 100));
   const tipTop = (viewsY / H) * 100;
   const flip = viewsY < H * 0.24;
+  // anchor it by the inner edge near the sides (extends right on the left, left
+  // on the right) so it can't get clipped off-screen, centred in the middle
+  const fx = dotX / W;
+  const tipX = fx < 0.3 ? "0%" : fx > 0.7 ? "-100%" : "-50%";
+  const tipTransform = `translate(${tipX}, ${flip ? "16px" : "calc(-100% - 16px)"})`;
 
   return (
     <div className="chart">
@@ -175,8 +179,8 @@ export function Chart({ series, range }: { series: Point[]; range: Range }) {
 
         {show && near && (
           <div
-            className={`chart-tip${flip ? " flip" : ""}`}
-            style={{ left: `${tipLeft}%`, top: `${tipTop}%` }}
+            className="chart-tip"
+            style={{ left: `${fx * 100}%`, top: `${tipTop}%`, transform: tipTransform }}
           >
             <span className="chart-tip-when num">{tipWhen(near.bucket, range)}</span>
             <span className="chart-tip-stat">
