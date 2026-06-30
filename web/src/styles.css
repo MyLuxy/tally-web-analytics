@@ -566,22 +566,20 @@ a {
   transform: translate(-50%, 16px);
 }
 
-/* day + time -- full contrast against the tip (light on the dark light-theme
-   tip, dark on the light dark-theme tip) so it always reads clearly */
-.chart-tip-when {
-  color: var(--paper);
-  font-size: 15px;
-}
-
 .chart-tip-stat {
   display: inline-flex;
   align-items: center;
   gap: 9px;
 }
 
+/* the date and the numbers share one look -- same size, weight and colour, with
+   full contrast against the tip (light on the light-theme tip, dark on the
+   dark-theme one) so everything reads as one piece */
+.chart-tip-when,
 .chart-tip-stat .num {
-  font-weight: 600;
-  font-size: 17px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--paper);
 }
 
 .chart-tip .dot {
