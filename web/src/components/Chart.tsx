@@ -50,8 +50,8 @@ export function Chart({ series, range }: { series: Point[]; range: Range }) {
   // three horizontal guides, labelled with rounded counts
   const guides = [0.25, 0.5, 0.75, 1].map((f) => Math.round(maxY * f));
 
-  // pick ~5 evenly spaced x ticks so labels never collide
-  const tickStep = Math.max(1, Math.ceil(n / 5));
+  // spread out ~8-10 x ticks: every day on 7d, a denser sampling on 24h/30d
+  const tickStep = Math.max(1, Math.ceil(n / 8));
   const ticks = series.map((p, i) => ({ p, i })).filter(({ i }) => i % tickStep === 0);
 
   // fractional index under the cursor, so the dot can ride the line smoothly
@@ -109,14 +109,24 @@ export function Chart({ series, range }: { series: Point[]; range: Range }) {
           ))}
 
           <path className="chart-area" d={areaPath} />
-          <path className="chart-line-views" d={linePath("pageviews")} />
           <path className="chart-line-visitors" d={linePath("visitors")} />
+          <path className="chart-line-views" d={linePath("pageviews")} />
 
-          {ticks.map(({ p, i }) => (
-            <text key={i} className="chart-axis" x={xFor(i)} y={H - 6} textAnchor="middle">
-              {tickLabel(p.bucket, range)}
-            </text>
+          {/* a marker on each data point so it's clear which day a value is */}
+          {series.map((p, i) => (
+            <circle key={`m${i}`} className="chart-marker" cx={xFor(i)} cy={yFor(p.pageviews)} r={2.3} />
           ))}
+
+          {ticks.map(({ p, i }) => {
+            const x = xFor(i);
+            // keep the edge labels from being clipped by the plot bounds
+            const anchor = x < PAD.left + 18 ? "start" : x > W - PAD.right - 18 ? "end" : "middle";
+            return (
+              <text key={i} className="chart-axis" x={x} y={H - 6} textAnchor={anchor}>
+                {tickLabel(p.bucket, range)}
+              </text>
+            );
+          })}
 
           {show && (
             <g>
