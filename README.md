@@ -10,8 +10,9 @@ The tracking script is tiny, visitors aren't followed across sites, and no
 IP addresses or persistent identifiers ever hit the database.
 
 > Status: work in progress. The tracker, ingestion backend, stats API and the
-> dashboard are all working, and a production build serves everything from a
-> single port. Next up: multi-site auth.
+> dashboard are all working, a production build serves everything from a single
+> port, and the dashboard can be locked behind an access token. Next up: a live
+> deploy.
 
 ## Why another analytics tool?
 
@@ -68,6 +69,18 @@ npm run build       # compile the server
 npm start           # serves API + dashboard on port 3000
 ```
 
+### Protecting the dashboard
+
+By default the read API is open, which is what you want for a local demo. Set
+`TALLY_TOKEN` and the stats endpoints (`/api/stats`, `/api/sites`) require a
+`Authorization: Bearer <token>` header; the dashboard prompts for the token and
+remembers it. The `/api/collect` endpoint always stays open — the tracker has to
+be able to post from any site.
+
+```bash
+TALLY_TOKEN=a-long-random-string npm start
+```
+
 ## Layout
 
 ```
@@ -76,6 +89,7 @@ server/         ingest + stats API, serves the tracker script
     routes/     collect (write) and stats (read)
     db.ts       schema + connection
     privacy.ts  visitor hashing, daily salt, UA parsing, DNT
+    auth.ts     optional bearer-token guard for the read API
   public/       tracker.js + a demo page
   scripts/      seed.ts — demo data generator
 web/            React dashboard (Vite)

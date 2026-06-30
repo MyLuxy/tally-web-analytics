@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { openDb } from "../db.js";
+import { bearerGuard } from "../auth.js";
 
 // Read side. One endpoint that returns everything the dashboard needs for a
 // given site + time range in a single round trip. If this grows we can split
@@ -14,6 +15,10 @@ const RANGES: Record<string, number> = {
 type Query = { site?: string; range?: string };
 
 export async function statsRoutes(app: FastifyInstance) {
+  // Guard the whole read side. Scoped to this plugin, so /api/collect (a
+  // separate plugin) stays open. No-ops unless TALLY_TOKEN is set.
+  app.addHook("onRequest", bearerGuard);
+
   // The dashboard asks for this on load to populate its site picker, instead of
   // hard-coding which sites exist. Most active first.
   app.get("/api/sites", async () => {

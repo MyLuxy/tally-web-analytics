@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 // Drive the whole app in-process with inject(), against a throwaway in-memory
 // db. This exercises the real wiring -- routing, body parsing, the privacy
@@ -107,5 +107,42 @@ describe("GET /api/sites", () => {
     expect(names).toContain("alpha");
     expect(names).toContain("beta");
     expect(sites.find((s: { site: string }) => s.site === "beta").events).toBe(2);
+  });
+});
+
+describe("bearer auth on the read API", () => {
+  // bearerGuard reads TALLY_TOKEN per request, so we can toggle it here
+  afterEach(() => {
+    delete process.env.TALLY_TOKEN;
+  });
+
+  it("is open when no token is configured", async () => {
+    expect((await app.inject({ url: "/api/sites" })).statusCode).toBe(200);
+  });
+
+  it("rejects the read API without the right token", async () => {
+    process.env.TALLY_TOKEN = "s3cret";
+    expect((await app.inject({ url: "/api/sites" })).statusCode).toBe(401);
+    expect((await app.inject({ url: "/api/stats?site=s1&range=7d" })).statusCode).toBe(401);
+    const wrong = await app.inject({
+      url: "/api/sites",
+      headers: { authorization: "Bearer nope" },
+    });
+    expect(wrong.statusCode).toBe(401);
+  });
+
+  it("allows the read API with the right token", async () => {
+    process.env.TALLY_TOKEN = "s3cret";
+    const res = await app.inject({
+      url: "/api/sites",
+      headers: { authorization: "Bearer s3cret" },
+    });
+    expect(res.statusCode).toBe(200);
+  });
+
+  it("never guards collect, even with a token set", async () => {
+    process.env.TALLY_TOKEN = "s3cret";
+    const res = await collect({ site: "s1", path: "/" });
+    expect(res.statusCode).toBe(204);
   });
 });
