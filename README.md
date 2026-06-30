@@ -77,7 +77,8 @@ itself.
   can move to Postgres/Timescale later without touching the routes
 - **Tracker** — around 1kb of vanilla JS, no dependencies
 - **Dashboard** — React + Vite, with a hand-rolled SVG chart (no charting
-  library) and self-hosted fonts, so it makes no third-party requests
+  library), self-hosted fonts, and a light/dark theme. The only external asset
+  is the country flag images (from flagcdn)
 
 ## Quick start
 
