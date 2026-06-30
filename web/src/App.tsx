@@ -396,7 +396,7 @@ function SitePicker({
 }
 
 // Build a URL to open the tracked site in a new tab. data-site is usually a
-// domain (e.g. "fotodanmar.com"); add https:// if there's no scheme already.
+// domain (e.g. "example.com"); add https:// if there's no scheme already.
 function siteUrl(site: string): string {
   return /^https?:\/\//i.test(site) ? site : `https://${site}`;
 }
