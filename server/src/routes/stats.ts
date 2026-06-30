@@ -6,10 +6,11 @@ import { bearerGuard } from "../auth.js";
 // given site + time range in a single round trip. If this grows we can split
 // it, but for now a fat summary object beats six chatty endpoints.
 
-const RANGES: Record<string, number> = {
-  "24h": 24 * 60 * 60 * 1000,
-  "7d": 7 * 24 * 60 * 60 * 1000,
-  "30d": 30 * 24 * 60 * 60 * 1000,
+// each range is a fixed number of evenly spaced buckets
+const RANGES: Record<string, { buckets: number; bucketMs: number }> = {
+  "24h": { buckets: 24, bucketMs: 60 * 60 * 1000 },
+  "7d": { buckets: 7, bucketMs: 24 * 60 * 60 * 1000 },
+  "30d": { buckets: 30, bucketMs: 24 * 60 * 60 * 1000 },
 };
 
 type Query = { site?: string; range?: string };
@@ -38,18 +39,19 @@ export async function statsRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: "missing site" });
     }
 
-    const window = RANGES[range];
-    if (!window) {
+    const cfg = RANGES[range];
+    if (!cfg) {
       return reply
         .code(400)
         .send({ error: `range must be one of ${Object.keys(RANGES).join(", ")}` });
     }
 
     const db = openDb();
-    const since = Date.now() - window;
-    // bucket by hour for the last day, by day otherwise -- keeps the chart
-    // readable at both ends instead of 720 hourly points for a month.
-    const bucketMs = range === "24h" ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+    const { buckets, bucketMs } = cfg;
+    // align "now" down to the current bucket, then step back N-1 buckets, so the
+    // window always lands on clean hour/day boundaries
+    const nowBucket = Math.floor(Date.now() / bucketMs) * bucketMs;
+    const since = nowBucket - (buckets - 1) * bucketMs;
 
     const totals = db
       .prepare(
@@ -106,19 +108,28 @@ export async function statsRoutes(app: FastifyInstance) {
       )
       .all(site, since);
 
-    // timeseries: floor each event's ts to its bucket and count per bucket
-    const series = db
+    // timeseries: count per bucket, then fill in every bucket in the window
+    // (empty ones included) so the chart always has exactly `buckets` points,
+    // evenly spaced -- no gaps, no stray extra day.
+    type Bucket = { bucket: number; pageviews: number; visitors: number };
+    const counted = db
       .prepare(
         // CAST forces integer division -- without it SQLite divides in floating
-        // point and every event lands in its own bucket instead of snapping to
-        // the hour/day boundary.
+        // point and every event lands in its own bucket instead of snapping.
         `SELECT CAST(ts / ? AS INTEGER) * ? AS bucket,
                 COUNT(*) AS pageviews,
                 COUNT(DISTINCT visitor_hash) AS visitors
          FROM events WHERE site_id = ? AND ts >= ?
-         GROUP BY bucket ORDER BY bucket ASC`,
+         GROUP BY bucket`,
       )
-      .all(bucketMs, bucketMs, site, since);
+      .all(bucketMs, bucketMs, site, since) as Bucket[];
+
+    const byBucket = new Map(counted.map((b) => [b.bucket, b]));
+    const series: Bucket[] = [];
+    for (let b = since; b <= nowBucket; b += bucketMs) {
+      const hit = byBucket.get(b);
+      series.push({ bucket: b, pageviews: hit?.pageviews ?? 0, visitors: hit?.visitors ?? 0 });
+    }
 
     return {
       site,

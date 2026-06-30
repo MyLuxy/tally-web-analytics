@@ -1,5 +1,5 @@
 // Fills the database with believable demo traffic so the dashboard has
-// something to show. Spreads events across the last 7 days (with extra weight
+// something to show. Spreads events across the last 30 days (with extra weight
 // on the last 24h) and reuses a pool of visitor hashes per day so the
 // unique-visitor counts come out sensible instead of equal to pageviews.
 //
@@ -30,7 +30,7 @@ const DAY = 24 * 60 * 60 * 1000;
 let total = 0;
 const now = Date.now();
 
-for (let dayAgo = 6; dayAgo >= 0; dayAgo--) {
+for (let dayAgo = 29; dayAgo >= 0; dayAgo--) {
   // a fresh pool of "people" each day -- mirrors how the daily salt would make
   // visitor hashes rotate, and keeps visitors < pageviews
   const visitors = Array.from({ length: 8 + Math.floor(Math.random() * 22) }, () =>

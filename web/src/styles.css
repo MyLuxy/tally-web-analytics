@@ -483,38 +483,44 @@ a {
    the dot is near the top so it never covers it */
 .chart-tip {
   position: absolute;
-  transform: translate(-50%, calc(-100% - 12px));
+  transform: translate(-50%, calc(-100% - 14px));
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
   background: var(--ink);
   color: var(--paper);
-  padding: 6px 12px;
+  padding: 10px 16px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1;
   white-space: nowrap;
   pointer-events: none;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
 }
 
 .chart-tip.flip {
-  transform: translate(-50%, 12px);
+  transform: translate(-50%, 14px);
 }
 
 .chart-tip-when {
   color: var(--ink-faint);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .chart-tip-stat {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 7px;
 }
 
 .chart-tip-stat .num {
   font-weight: 600;
+  font-size: 15px;
+}
+
+.chart-tip .dot {
+  width: 11px;
+  height: 11px;
 }
 
 .chart-legend {

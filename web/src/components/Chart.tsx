@@ -23,21 +23,17 @@ function tickLabel(ms: number, range: Range): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-// Fuller label for the tooltip. On 24h each bucket is an hour, so we can show
-// the exact local time; on 7d/30d a bucket is a whole day, so just the date.
-// Times come out in the viewer's own timezone (toLocale*), which is what you
-// want once real traffic is flowing in.
+// Fuller label for the tooltip -- always with the bucket's local time. On 24h a
+// bucket is an hour; on 7d/30d it's a day, but the time is shown too. Everything
+// is in the viewer's own timezone (toLocale*), so it reads correctly once real
+// traffic is flowing in.
 function tipWhen(ms: number, range: Range): string {
   const d = new Date(ms);
+  const time = { hour: "2-digit", minute: "2-digit" } as const;
   if (range === "24h") {
-    return d.toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return d.toLocaleString("en-US", { month: "short", day: "numeric", ...time });
   }
-  return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+  return d.toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", ...time });
 }
 
 export function Chart({ series, range }: { series: Point[]; range: Range }) {
@@ -96,13 +92,18 @@ export function Chart({ series, range }: { series: Point[]; range: Range }) {
 
   const show = cursorX != null && n > 0;
   const cx = cursorX ?? 0;
-  const viewsY = yFor(valueAt(cx, "pageviews"));
-  const visitorsY = yFor(valueAt(cx, "visitors"));
-  // the tooltip reports the nearest real data point (integer counts + its date)
-  const near = show ? series[Math.round(fracIndex(cx))] : undefined;
+  // 7d/30d have distinct daily points, so snap onto the nearest one for a clean
+  // read; 24h is denser and reads better as a continuous glide along the line.
+  const snap = range !== "24h";
+  const nearIdx = Math.round(fracIndex(cx));
+  const near = show ? series[nearIdx]! : undefined;
+
+  const dotX = snap ? xFor(nearIdx) : cx;
+  const viewsY = yFor(snap ? (near?.pageviews ?? 0) : valueAt(cx, "pageviews"));
+  const visitorsY = yFor(snap ? (near?.visitors ?? 0) : valueAt(cx, "visitors"));
 
   // place the tip above the (upper) views dot; flip below when it's near the top
-  const tipLeft = Math.min(92, Math.max(8, (cx / W) * 100));
+  const tipLeft = Math.min(92, Math.max(8, (dotX / W) * 100));
   const tipTop = (viewsY / H) * 100;
   const flip = viewsY < H * 0.24;
 
@@ -129,10 +130,12 @@ export function Chart({ series, range }: { series: Point[]; range: Range }) {
           <path className="chart-line-visitors" d={linePath("visitors")} />
           <path className="chart-line-views" d={linePath("pageviews")} />
 
-          {/* a marker on each data point so it's clear which day a value is */}
-          {series.map((p, i) => (
-            <circle key={`m${i}`} className="chart-marker" cx={xFor(i)} cy={yFor(p.pageviews)} r={2.3} />
-          ))}
+          {/* a marker on each data point (7d/30d only -- on 24h there are too
+              many and we glide instead of snapping) */}
+          {snap &&
+            series.map((p, i) => (
+              <circle key={`m${i}`} className="chart-marker" cx={xFor(i)} cy={yFor(p.pageviews)} r={2.6} />
+            ))}
 
           {ticks.map(({ p, i }) => {
             const x = xFor(i);
@@ -147,9 +150,9 @@ export function Chart({ series, range }: { series: Point[]; range: Range }) {
 
           {show && (
             <g>
-              <line className="chart-cursor" x1={cx} x2={cx} y1={PAD.top} y2={baseline} />
-              <circle className="chart-dot-visitors" cx={cx} cy={visitorsY} r={4} />
-              <circle className="chart-dot-views" cx={cx} cy={viewsY} r={4.5} />
+              <line className="chart-cursor" x1={dotX} x2={dotX} y1={PAD.top} y2={baseline} />
+              <circle className="chart-dot-visitors" cx={dotX} cy={visitorsY} r={4.5} />
+              <circle className="chart-dot-views" cx={dotX} cy={viewsY} r={5} />
             </g>
           )}
         </svg>
