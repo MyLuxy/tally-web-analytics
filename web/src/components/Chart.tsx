@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Range, Stats } from "../api.js";
 
 // A small hand-drawn area+line chart. No charting library on purpose -- the
@@ -7,7 +7,6 @@ import type { Range, Stats } from "../api.js";
 
 type Point = Stats["series"][number];
 
-const W = 720;
 const H = 260;
 const PAD = { top: 16, right: 14, bottom: 26, left: 40 };
 
@@ -40,6 +39,20 @@ export function Chart({ series, range }: { series: Point[]; range: Range }) {
   const svgRef = useRef<SVGSVGElement>(null);
   // continuous chart-x of the cursor (not snapped to a data point), or null
   const [cursorX, setCursorX] = useState<number | null>(null);
+  const [narrow, setNarrow] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(max-width: 640px)").matches,
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 640px)");
+    const onChange = () => setNarrow(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  // a narrower viewBox on phones: the chart ends up taller and, since it's
+  // scaled less to fit the screen, the labels stay readable
+  const W = narrow ? 380 : 720;
 
   const n = series.length;
   const innerW = W - PAD.left - PAD.right;
@@ -63,8 +76,8 @@ export function Chart({ series, range }: { series: Point[]; range: Range }) {
   // three horizontal guides, labelled with rounded counts
   const guides = [0.25, 0.5, 0.75, 1].map((f) => Math.round(maxY * f));
 
-  // spread out ~8-10 x ticks: every day on 7d, a denser sampling on 24h/30d
-  const tickStep = Math.max(1, Math.ceil(n / 8));
+  // fewer x labels on phones so they don't collide
+  const tickStep = Math.max(1, Math.ceil(n / (narrow ? 4 : 8)));
   const ticks = series.map((p, i) => ({ p, i })).filter(({ i }) => i % tickStep === 0);
 
   // fractional index under the cursor, so the dot can ride the line smoothly
@@ -83,7 +96,9 @@ export function Chart({ series, range }: { series: Point[]; range: Range }) {
     return a[key] + (b[key] - a[key]) * (fi - i0);
   };
 
-  function onMove(e: React.MouseEvent) {
+  // pointer events cover mouse hover and touch alike (paired with touch-action:
+  // pan-y in CSS, so a vertical swipe still scrolls the page)
+  function onMove(e: React.PointerEvent) {
     const rect = svgRef.current?.getBoundingClientRect();
     if (!rect || n === 0) return;
     const frac = (e.clientX - rect.left) / rect.width;
@@ -114,8 +129,9 @@ export function Chart({ series, range }: { series: Point[]; range: Range }) {
           ref={svgRef}
           viewBox={`0 0 ${W} ${H}`}
           className="chart-svg"
-          onMouseMove={onMove}
-          onMouseLeave={() => setCursorX(null)}
+          onPointerDown={onMove}
+          onPointerMove={onMove}
+          onPointerLeave={() => setCursorX(null)}
         >
           {guides.map((g) => (
             <g key={g}>
