@@ -489,6 +489,9 @@ a {
   width: 100%;
   height: auto;
   display: block;
+  /* let a vertical swipe scroll the page, but keep taps/horizontal drags for
+     scrubbing the chart on touch screens */
+  touch-action: pan-y;
 }
 
 .chart-grid {
@@ -585,6 +588,23 @@ a {
 .chart-tip .dot {
   width: 13px;
   height: 13px;
+}
+
+/* keep the tip from overflowing a phone screen */
+@media (max-width: 480px) {
+  .chart-tip {
+    gap: 11px;
+    padding: 8px 13px;
+    font-size: 13px;
+  }
+  .chart-tip-when,
+  .chart-tip-stat .num {
+    font-size: 13px;
+  }
+  .chart-tip .dot {
+    width: 10px;
+    height: 10px;
+  }
 }
 
 .chart-legend {
