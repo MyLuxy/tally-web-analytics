@@ -39,6 +39,16 @@ addresses or persistent identifiers ever hit the database.
 - **Optional access token** — lock the dashboard down with a single env var.
 - **One process in production** — the API also serves the built dashboard.
 
+## Live demo
+
+A hosted instance will live here once it's deployed:
+
+<p align="center">
+  <a href="https://your-subdomain.duckdns.org"><strong>your-subdomain.duckdns.org</strong></a>
+  <br>
+  <sub>placeholder — updated after deployment</sub>
+</p>
+
 ## How the privacy works
 
 Most analytics either bloat your page with a 40kb script that follows people
@@ -85,6 +95,51 @@ npm run dev
 
 Open http://localhost:5173 for the dashboard, or
 http://localhost:3000/demo.html to generate live events with the tracker.
+
+> The `npm run seed` step is only for the demo. A real instance starts with an
+> empty database and fills up with your own traffic — don't run it in production.
+
+## Adding the tracker to a site
+
+Drop one script tag on any page you want to measure, pointing it at your Tally
+server. The tracker is served by the server itself at `/tracker.js`.
+
+```html
+<script
+  defer
+  data-site="my-site.com"
+  src="https://your-tally-server/tracker.js"
+></script>
+```
+
+- **`src`** — your Tally server's URL. Use `http://localhost:3000/tracker.js`
+  while developing; in production it must be reachable over HTTPS so it loads on
+  HTTPS pages.
+- **`data-site`** — the name this site appears as in the dashboard. It's any
+  string you choose; a new site shows up on its own with its first event, so
+  there's nothing to register first.
+
+That covers it. The tracker sends a pageview on load and on every SPA route
+change, respects Do Not Track, ignores bots, and stores nothing on the visitor's
+device — no cookies, no localStorage.
+
+Custom events are a one-liner. The tracker exposes a global `tally()`:
+
+```html
+<button onclick="tally('signup')">Sign up</button>
+```
+
+If you serve the script from a different host than your server, point it at the
+collector explicitly:
+
+```html
+<script
+  defer
+  data-site="my-site.com"
+  data-endpoint="https://your-tally-server/api/collect"
+  src="https://some-cdn/tracker.js"
+></script>
+```
 
 ## Production
 
