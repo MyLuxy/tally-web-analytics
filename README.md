@@ -1,7 +1,4 @@
-<h1 align="center">Tally</h1>
-
-<hr>
-
+<h2 align="center">Tally Web Analytics</h1>
 <p align="center">
   <a href="https://github.com/MyLuxy/tally-web-analytics/actions/workflows/ci.yml">
     <img src="https://github.com/MyLuxy/tally-web-analytics/actions/workflows/ci.yml/badge.svg" alt="CI">
@@ -9,7 +6,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/banner.png" alt="Tally Analytics" width="100%">
+  <img src="docs/banner.png" alt="Tally Analytics">
 </p>
 
 Privacy-first, self-hosted web analytics. No cookies, no personal data, one
