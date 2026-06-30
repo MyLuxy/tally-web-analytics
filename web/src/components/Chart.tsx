@@ -23,6 +23,23 @@ function tickLabel(ms: number, range: Range): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+// Fuller label for the tooltip. On 24h each bucket is an hour, so we can show
+// the exact local time; on 7d/30d a bucket is a whole day, so just the date.
+// Times come out in the viewer's own timezone (toLocale*), which is what you
+// want once real traffic is flowing in.
+function tipWhen(ms: number, range: Range): string {
+  const d = new Date(ms);
+  if (range === "24h") {
+    return d.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+  return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+}
+
 export function Chart({ series, range }: { series: Point[]; range: Range }) {
   const svgRef = useRef<SVGSVGElement>(null);
   // continuous chart-x of the cursor (not snapped to a data point), or null
@@ -142,7 +159,7 @@ export function Chart({ series, range }: { series: Point[]; range: Range }) {
             className={`chart-tip${flip ? " flip" : ""}`}
             style={{ left: `${tipLeft}%`, top: `${tipTop}%` }}
           >
-            <span className="chart-tip-when num">{tickLabel(near.bucket, range)}</span>
+            <span className="chart-tip-when num">{tipWhen(near.bucket, range)}</span>
             <span className="chart-tip-stat">
               <span className="dot dot-views" />
               <span className="num">{fmt(near.pageviews)}</span>
