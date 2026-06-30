@@ -5,45 +5,61 @@
 Privacy-first, self-hosted web analytics. No cookies, no personal data, one
 small script tag.
 
+<p align="center">
+  <img src="docs/dashboard.png" alt="The Tally dashboard, showing pageviews, a traffic chart and breakdowns" width="860">
+</p>
+
 Tally is a lightweight alternative to Google Analytics that you run yourself.
-The tracking script is tiny, visitors aren't followed across sites, and no
-IP addresses or persistent identifiers ever hit the database.
+The tracking script is tiny, visitors aren't followed across sites, and no IP
+addresses or persistent identifiers ever hit the database.
 
-> Status: work in progress. The tracker, ingestion backend, stats API and the
-> dashboard are all working, a production build serves everything from a single
-> port, and the dashboard can be locked behind an access token. Next up: a live
-> deploy.
+> **Status** — the tracker, ingestion backend, stats API and dashboard all work,
+> a single production process serves everything on one port, and the dashboard
+> can be locked behind an access token. Next up: a live deploy.
 
-## Why another analytics tool?
+## Features
+
+- **One script tag** — around 1kb of vanilla JS, no dependencies, SPA-aware.
+- **No cookies, no consent banner** — nothing that needs a GDPR pop-up.
+- **Unique visitors without tracking** — a daily-rotating hash, never a stored
+  identifier (see below).
+- **The numbers that matter** — pageviews, unique visitors, top pages,
+  referrers, and traffic over time on a hand-drawn chart.
+- **Breakdowns** — browser, operating system, device and country.
+- **Multi-site** — one server tracks many sites, switchable from the dashboard.
+- **Optional access token** — lock the dashboard down with a single env var.
+- **One process in production** — the API also serves the built dashboard.
+
+## How the privacy works
 
 Most analytics either bloat your page with a 40kb script that follows people
 around the web, or they're so stripped down you can't answer basic questions.
-Tally tries to sit in the middle: enough to actually be useful (top pages,
-referrers, unique visitors over time), nothing that needs a cookie banner.
+Tally sits in the middle: enough to be genuinely useful, nothing that needs a
+cookie banner.
 
-How "unique visitors" works without cookies: we hash
-`daily_salt + site + ip + user_agent` into a `visitor_hash`. The salt rotates
-every night and is never stored in a way that lets you reverse it, so the same
-person looks like a new visitor tomorrow. Good enough for counting, useless for
-tracking. (Same trick Plausible and Fathom use.)
+**Unique visitors, without cookies.** Each event is reduced to a `visitor_hash`
+of `daily_salt + site + ip + user_agent`. The salt rotates every night and is
+never stored in a reversible way, so the same person looks like a brand new
+visitor tomorrow. Good enough for counting, useless for tracking. (The same
+approach Plausible and Fathom take.)
 
-Country works the same hands-off way: if you run behind Cloudflare, Vercel or
-Fastly, they resolve the visitor's country at the edge and pass it as a header
-(`cf-ipcountry` and friends). Tally just stores the two-letter code — it never
-sees or stores the IP itself.
+**Country, without an IP.** Behind Cloudflare, Vercel or Fastly, the visitor's
+country is resolved at the edge and handed over as a header (`cf-ipcountry` and
+friends). Tally stores only the two-letter code; it never sees or stores the IP
+itself.
 
 ## Stack
 
 - **Backend** — Node + TypeScript + Fastify
 - **Storage** — SQLite (via `better-sqlite3`), kept behind a thin module so it
   can move to Postgres/Timescale later without touching the routes
-- **Tracker** — ~1kb of vanilla JS, no dependencies
-- **Dashboard** — React + Vite, with a hand-rolled SVG chart (no charting lib)
-  and self-hosted fonts so it makes no third-party requests
+- **Tracker** — around 1kb of vanilla JS, no dependencies
+- **Dashboard** — React + Vite, with a hand-rolled SVG chart (no charting
+  library) and self-hosted fonts, so it makes no third-party requests
 
 ## Quick start
 
-Two processes: the API server and the dashboard.
+In development it's two processes: the API server and the dashboard.
 
 ```bash
 # 1. API server (port 3000)
@@ -77,10 +93,10 @@ npm start           # serves API + dashboard on port 3000
 ### Protecting the dashboard
 
 By default the read API is open, which is what you want for a local demo. Set
-`TALLY_TOKEN` and the stats endpoints (`/api/stats`, `/api/sites`) require a
-`Authorization: Bearer <token>` header; the dashboard prompts for the token and
-remembers it. The `/api/collect` endpoint always stays open — the tracker has to
-be able to post from any site.
+`TALLY_TOKEN` and the stats endpoints (`/api/stats`, `/api/sites`) require an
+`Authorization: Bearer <token>` header. The dashboard prompts for the token and
+remembers it. The `/api/collect` endpoint always stays open, since the tracker
+has to be able to post from any site.
 
 ```bash
 TALLY_TOKEN=a-long-random-string npm start
