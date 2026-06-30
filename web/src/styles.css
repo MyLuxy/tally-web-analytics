@@ -12,6 +12,9 @@
   --accent: #0e7a59;
   --accent-ink: #0a5a41;
   --accent-wash: #e8f2ec;
+  /* second series (visitors): a brand amber that stays legible on the paper,
+     on the dark tooltip, and in dark mode -- so the dot matches the line everywhere */
+  --accent-2: #cb7a2c;
 
   --font-display: "Space Grotesk Variable", system-ui, sans-serif;
   --font-body: "IBM Plex Sans", system-ui, sans-serif;
@@ -35,6 +38,7 @@
   --accent: #1ba87c;
   --accent-ink: #36bd91;
   --accent-wash: #15271f;
+  --accent-2: #e0954c;
   color-scheme: dark;
 }
 
@@ -94,7 +98,34 @@ a {
 .shell {
   max-width: var(--maxw);
   margin: 0 auto;
-  padding: 28px 24px 80px;
+  padding: 28px 24px 40px;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 44px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+  color: var(--ink-faint);
+  font-size: 13px;
+}
+
+.footer svg {
+  color: var(--ink-faint);
+  flex-shrink: 0;
+}
+
+.footer a {
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.footer a:hover {
+  color: var(--accent);
 }
 
 .topbar {
@@ -419,7 +450,7 @@ a {
 
 .chart-line-visitors {
   fill: none;
-  stroke: var(--ink);
+  stroke: var(--accent-2);
   stroke-width: 1.5;
   stroke-dasharray: 3 4;
   stroke-linecap: round;
@@ -431,12 +462,19 @@ a {
   stroke-dasharray: 2 3;
 }
 
+/* day markers on the pageviews line -- a paper core with an accent ring */
+.chart-marker {
+  fill: var(--paper);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+
 .chart-dot-views {
   fill: var(--accent);
 }
 
 .chart-dot-visitors {
-  fill: var(--ink);
+  fill: var(--accent-2);
 }
 
 /* tooltip: a pill that follows the dot and sits above it, flipping below when
@@ -456,6 +494,8 @@ a {
   white-space: nowrap;
   pointer-events: none;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+  /* glide after the dot rather than snapping -- a touch slow on purpose */
+  transition: left 0.22s ease-out, top 0.22s ease-out, transform 0.22s ease-out;
 }
 
 .chart-tip.flip {
@@ -475,11 +515,6 @@ a {
 
 .chart-tip-stat .num {
   font-weight: 600;
-}
-
-/* the visitors dot defaults to var(--ink) -- invisible on the tip's ink bg */
-.chart-tip .dot-visitors {
-  background: var(--paper);
 }
 
 .chart-legend {
@@ -509,7 +544,7 @@ a {
 }
 
 .dot-visitors {
-  background: var(--ink);
+  background: var(--accent-2);
 }
 
 /* ---- empty + error states ---- */
