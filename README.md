@@ -3,6 +3,9 @@
   <a href="https://github.com/MyLuxy/tally-web-analytics/actions/workflows/ci.yml">
     <img src="https://github.com/MyLuxy/tally-web-analytics/actions/workflows/ci.yml/badge.svg" alt="CI">
   </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="License: AGPL-3.0">
+  </a>
 </p>
 
 <p align="center">
@@ -191,4 +194,6 @@ web/            React dashboard (Vite)
 
 ## License
 
-MIT
+[GNU AGPLv3](LICENSE). You're free to use, modify and self-host Tally, but if you
+run a modified version — including as a hosted service over a network — you have
+to make your source available under the same license.
