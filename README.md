@@ -1,11 +1,7 @@
-<h2 align="center">Tally Web Analytics</h1>
+<h1 align="center">Tally Web Analytics</h1>
 <p align="center">
-  <a href="https://github.com/MyLuxy/tally-web-analytics/actions/workflows/ci.yml">
-    <img src="https://github.com/MyLuxy/tally-web-analytics/actions/workflows/ci.yml/badge.svg" alt="CI">
-  </a>
-  <a href="LICENSE">
-    <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="License: AGPL-3.0">
-  </a>
+  <a href="https://github.com/MyLuxy/tally-web-analytics/actions/workflows/ci.yml"><img src="https://github.com/MyLuxy/tally-web-analytics/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="License: AGPL-3.0"></a>
 </p>
 
 <p align="center">
@@ -19,14 +15,21 @@ Tally is a lightweight alternative to Google Analytics that you run yourself.
 The tracking script is tiny, visitors aren't followed across sites, and no IP
 addresses or persistent identifiers ever hit the database.
 
-> **Status** — the tracker, ingestion backend, stats API and dashboard all work,
-> a single production process serves everything on one port, and the dashboard
-> can be locked behind an access token. Next up: a live deploy.
-
-## Preview
+<p align="center">
+<h2 align="center">Preview</h2>
+</p>
 
 <p align="center">
   <img src="docs/dashboard.png" alt="The Tally dashboard, showing pageviews, a traffic chart and breakdowns" width="520">
+</p>
+
+---
+
+<h3 align="center">Try the live demo</h3>
+<p align="center">
+  <a href="https://tally-analytics.duckdns.org/">
+    <img src="https://img.shields.io/badge/live_demo-tally--analytics.duckdns.org-58a6ff?style=flat&logo=target&logoColor=white" style="height: 38px;" alt="Live Demo">
+  </a>
 </p>
 
 ## Features
@@ -41,16 +44,6 @@ addresses or persistent identifiers ever hit the database.
 - **Multi-site** — one server tracks many sites, switchable from the dashboard.
 - **Optional access token** — lock the dashboard down with a single env var.
 - **One process in production** — the API also serves the built dashboard.
-
-## Live demo
-
-A hosted instance will live here once it's deployed:
-
-<p align="center">
-  <a href="https://your-subdomain.duckdns.org"><strong>your-subdomain.duckdns.org</strong></a>
-  <br>
-  <sub>placeholder — updated after deployment</sub>
-</p>
 
 ## How the privacy works
 
