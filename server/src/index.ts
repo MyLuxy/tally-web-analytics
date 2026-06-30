@@ -25,6 +25,17 @@ export async function buildApp(opts: { logger?: FastifyServerOptions["logger"] }
   // safe. The stats API would get locked down per-site once there's auth.
   await app.register(cors, { origin: true });
 
+  // navigator.sendBeacon posts the JSON body as text/plain -- that's deliberate
+  // on the tracker's side, since text/plain is CORS-safelisted and dodges a
+  // preflight. Fastify won't treat it as JSON, so parse it ourselves here.
+  app.addContentTypeParser("text/plain", { parseAs: "string" }, (_req, body, done) => {
+    try {
+      done(null, body ? JSON.parse(body as string) : {});
+    } catch {
+      done(null, {}); // a junk body just becomes "no site" -> 400 downstream
+    }
+  });
+
   // The built dashboard lives in web-dist (vite outputs there). When it's
   // present we serve everything from one origin in prod; in dev it's missing
   // and the dashboard runs off the vite server on :5173 instead.

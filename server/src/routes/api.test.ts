@@ -62,6 +62,20 @@ describe("POST /api/collect", () => {
     expect(res.statusCode).toBe(400);
   });
 
+  it("accepts a sendBeacon body (JSON posted as text/plain)", async () => {
+    // browsers beacon the body as text/plain, not application/json
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/collect",
+      headers: { "content-type": "text/plain", "user-agent": CHROME_UA },
+      payload: JSON.stringify({ site: "beacon", path: "/" }),
+    });
+    expect(res.statusCode).toBe(204);
+
+    const stats = (await app.inject({ url: "/api/stats?site=beacon&range=7d" })).json();
+    expect(stats.totals.pageviews).toBe(1);
+  });
+
   it("picks up the country from an edge header", async () => {
     await collect({ site: "s1", path: "/" }, { "cf-ipcountry": "it" });
     const stats = (await app.inject({ url: "/api/stats?site=s1&range=7d" })).json();
