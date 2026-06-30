@@ -1,13 +1,19 @@
-# Tally
+<h1 align="center">Tally</h1>
 
-[![CI](https://github.com/MyLuxy/tally-web-analytics/actions/workflows/ci.yml/badge.svg)](https://github.com/MyLuxy/tally-web-analytics/actions/workflows/ci.yml)
+<hr>
+
+<p align="center">
+  <a href="https://github.com/MyLuxy/tally-web-analytics/actions/workflows/ci.yml">
+    <img src="https://github.com/MyLuxy/tally-web-analytics/actions/workflows/ci.yml/badge.svg" alt="CI">
+  </a>
+</p>
+
+<p align="center">
+  <img src="docs/banner.png" alt="Tally Analytics" width="100%">
+</p>
 
 Privacy-first, self-hosted web analytics. No cookies, no personal data, one
 small script tag.
-
-<p align="center">
-  <img src="docs/dashboard.png" alt="The Tally dashboard, showing pageviews, a traffic chart and breakdowns" width="860">
-</p>
 
 Tally is a lightweight alternative to Google Analytics that you run yourself.
 The tracking script is tiny, visitors aren't followed across sites, and no IP
@@ -16,6 +22,12 @@ addresses or persistent identifiers ever hit the database.
 > **Status** — the tracker, ingestion backend, stats API and dashboard all work,
 > a single production process serves everything on one port, and the dashboard
 > can be locked behind an access token. Next up: a live deploy.
+
+## Preview
+
+<p align="center">
+  <img src="docs/dashboard.png" alt="The Tally dashboard, showing pageviews, a traffic chart and breakdowns" width="640">
+</p>
 
 ## Features
 

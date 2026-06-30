@@ -97,8 +97,10 @@ a {
   gap: 12px;
 }
 
-.brand-mark {
-  color: var(--accent);
+.brand-logo {
+  height: 38px;
+  width: auto;
+  display: block;
 }
 
 .brand-name {

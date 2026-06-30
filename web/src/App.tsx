@@ -89,7 +89,7 @@ export function App() {
     <div className="shell">
       <header className="topbar">
         <div className="brand">
-          <TallyMarks count={5} className="brand-mark" />
+          <img src="/brand.png" className="brand-logo" alt="Tally" />
           <div>
             <div className="brand-name">Tally</div>
             <div className="brand-sub">self-hosted analytics</div>
