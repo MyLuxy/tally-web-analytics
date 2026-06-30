@@ -175,7 +175,7 @@ a {
 
 .site-pill {
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
   padding: 6px 12px;
   border: 1px solid var(--line-strong);
@@ -183,9 +183,17 @@ a {
   background: var(--panel);
 }
 
-.site-pill .num {
+/* the site name -- normal font, and a link that opens the tracked site */
+.site-name {
   font-size: 14px;
   font-weight: 500;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.site-name:hover {
+  color: var(--accent-ink);
+  text-decoration: underline;
 }
 
 /* custom site dropdown (a native <select> won't theme), pill-shaped to match */
@@ -193,39 +201,31 @@ a {
   position: relative;
 }
 
-.site-picker-btn {
+.site-chevron {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  border: 1px solid var(--line-strong);
-  border-radius: 999px;
-  background: var(--panel);
-  color: var(--ink);
+  padding: 2px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-faint);
   cursor: pointer;
-  transition: border-color 0.15s ease;
 }
 
-.site-picker-btn:hover {
-  border-color: var(--ink-faint);
+.site-chevron:hover {
+  color: var(--ink);
 }
 
-.site-picker-btn:focus-visible {
+.site-chevron:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+  border-radius: 4px;
 }
 
-.site-picker-value {
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.site-picker .chevron {
-  color: var(--ink-faint);
+.site-chevron .chevron {
   transition: transform 0.15s ease;
 }
 
-.site-picker-btn[aria-expanded="true"] .chevron {
+.site-chevron[aria-expanded="true"] .chevron {
   transform: rotate(180deg);
 }
 

@@ -126,7 +126,13 @@ export function App() {
           ) : (
             <span className="site-pill">
               <span className="eyebrow">site</span>
-              <span className="num">{site ?? "—"}</span>
+              {site ? (
+                <a className="site-name" href={siteUrl(site)} target="_blank" rel="noreferrer">
+                  {site}
+                </a>
+              ) : (
+                <span className="site-name">—</span>
+              )}
             </span>
           )}
 
@@ -346,17 +352,22 @@ function SitePicker({
 
   return (
     <div className="site-picker" ref={ref}>
-      <button
-        type="button"
-        className="site-picker-btn"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
-      >
+      <span className="site-pill">
         <span className="eyebrow">site</span>
-        <span className="num site-picker-value">{site}</span>
-        <ChevronIcon />
-      </button>
+        <a className="site-name" href={siteUrl(site)} target="_blank" rel="noreferrer">
+          {site}
+        </a>
+        <button
+          type="button"
+          className="site-chevron"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-label="Switch site"
+          onClick={() => setOpen((o) => !o)}
+        >
+          <ChevronIcon />
+        </button>
+      </span>
 
       {open && (
         <ul className="site-picker-menu" role="listbox">
@@ -366,7 +377,7 @@ function SitePicker({
                 type="button"
                 role="option"
                 aria-selected={s.site === site}
-                className={`site-picker-option num${s.site === site ? " is-active" : ""}`}
+                className={`site-picker-option${s.site === site ? " is-active" : ""}`}
                 onClick={() => {
                   onChange(s.site);
                   setOpen(false);
@@ -380,6 +391,12 @@ function SitePicker({
       )}
     </div>
   );
+}
+
+// Build a URL to open the tracked site in a new tab. data-site is usually a
+// domain (e.g. "fotodanmar.com"); add https:// if there's no scheme already.
+function siteUrl(site: string): string {
+  return /^https?:\/\//i.test(site) ? site : `https://${site}`;
 }
 
 function ChevronIcon() {
