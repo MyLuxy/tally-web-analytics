@@ -7,7 +7,6 @@ import type { Range, Stats } from "../api.js";
 
 type Point = Stats["series"][number];
 
-const H = 260;
 const PAD = { top: 16, right: 14, bottom: 26, left: 40 };
 
 // Fixed to en-US so the data reads consistently regardless of the viewer's
@@ -50,9 +49,10 @@ export function Chart({ series, range }: { series: Point[]; range: Range }) {
     return () => mq.removeEventListener("change", onChange);
   }, []);
 
-  // a narrower viewBox on phones: the chart ends up taller and, since it's
-  // scaled less to fit the screen, the labels stay readable
-  const W = narrow ? 380 : 720;
+  // a narrower, taller viewBox on phones: the chart fills more of the screen and,
+  // being scaled less to fit the width, the labels stay readable
+  const W = narrow ? 360 : 720;
+  const H = narrow ? 300 : 260;
 
   const n = series.length;
   const innerW = W - PAD.left - PAD.right;
@@ -135,7 +135,10 @@ export function Chart({ series, range }: { series: Point[]; range: Range }) {
           className="chart-svg"
           onPointerDown={onMove}
           onPointerMove={onMove}
-          onPointerLeave={() => setCursorX(null)}
+          // a mouse leaving clears it; on touch we leave the box up after a tap
+          onPointerLeave={(e) => {
+            if (e.pointerType === "mouse") setCursorX(null);
+          }}
         >
           {guides.map((g) => (
             <g key={g}>

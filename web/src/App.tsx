@@ -130,18 +130,7 @@ export function App() {
             </span>
           )}
 
-          <div className="segmented" role="group" aria-label="Time range">
-            {RANGES.map((r) => (
-              <button
-                key={r}
-                className="segment num"
-                aria-pressed={r === range}
-                onClick={() => setRange(r)}
-              >
-                {r}
-              </button>
-            ))}
-          </div>
+          <RangeTabs range={range} setRange={setRange} className="range-header" />
 
           <button
             className="theme-toggle"
@@ -188,6 +177,8 @@ export function App() {
               <span className="eyebrow">last {range}</span>
             </div>
             {data && <Chart series={data.series} range={range} />}
+            {/* on phones the range tabs live here, under the chart */}
+            <RangeTabs range={range} setRange={setRange} className="range-chart" />
           </section>
 
           <div className="grid-two">
@@ -292,6 +283,33 @@ function TokenGate({ onSubmit }: { onSubmit: (token: string) => void }) {
           Unlock
         </button>
       </form>
+    </div>
+  );
+}
+
+// The 24h/7d/30d switch. Rendered twice -- in the header on desktop, under the
+// chart on phones -- with CSS deciding which copy shows.
+function RangeTabs({
+  range,
+  setRange,
+  className,
+}: {
+  range: Range;
+  setRange: (r: Range) => void;
+  className: string;
+}) {
+  return (
+    <div className={`segmented ${className}`} role="group" aria-label="Time range">
+      {RANGES.map((r) => (
+        <button
+          key={r}
+          className="segment num"
+          aria-pressed={r === range}
+          onClick={() => setRange(r)}
+        >
+          {r}
+        </button>
+      ))}
     </div>
   );
 }
