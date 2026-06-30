@@ -2,6 +2,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { existsSync } from "node:fs";
 import Fastify from "fastify";
+import type { FastifyServerOptions } from "fastify";
 import cors from "@fastify/cors";
 import staticFiles from "@fastify/static";
 import { openDb } from "./db.js";
@@ -10,13 +11,13 @@ import { statsRoutes } from "./routes/stats.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
-async function main() {
-  openDb(); // fail fast if the db can't be opened
-
+// Build the fully wired app without binding a port, so tests can drive it with
+// app.inject() and main() can just open the db and listen.
+export async function buildApp(opts: { logger?: FastifyServerOptions["logger"] } = {}) {
   const app = Fastify({
     // trustProxy lets req.ip resolve correctly behind a reverse proxy in prod
     trustProxy: true,
-    logger: { transport: { target: "pino-pretty" } },
+    logger: opts.logger ?? false,
   });
 
   // The collect endpoint is hit from any site embedding the tracker, so it has
@@ -52,11 +53,20 @@ async function main() {
     });
   }
 
+  return app;
+}
+
+async function main() {
+  openDb(); // fail fast if the db can't be opened
+  const app = await buildApp({ logger: { transport: { target: "pino-pretty" } } });
   const port = Number(process.env.PORT ?? 3000);
   await app.listen({ port, host: "0.0.0.0" });
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+// Don't boot the server when the module is imported by a test.
+if (process.env.NODE_ENV !== "test") {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
