@@ -26,7 +26,7 @@ addresses or persistent identifiers ever hit the database.
 ## Preview
 
 <p align="center">
-  <img src="docs/dashboard.png" alt="The Tally dashboard, showing pageviews, a traffic chart and breakdowns" width="640">
+  <img src="docs/dashboard.png" alt="The Tally dashboard, showing pageviews, a traffic chart and breakdowns" width="520">
 </p>
 
 ## Features
