@@ -171,9 +171,10 @@ TALLY_TOKEN=a-long-random-string npm start
 
 ### Self-hosting with Docker
 
-There's a `Dockerfile` and a `docker-compose.yml` that runs Tally behind Caddy
-with automatic HTTPS. For a full walkthrough on a fresh Ubuntu VPS — including a
-free HTTPS hostname with no domain to buy — see [docs/DEPLOY.md](docs/DEPLOY.md).
+There's a `Dockerfile` and a `docker-compose.yml`. Tally can sit behind a web
+server you already run (nginx/apache + certbot), or bring up the bundled Caddy
+for automatic HTTPS on a fresh box. The full walkthrough — including a free HTTPS
+hostname with no domain to buy — is in [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## Layout
 
