@@ -49,6 +49,21 @@ export function Chart({ series, range }: { series: Point[]; range: Range }) {
     return () => mq.removeEventListener("change", onChange);
   }, []);
 
+  // drop the (touch) tooltip when the view changes -- a new range or fresh data
+  useEffect(() => {
+    setCursorX(null);
+  }, [range, series]);
+
+  // ...and when tapping or clicking anywhere outside the chart
+  useEffect(() => {
+    if (cursorX == null) return;
+    const onDown = (e: PointerEvent) => {
+      if (svgRef.current && !svgRef.current.contains(e.target as Node)) setCursorX(null);
+    };
+    document.addEventListener("pointerdown", onDown);
+    return () => document.removeEventListener("pointerdown", onDown);
+  }, [cursorX]);
+
   // a narrower, taller viewBox on phones: the chart fills more of the screen and,
   // being scaled less to fit the width, the labels stay readable
   const W = narrow ? 360 : 720;
