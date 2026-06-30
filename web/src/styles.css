@@ -546,11 +546,10 @@ a {
   fill: var(--accent-2);
 }
 
-/* tooltip: a pill that follows the dot and sits above it, flipping below when
-   the dot is near the top so it never covers it */
+/* tooltip: a pill that follows the dot and sits above it (positioning -- the
+   transform that places and flips it -- is set inline by the chart) */
 .chart-tip {
   position: absolute;
-  transform: translate(-50%, calc(-100% - 16px));
   display: inline-flex;
   align-items: center;
   gap: 18px;
@@ -563,10 +562,6 @@ a {
   white-space: nowrap;
   pointer-events: none;
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2);
-}
-
-.chart-tip.flip {
-  transform: translate(-50%, 16px);
 }
 
 .chart-tip-stat {
@@ -590,11 +585,15 @@ a {
   height: 13px;
 }
 
-/* keep the tip from overflowing a phone screen */
+/* on a phone, stack the tip vertically -- a tall narrow card can't get clipped
+   at the screen edges the way a long horizontal pill would */
 @media (max-width: 480px) {
   .chart-tip {
-    gap: 11px;
-    padding: 8px 13px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    padding: 9px 13px;
+    border-radius: 13px;
     font-size: 13px;
   }
   .chart-tip-when,
