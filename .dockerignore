@@ -1,0 +1,13 @@
+# keep the build context small and never ship host artifacts into the image
+**/node_modules
+**/dist
+server/web-dist
+**/*.sqlite
+**/*.sqlite-*
+.git
+.github
+docs
+*.md
+.env
+.env.*
+!.env.example
