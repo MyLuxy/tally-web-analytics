@@ -25,7 +25,8 @@ function tickLabel(ms: number, range: Range): string {
 
 export function Chart({ series, range }: { series: Point[]; range: Range }) {
   const svgRef = useRef<SVGSVGElement>(null);
-  const [hover, setHover] = useState<number | null>(null);
+  // continuous chart-x of the cursor (not snapped to a data point), or null
+  const [cursorX, setCursorX] = useState<number | null>(null);
 
   const n = series.length;
   const innerW = W - PAD.left - PAD.right;
@@ -53,64 +54,96 @@ export function Chart({ series, range }: { series: Point[]; range: Range }) {
   const tickStep = Math.max(1, Math.ceil(n / 5));
   const ticks = series.map((p, i) => ({ p, i })).filter(({ i }) => i % tickStep === 0);
 
+  // fractional index under the cursor, so the dot can ride the line smoothly
+  // instead of snapping from point to point
+  const fracIndex = (cx: number) =>
+    n <= 1 ? 0 : Math.min(n - 1, Math.max(0, ((cx - PAD.left) / innerW) * (n - 1)));
+
+  // linear-interpolate a series value at the cursor's position on the line
+  const valueAt = (cx: number, key: "pageviews" | "visitors") => {
+    if (n === 0) return 0;
+    const fi = fracIndex(cx);
+    const i0 = Math.floor(fi);
+    const i1 = Math.min(n - 1, i0 + 1);
+    const a = series[i0]!;
+    const b = series[i1]!;
+    return a[key] + (b[key] - a[key]) * (fi - i0);
+  };
+
   function onMove(e: React.MouseEvent) {
     const rect = svgRef.current?.getBoundingClientRect();
     if (!rect || n === 0) return;
     const frac = (e.clientX - rect.left) / rect.width;
-    const i = Math.round(frac * (n - 1));
-    setHover(Math.min(n - 1, Math.max(0, i)));
+    setCursorX(PAD.left + Math.min(1, Math.max(0, frac)) * innerW);
   }
 
-  const active = hover != null ? series[hover] : undefined;
+  const show = cursorX != null && n > 0;
+  const cx = cursorX ?? 0;
+  const viewsY = yFor(valueAt(cx, "pageviews"));
+  const visitorsY = yFor(valueAt(cx, "visitors"));
+  // the tooltip reports the nearest real data point (integer counts + its date)
+  const near = show ? series[Math.round(fracIndex(cx))] : undefined;
+
+  // place the tip above the (upper) views dot; flip below when it's near the top
+  const tipLeft = Math.min(92, Math.max(8, (cx / W) * 100));
+  const tipTop = (viewsY / H) * 100;
+  const flip = viewsY < H * 0.24;
 
   return (
     <div className="chart">
-      <svg
-        ref={svgRef}
-        viewBox={`0 0 ${W} ${H}`}
-        className="chart-svg"
-        onMouseMove={onMove}
-        onMouseLeave={() => setHover(null)}
-      >
-        {guides.map((g) => (
-          <g key={g}>
-            <line className="chart-grid" x1={PAD.left} x2={W - PAD.right} y1={yFor(g)} y2={yFor(g)} />
-            <text className="chart-axis" x={PAD.left - 8} y={yFor(g) + 4} textAnchor="end">
-              {fmt(g)}
+      <div className="chart-plot">
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${W} ${H}`}
+          className="chart-svg"
+          onMouseMove={onMove}
+          onMouseLeave={() => setCursorX(null)}
+        >
+          {guides.map((g) => (
+            <g key={g}>
+              <line className="chart-grid" x1={PAD.left} x2={W - PAD.right} y1={yFor(g)} y2={yFor(g)} />
+              <text className="chart-axis" x={PAD.left - 8} y={yFor(g) + 4} textAnchor="end">
+                {fmt(g)}
+              </text>
+            </g>
+          ))}
+
+          <path className="chart-area" d={areaPath} />
+          <path className="chart-line-views" d={linePath("pageviews")} />
+          <path className="chart-line-visitors" d={linePath("visitors")} />
+
+          {ticks.map(({ p, i }) => (
+            <text key={i} className="chart-axis" x={xFor(i)} y={H - 6} textAnchor="middle">
+              {tickLabel(p.bucket, range)}
             </text>
-          </g>
-        ))}
+          ))}
 
-        <path className="chart-area" d={areaPath} />
-        <path className="chart-line-views" d={linePath("pageviews")} />
-        <path className="chart-line-visitors" d={linePath("visitors")} />
+          {show && (
+            <g>
+              <line className="chart-cursor" x1={cx} x2={cx} y1={PAD.top} y2={baseline} />
+              <circle className="chart-dot-visitors" cx={cx} cy={visitorsY} r={4} />
+              <circle className="chart-dot-views" cx={cx} cy={viewsY} r={4.5} />
+            </g>
+          )}
+        </svg>
 
-        {ticks.map(({ p, i }) => (
-          <text key={i} className="chart-axis" x={xFor(i)} y={H - 6} textAnchor="middle">
-            {tickLabel(p.bucket, range)}
-          </text>
-        ))}
-
-        {hover != null && active && (
-          <g>
-            <line className="chart-cursor" x1={xFor(hover)} x2={xFor(hover)} y1={PAD.top} y2={baseline} />
-            <circle className="chart-dot-views" cx={xFor(hover)} cy={yFor(active.pageviews)} r={4} />
-            <circle className="chart-dot-visitors" cx={xFor(hover)} cy={yFor(active.visitors)} r={4} />
-          </g>
+        {show && near && (
+          <div
+            className={`chart-tip${flip ? " flip" : ""}`}
+            style={{ left: `${tipLeft}%`, top: `${tipTop}%` }}
+          >
+            <span className="chart-tip-when num">{tickLabel(near.bucket, range)}</span>
+            <span className="chart-tip-stat">
+              <span className="dot dot-views" />
+              <span className="num">{fmt(near.pageviews)}</span>
+            </span>
+            <span className="chart-tip-stat">
+              <span className="dot dot-visitors" />
+              <span className="num">{fmt(near.visitors)}</span>
+            </span>
+          </div>
         )}
-      </svg>
-
-      {hover != null && active && (
-        <div className="chart-tip" style={{ left: `${(xFor(hover) / W) * 100}%` }}>
-          <div className="chart-tip-when">{tickLabel(active.bucket, range)}</div>
-          <div className="chart-tip-row">
-            <span className="dot dot-views" /> <span className="num">{fmt(active.pageviews)}</span> views
-          </div>
-          <div className="chart-tip-row">
-            <span className="dot dot-visitors" /> <span className="num">{fmt(active.visitors)}</span> visitors
-          </div>
-        </div>
-      )}
+      </div>
 
       <div className="chart-legend">
         <span className="legend-item"><span className="dot dot-views" /> Pageviews</span>

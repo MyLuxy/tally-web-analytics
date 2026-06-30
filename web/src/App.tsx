@@ -7,19 +7,34 @@ import { StatList } from "./components/StatList.js";
 
 const RANGES: Range[] = ["24h", "7d", "30d"];
 
-// Turn a 2-letter country code into "🇮🇹 Italy". The flag is just the two
-// regional-indicator codepoints; the name comes from Intl so we don't ship a
-// country table. Falls back to the raw code if anything's off.
+// Country name from a 2-letter code, via Intl so we don't ship a lookup table.
 const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
-function countryLabel(code: string): string {
-  const flag = [...code].map((ch) => String.fromCodePoint(0x1f1a5 + ch.charCodeAt(0))).join("");
-  let name = code;
+function countryName(code: string): string {
   try {
-    name = regionNames.of(code) ?? code;
+    return regionNames.of(code) ?? code;
   } catch {
-    /* invalid code -- just show what we got */
+    return code; // not a real region code -- just show what we got
   }
-  return `${flag} ${name}`;
+}
+
+// Flag emoji don't render everywhere (Windows and many Samsung phones show the
+// bare letters instead), so use small flag images keyed by the country code.
+function CountryLabel({ code }: { code: string }) {
+  const cc = code.toLowerCase();
+  return (
+    <span className="country">
+      <img
+        className="flag"
+        src={`https://flagcdn.com/24x18/${cc}.png`}
+        srcSet={`https://flagcdn.com/48x36/${cc}.png 2x`}
+        width={24}
+        height={18}
+        alt=""
+        loading="lazy"
+      />
+      {countryName(code)}
+    </span>
+  );
 }
 
 export function App() {
@@ -31,6 +46,15 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [locked, setLocked] = useState(false); // server wants a token
   const [reload, setReload] = useState(0); // bumped to retry after unlocking
+  const [theme, setTheme] = useState<"light" | "dark">(
+    () => (localStorage.getItem("tally_theme") === "dark" ? "dark" : "light"),
+  );
+
+  // reflect the theme on <html> so the CSS variables flip, and remember it
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem("tally_theme", theme);
+  }, [theme]);
 
   // Pull the list of sites once, then default to the most active one.
   useEffect(() => {
@@ -129,6 +153,15 @@ export function App() {
               </button>
             ))}
           </div>
+
+          <button
+            className="theme-toggle"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            aria-label="Toggle dark mode"
+            title="Toggle theme"
+          >
+            {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+          </button>
         </div>
       </header>
 
@@ -206,7 +239,11 @@ export function App() {
               title="Countries"
               unit="views"
               empty="No country data."
-              rows={(data?.countries ?? []).map((c) => ({ label: countryLabel(c.name), value: c.views }))}
+              rows={(data?.countries ?? []).map((c) => ({
+                label: <CountryLabel code={c.name} />,
+                title: countryName(c.name),
+                value: c.views,
+              }))}
             />
           </div>
         </main>
@@ -247,6 +284,25 @@ function TokenGate({ onSubmit }: { onSubmit: (token: string) => void }) {
         </button>
       </form>
     </div>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" />
+    </svg>
+  );
+}
+
+function SunIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+    </svg>
   );
 }
 
