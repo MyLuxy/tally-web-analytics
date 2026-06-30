@@ -291,6 +291,23 @@ a {
   color: var(--ink);
 }
 
+/* the range tabs render twice; show the header copy on desktop, the under-chart
+   copy on phones */
+.range-chart {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .range-header {
+    display: none;
+  }
+  .range-chart {
+    display: flex;
+    width: fit-content;
+    margin: 18px auto 0;
+  }
+}
+
 /* dark/light switch */
 .theme-toggle {
   display: inline-flex;
