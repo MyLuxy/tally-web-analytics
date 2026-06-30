@@ -188,19 +188,83 @@ a {
   font-weight: 500;
 }
 
-/* a bare select that inherits the pill's look instead of the browser default */
-.site-select {
+/* custom site dropdown (a native <select> won't theme), pill-shaped to match */
+.site-picker {
+  position: relative;
+}
+
+.site-picker-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.site-picker-btn:hover {
+  border-color: var(--ink-faint);
+}
+
+.site-picker-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.site-picker-value {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.site-picker .chevron {
+  color: var(--ink-faint);
+  transition: transform 0.15s ease;
+}
+
+.site-picker-btn[aria-expanded="true"] .chevron {
+  transform: rotate(180deg);
+}
+
+.site-picker-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 100%;
+  list-style: none;
+  margin: 0;
+  padding: 5px;
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
+  z-index: 30;
+}
+
+.site-picker-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  white-space: nowrap;
+  padding: 7px 12px;
   border: 0;
+  border-radius: 7px;
   background: transparent;
   color: var(--ink);
   font-size: 14px;
-  font-weight: 500;
   cursor: pointer;
-  padding: 0 2px;
 }
 
-.site-select:focus {
-  outline: none;
+.site-picker-option:hover {
+  background: var(--accent-wash);
+}
+
+.site-picker-option.is-active {
+  color: var(--accent-ink);
+  font-weight: 600;
 }
 
 /* segmented range control */
@@ -483,44 +547,46 @@ a {
    the dot is near the top so it never covers it */
 .chart-tip {
   position: absolute;
-  transform: translate(-50%, calc(-100% - 14px));
+  transform: translate(-50%, calc(-100% - 16px));
   display: inline-flex;
   align-items: center;
-  gap: 14px;
+  gap: 18px;
   background: var(--ink);
   color: var(--paper);
-  padding: 10px 16px;
+  padding: 13px 21px;
   border-radius: 999px;
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1;
   white-space: nowrap;
   pointer-events: none;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2);
 }
 
 .chart-tip.flip {
-  transform: translate(-50%, 14px);
+  transform: translate(-50%, 16px);
 }
 
+/* day + time -- full contrast against the tip (light on the dark light-theme
+   tip, dark on the light dark-theme tip) so it always reads clearly */
 .chart-tip-when {
-  color: var(--ink-faint);
-  font-size: 13px;
+  color: var(--paper);
+  font-size: 15px;
 }
 
 .chart-tip-stat {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 9px;
 }
 
 .chart-tip-stat .num {
   font-weight: 600;
-  font-size: 15px;
+  font-size: 17px;
 }
 
 .chart-tip .dot {
-  width: 11px;
-  height: 11px;
+  width: 13px;
+  height: 13px;
 }
 
 .chart-legend {

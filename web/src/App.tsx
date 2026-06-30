@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Range, Site, Stats } from "./api.js";
 import { fetchSites, fetchStats, getToken, setToken, Unauthorized } from "./api.js";
 import { TallyMarks } from "./components/TallyMarks.js";
@@ -121,25 +121,14 @@ export function App() {
         </div>
 
         <div className="controls">
-          <span className="site-pill">
-            <span className="eyebrow">site</span>
-            {sites.length > 1 ? (
-              <select
-                className="site-select num"
-                value={site ?? ""}
-                onChange={(e) => setSite(e.target.value)}
-                aria-label="Site"
-              >
-                {sites.map((s) => (
-                  <option key={s.site} value={s.site}>
-                    {s.site}
-                  </option>
-                ))}
-              </select>
-            ) : (
+          {sites.length > 1 ? (
+            <SitePicker sites={sites} site={site ?? ""} onChange={setSite} />
+          ) : (
+            <span className="site-pill">
+              <span className="eyebrow">site</span>
               <span className="num">{site ?? "—"}</span>
-            )}
-          </span>
+            </span>
+          )}
 
           <div className="segmented" role="group" aria-label="Time range">
             {RANGES.map((r) => (
@@ -304,6 +293,93 @@ function TokenGate({ onSubmit }: { onSubmit: (token: string) => void }) {
         </button>
       </form>
     </div>
+  );
+}
+
+// Custom site dropdown -- a native <select> can't be styled to match the dark
+// theme, so we roll our own. Closes on outside-click or Escape.
+function SitePicker({
+  sites,
+  site,
+  onChange,
+}: {
+  sites: Site[];
+  site: string;
+  onChange: (s: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div className="site-picker" ref={ref}>
+      <button
+        type="button"
+        className="site-picker-btn"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <span className="eyebrow">site</span>
+        <span className="num site-picker-value">{site}</span>
+        <ChevronIcon />
+      </button>
+
+      {open && (
+        <ul className="site-picker-menu" role="listbox">
+          {sites.map((s) => (
+            <li key={s.site}>
+              <button
+                type="button"
+                role="option"
+                aria-selected={s.site === site}
+                className={`site-picker-option num${s.site === site ? " is-active" : ""}`}
+                onClick={() => {
+                  onChange(s.site);
+                  setOpen(false);
+                }}
+              >
+                {s.site}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function ChevronIcon() {
+  return (
+    <svg
+      className="chevron"
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M6 9l6 6 6-6" />
+    </svg>
   );
 }
 
