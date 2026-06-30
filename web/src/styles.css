@@ -37,7 +37,9 @@
   --line-strong: #343b3e;
   --accent: #1ba87c;
   --accent-ink: #36bd91;
-  --accent-wash: #15271f;
+  /* a neutral elevated tone for the row bars and chart fill -- the dark green
+     read as murky, so the fills stay grey while the lines keep the accent */
+  --accent-wash: #283035;
   --accent-2: #e0954c;
   color-scheme: dark;
 }
@@ -494,8 +496,6 @@ a {
   white-space: nowrap;
   pointer-events: none;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
-  /* glide after the dot rather than snapping -- a touch slow on purpose */
-  transition: left 0.22s ease-out, top 0.22s ease-out, transform 0.22s ease-out;
 }
 
 .chart-tip.flip {
