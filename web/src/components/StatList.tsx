@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { TallyMarks } from "./TallyMarks.js";
 
 // Ledger-style breakdown: a label, a count, and a faint bar behind each row
@@ -12,18 +13,23 @@ export function StatList({
   unit,
   rows,
   empty,
+  info,
 }: {
   title: string;
   unit: string;
   rows: Row[];
   empty: string;
+  info?: string; // optional one-liner explaining the section
 }) {
   const max = Math.max(1, ...rows.map((r) => r.value));
 
   return (
     <section className="panel">
       <div className="panel-head">
-        <h2 className="panel-title">{title}</h2>
+        <h2 className="panel-title">
+          {title}
+          {info && <InfoDot text={info} />}
+        </h2>
         <span className="eyebrow">{unit}</span>
       </div>
 
@@ -47,5 +53,60 @@ export function StatList({
         </ul>
       )}
     </section>
+  );
+}
+
+// A little info button next to a section title; click to pop a short blurb.
+function InfoDot({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <span className="info" ref={ref}>
+      <button
+        type="button"
+        className="info-btn"
+        aria-label="What is this?"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 16v-4" />
+          <path d="M12 8h.01" />
+        </svg>
+      </button>
+      {open && (
+        <span className="info-pop" role="tooltip">
+          {text}
+        </span>
+      )}
+    </span>
   );
 }

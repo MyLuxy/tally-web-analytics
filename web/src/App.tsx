@@ -191,12 +191,14 @@ export function App() {
             <StatList
               title="Top pages"
               unit="views"
+              info="Your most-visited pages in the selected time range, ranked by pageviews."
               empty="No pages recorded."
               rows={(data?.topPages ?? []).map((p) => ({ label: p.path, value: p.views }))}
             />
             <StatList
               title="Referrers"
               unit="views"
+              info="Where your visitors came from — the external site or search engine that linked them to you."
               empty="All traffic came in direct."
               rows={(data?.topReferrers ?? []).map((r) => ({ label: r.source, value: r.views }))}
             />
