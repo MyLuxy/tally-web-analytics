@@ -27,6 +27,11 @@ every night and is never stored in a way that lets you reverse it, so the same
 person looks like a new visitor tomorrow. Good enough for counting, useless for
 tracking. (Same trick Plausible and Fathom use.)
 
+Country works the same hands-off way: if you run behind Cloudflare, Vercel or
+Fastly, they resolve the visitor's country at the edge and pass it as a header
+(`cf-ipcountry` and friends). Tally just stores the two-letter code — it never
+sees or stores the IP itself.
+
 ## Stack
 
 - **Backend** — Node + TypeScript + Fastify

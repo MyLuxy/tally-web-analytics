@@ -261,9 +261,11 @@ a {
   margin-top: var(--gap);
 }
 
-.grid-three {
+/* breakdown panels (browsers, os, devices, countries) -- flow as many across
+   as fit, dropping to fewer columns on narrow screens without a media query */
+.breakdowns {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   gap: var(--gap);
   margin-top: var(--gap);
 }
@@ -504,8 +506,7 @@ a {
   .ledger {
     grid-template-columns: 1fr;
   }
-  .grid-two,
-  .grid-three {
+  .grid-two {
     grid-template-columns: 1fr;
   }
   .metric-value {

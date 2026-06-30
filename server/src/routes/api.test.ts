@@ -62,6 +62,18 @@ describe("POST /api/collect", () => {
     expect(res.statusCode).toBe(400);
   });
 
+  it("picks up the country from an edge header", async () => {
+    await collect({ site: "s1", path: "/" }, { "cf-ipcountry": "it" });
+    const stats = (await app.inject({ url: "/api/stats?site=s1&range=7d" })).json();
+    expect(stats.countries).toContainEqual({ name: "IT", views: 1 });
+  });
+
+  it("leaves country out when the edge says it's unknown", async () => {
+    await collect({ site: "s1", path: "/" }, { "cf-ipcountry": "XX" });
+    const stats = (await app.inject({ url: "/api/stats?site=s1&range=7d" })).json();
+    expect(stats.countries).toEqual([]);
+  });
+
   it("honours a Do-Not-Track opt-out without storing anything", async () => {
     const res = await collect({ site: "s1", path: "/x" }, { dnt: "1" });
     expect(res.statusCode).toBe(202); // not an error -- the tracker shouldn't look broken

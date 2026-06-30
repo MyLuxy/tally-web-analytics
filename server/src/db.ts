@@ -18,6 +18,7 @@ export type EventRow = {
   browser: string | null;
   os: string | null;
   device: string | null;
+  country: string | null; // 2-letter code from an edge header, never the IP
   ts: number; // unix millis
 };
 
@@ -32,6 +33,7 @@ CREATE TABLE IF NOT EXISTS events (
   browser      TEXT,
   os           TEXT,
   device       TEXT,
+  country      TEXT,
   ts           INTEGER NOT NULL
 );
 
@@ -55,13 +57,23 @@ export function openDb(file = process.env.TALLY_DB ?? "tally.sqlite") {
   db.pragma("journal_mode = WAL"); // many small writes, the odd read
   db.pragma("synchronous = NORMAL");
   db.exec(SCHEMA);
+  migrate(db);
   return db;
+}
+
+// Tiny forward-only migration: add columns we introduced after the first
+// release so an existing tally.sqlite keeps working instead of erroring on
+// insert. SQLite only allows adding columns, which is all we need so far.
+function migrate(db: Database.Database) {
+  const cols = db.prepare("PRAGMA table_info(events)").all() as { name: string }[];
+  const has = (name: string) => cols.some((c) => c.name === name);
+  if (!has("country")) db.exec("ALTER TABLE events ADD COLUMN country TEXT");
 }
 
 const insertStmt = () =>
   openDb().prepare<EventRow>(`
-    INSERT INTO events (site_id, name, path, referrer, visitor_hash, browser, os, device, ts)
-    VALUES (@site_id, @name, @path, @referrer, @visitor_hash, @browser, @os, @device, @ts)
+    INSERT INTO events (site_id, name, path, referrer, visitor_hash, browser, os, device, country, ts)
+    VALUES (@site_id, @name, @path, @referrer, @visitor_hash, @browser, @os, @device, @country, @ts)
   `);
 
 export function insertEvent(row: EventRow) {

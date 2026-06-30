@@ -21,6 +21,9 @@ const AGENTS = [
   { browser: "Edge", os: "Windows", device: "desktop" },
 ];
 
+// weighted toward a couple of countries, with a long tail and the odd unknown
+const COUNTRIES = ["US", "US", "US", "IT", "IT", "DE", "GB", "FR", "ES", "BR", "IN", "CA", "NL", null];
+
 const pick = <T>(xs: T[]): T => xs[Math.floor(Math.random() * xs.length)]!;
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -49,6 +52,7 @@ for (let dayAgo = 6; dayAgo >= 0; dayAgo--) {
       browser: agent.browser,
       os: agent.os,
       device: agent.device,
+      country: pick(COUNTRIES),
       ts: now - dayAgo * DAY - offset,
     });
     total++;
