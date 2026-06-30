@@ -1,11 +1,16 @@
 # Deploying Tally
 
-This walks through running Tally on a plain Ubuntu/Debian VPS with Docker, and
-serving it over HTTPS on a free DuckDNS subdomain. End result: the dashboard and
-the tracker live at `https://your-subdomain.duckdns.org`.
+Tally runs as a single Docker container. The only real choice is how it's put
+behind HTTPS:
 
-Everything runs as two containers: Tally itself, and Caddy in front of it for
-automatic HTTPS (see `docker-compose.yml`).
+- **Option A — you already run a web server (nginx/apache + certbot).** Tally
+  binds to localhost and your existing proxy serves the subdomain and the
+  certificate. No port conflicts. This is the safest path if the box already
+  hosts another site.
+- **Option B — fresh server, nothing on ports 80/443 yet.** Use the bundled
+  Caddy container for automatic HTTPS.
+
+The shared setup is the same; pick the option that matches your box at step 4.
 
 ## 1. Get a hostname (DuckDNS)
 
@@ -15,38 +20,22 @@ You don't need to buy a domain.
 2. Pick a subdomain, e.g. `mysite`, and create it.
 3. Set its IP to your VPS's public IP address and save.
 
-You now have `mysite.duckdns.org` pointing at the server. Confirm it resolves:
+Confirm it resolves to your server:
 
 ```bash
 ping mysite.duckdns.org
 ```
 
-## 2. Open the firewall
-
-HTTPS issuance and traffic need ports 80 and 443 reachable.
-
-```bash
-sudo ufw allow 80
-sudo ufw allow 443
-```
-
-(If you use a cloud provider's security groups, allow 80/443 there too.)
-
-## 3. Install Docker
+## 2. Install Docker (if it isn't already)
 
 ```bash
 curl -fsSL https://get.docker.com | sudo sh
 sudo usermod -aG docker $USER
 # log out and back in so the group change takes effect
-```
-
-Check it:
-
-```bash
 docker compose version
 ```
 
-## 4. Get the code and configure it
+## 3. Get the code and configure it
 
 ```bash
 git clone https://github.com/MyLuxy/tally-web-analytics.git
@@ -56,47 +45,124 @@ cp .env.example .env
 nano .env
 ```
 
-In `.env` set:
+In `.env`:
 
-- `TALLY_DOMAIN` to your DuckDNS hostname, e.g. `mysite.duckdns.org`
-- `TALLY_TOKEN` to a long random string if you want the dashboard locked
-  (leave it empty to keep it open). A quick one: `openssl rand -hex 24`
+- `TALLY_TOKEN` — a long random string to lock the dashboard, or leave empty to
+  keep it open. A quick one: `openssl rand -hex 24`.
+- `TALLY_HOST_PORT` — the localhost port the container is published on. The
+  default is `3000`; **change it if 3000 is already used** on the box.
+- `TALLY_DOMAIN` — only matters for Option B (Caddy). Set it to your DuckDNS
+  hostname there; ignore it for Option A.
 
-## 5. Build and run
+---
+
+## Option A — behind your existing nginx/apache
+
+This keeps your current site untouched: Tally listens only on
+`127.0.0.1:<TALLY_HOST_PORT>`, and your proxy forwards the subdomain to it.
+
+**1. Start Tally** (no Caddy, just the app):
 
 ```bash
 docker compose up -d --build
 ```
 
-The first start takes a minute or two: it builds the image and Caddy fetches the
-certificate. Watch the logs if you like:
+Check it's up locally:
 
 ```bash
-docker compose logs -f
+curl http://127.0.0.1:3000/health   # -> {"ok":true}
 ```
 
-Then open `https://your-subdomain.duckdns.org` — you should see the dashboard
-(empty until events arrive).
+**2a. nginx** — create `/etc/nginx/sites-available/tally`:
 
-## 6. Start collecting
+```nginx
+server {
+    listen 80;
+    server_name mysite.duckdns.org;
 
-On any site you want to track, add the tracker and point it at your server:
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+Enable it and reload, then let certbot add HTTPS:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/tally /etc/nginx/sites-enabled/tally
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot --nginx -d mysite.duckdns.org
+```
+
+**2b. apache** — make sure the proxy modules are on, then add a vhost:
+
+```bash
+sudo a2enmod proxy proxy_http headers
+```
+
+`/etc/apache2/sites-available/tally.conf`:
+
+```apache
+<VirtualHost *:80>
+    ServerName mysite.duckdns.org
+    ProxyPreserveHost On
+    ProxyPass / http://127.0.0.1:3000/
+    ProxyPassReverse / http://127.0.0.1:3000/
+    RequestHeader set X-Forwarded-Proto "http"
+</VirtualHost>
+```
+
+```bash
+sudo a2ensite tally
+sudo apache2ctl configtest && sudo systemctl reload apache2
+sudo certbot --apache -d mysite.duckdns.org
+```
+
+certbot reuses the same setup as your existing site, so nothing there changes.
+Open `https://mysite.duckdns.org` and you should see the dashboard.
+
+---
+
+## Option B — fresh server with bundled Caddy
+
+Only if nothing else is using ports 80 and 443.
+
+```bash
+sudo ufw allow 80
+sudo ufw allow 443
+docker compose --profile caddy up -d --build
+```
+
+Caddy fetches a Let's Encrypt certificate for `TALLY_DOMAIN` and proxies to
+Tally. First start takes a minute or two; watch with `docker compose logs -f`.
+Open `https://your-subdomain.duckdns.org`.
+
+---
+
+## Start collecting
+
+On any site you want to track, add the tracker pointing at your server:
 
 ```html
 <script
   defer
   data-site="my-site"
-  src="https://your-subdomain.duckdns.org/tracker.js"
+  src="https://mysite.duckdns.org/tracker.js"
 ></script>
 ```
 
-Reload that page a few times, then refresh the dashboard.
+Reload that page a few times, then refresh the dashboard. The site appears in the
+picker on its first event — no seeding, no registration.
 
 ## Updating
 
 ```bash
 git pull
-docker compose up -d --build
+docker compose up -d --build              # Option A
+# docker compose --profile caddy up -d --build   # Option B
 ```
 
 The SQLite database lives on a Docker volume (`tally-data`), so it survives
@@ -105,7 +171,8 @@ rebuilds and updates.
 ## Notes
 
 - The country breakdown relies on an edge header (`cf-ipcountry` and friends).
-  Behind plain Caddy that header isn't set, so country stays empty unless you
-  also front the site with something like Cloudflare. Everything else works as is.
-- Backups are just the SQLite file. Copy it out of the volume any time:
+  Behind a plain nginx/apache/Caddy that header isn't set, so country stays empty
+  unless you also front the site with something like Cloudflare. Everything else
+  works as is.
+- Back up the database any time by copying the file out of the volume:
   `docker compose cp tally:/data/tally.sqlite ./backup.sqlite`

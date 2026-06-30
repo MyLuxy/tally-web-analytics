@@ -1,7 +1,14 @@
-# Two services: Tally itself, and Caddy in front of it for automatic HTTPS.
-# Caddy fetches and renews a real Let's Encrypt certificate for $TALLY_DOMAIN,
-# so the tracker loads fine on HTTPS sites. Values come from a .env file next to
-# this one (see .env.example).
+# Tally runs as one container. How it's exposed depends on your server:
+#
+#   - Already running nginx/apache + certbot? Use the default below: Tally binds
+#     to localhost only and your existing proxy handles the domain and TLS.
+#       docker compose up -d --build
+#
+#   - Nothing on ports 80/443 yet? Bring up the bundled Caddy too for automatic
+#     HTTPS (it's behind a profile so it stays off by default):
+#       docker compose --profile caddy up -d --build
+#
+# Values come from a .env file next to this one (see .env.example).
 
 services:
   tally:
@@ -12,14 +19,18 @@ services:
       - TALLY_DB=/data/tally.sqlite
       # leave empty to keep the dashboard open; set it to lock it down
       - TALLY_TOKEN=${TALLY_TOKEN:-}
+    # published on localhost only, so an existing reverse proxy can reach it
+    # without exposing Tally straight to the internet. Change the host port if
+    # 3000 is already taken on the box.
+    ports:
+      - "127.0.0.1:${TALLY_HOST_PORT:-3000}:3000"
     volumes:
       - tally-data:/data
-    expose:
-      - "3000"
 
   caddy:
     image: caddy:2
     restart: unless-stopped
+    profiles: ["caddy"]
     depends_on:
       - tally
     ports:
