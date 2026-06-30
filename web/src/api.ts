@@ -11,6 +11,8 @@ export type Stats = {
   topPages: { path: string; views: number }[];
   topReferrers: { source: string; views: number }[];
   browsers: { name: string; views: number }[];
+  systems: { name: string; views: number }[];
+  devices: { name: string; views: number }[];
   series: { bucket: number; pageviews: number; visitors: number }[];
 };
 

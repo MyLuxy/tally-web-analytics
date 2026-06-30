@@ -77,6 +77,22 @@ export async function statsRoutes(app: FastifyInstance) {
       )
       .all(site, since);
 
+    const systems = db
+      .prepare(
+        `SELECT os AS name, COUNT(*) AS views
+         FROM events WHERE site_id = ? AND ts >= ?
+         GROUP BY os ORDER BY views DESC`,
+      )
+      .all(site, since);
+
+    const devices = db
+      .prepare(
+        `SELECT device AS name, COUNT(*) AS views
+         FROM events WHERE site_id = ? AND ts >= ?
+         GROUP BY device ORDER BY views DESC`,
+      )
+      .all(site, since);
+
     // timeseries: floor each event's ts to its bucket and count per bucket
     const series = db
       .prepare(
@@ -99,6 +115,8 @@ export async function statsRoutes(app: FastifyInstance) {
       topPages,
       topReferrers,
       browsers,
+      systems,
+      devices,
       series,
     };
   });
