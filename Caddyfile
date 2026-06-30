@@ -1,0 +1,6 @@
+# Caddy gets a Let's Encrypt cert for this hostname automatically (ports 80 and
+# 443 just need to be reachable) and proxies everything to the Tally container.
+# The domain comes from the TALLY_DOMAIN env var set in .env.
+{$TALLY_DOMAIN} {
+	reverse_proxy tally:3000
+}

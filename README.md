@@ -102,6 +102,12 @@ has to be able to post from any site.
 TALLY_TOKEN=a-long-random-string npm start
 ```
 
+### Self-hosting with Docker
+
+There's a `Dockerfile` and a `docker-compose.yml` that runs Tally behind Caddy
+with automatic HTTPS. For a full walkthrough on a fresh Ubuntu VPS — including a
+free HTTPS hostname with no domain to buy — see [docs/DEPLOY.md](docs/DEPLOY.md).
+
 ## Layout
 
 ```

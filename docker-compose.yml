@@ -1,0 +1,38 @@
+# Two services: Tally itself, and Caddy in front of it for automatic HTTPS.
+# Caddy fetches and renews a real Let's Encrypt certificate for $TALLY_DOMAIN,
+# so the tracker loads fine on HTTPS sites. Values come from a .env file next to
+# this one (see .env.example).
+
+services:
+  tally:
+    build: .
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - TALLY_DB=/data/tally.sqlite
+      # leave empty to keep the dashboard open; set it to lock it down
+      - TALLY_TOKEN=${TALLY_TOKEN:-}
+    volumes:
+      - tally-data:/data
+    expose:
+      - "3000"
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - tally
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - TALLY_DOMAIN=${TALLY_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  tally-data:
+  caddy-data:
+  caddy-config:
