@@ -28,7 +28,7 @@ addresses or persistent identifiers ever hit the database.
 <h3 align="center">Try the live demo</h3>
 <p align="center">
   <a href="https://tally-analytics.duckdns.org/">
-    <img src="https://img.shields.io/badge/live_demo-tally--analytics.duckdns.org-58a6ff?style=flat&logo=target&logoColor=white" style="height: 38px;" alt="Live Demo">
+    <img src="https://img.shields.io/badge/live_demo-tally--analytics.duckdns.org-58a6ff?style=flat&logo=target&logoColor=white" style="height: 36px;" alt="Live Demo">
   </a>
 </p>
 
