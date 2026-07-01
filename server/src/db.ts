@@ -56,9 +56,28 @@ export function openDb(file = process.env.TALLY_DB ?? "tally.sqlite") {
   db = new Database(file);
   db.pragma("journal_mode = WAL"); // many small writes, the odd read
   db.pragma("synchronous = NORMAL");
+  // Keep a chunk of the db resident so the dashboard isn't slow on the first
+  // open (the tell: sluggish first load, snappy after a reload -- cold disk
+  // cache). This page cache lives in the process for the server's whole life,
+  // so idle time on the box can't evict it the way the OS file cache would.
+  db.pragma("cache_size = -20000"); // ~20 MB page cache (negative = KiB)
+  db.pragma("mmap_size = 268435456"); // 256 MB memory-mapped reads
+  db.pragma("temp_store = MEMORY");
   db.exec(SCHEMA);
   migrate(db);
+  warmUp(db);
   return db;
+}
+
+// Pull the events table into the cache at startup, so the first stats query a
+// visitor triggers is already warm instead of hitting cold disk. One-off and
+// cheap for the sizes a self-hosted analytics db reaches.
+function warmUp(db: Database.Database) {
+  try {
+    db.prepare("SELECT COUNT(*) FROM events").get();
+  } catch {
+    // brand-new db, nothing to warm yet
+  }
 }
 
 // Tiny forward-only migration: add columns we introduced after the first
