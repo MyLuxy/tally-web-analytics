@@ -182,7 +182,16 @@ export function App() {
               <h2 className="panel-title">Traffic</h2>
               <span className="eyebrow">last {range}</span>
             </div>
-            {data && <Chart series={data.series} range={range} />}
+            <div className="chart-wrap">
+              {data && <Chart series={data.series} range={range} />}
+              {/* spinner sits over the chart the moment a range is clicked, so the
+                  switch never feels like a dead pause while stats are refetched */}
+              {loading && (
+                <div className="chart-loading" role="status" aria-label="Loading">
+                  <span className="spinner" />
+                </div>
+              )}
+            </div>
             {/* on phones the range tabs live here, under the chart */}
             <RangeTabs range={range} setRange={setRange} className="range-chart" />
           </section>
