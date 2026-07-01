@@ -142,6 +142,63 @@ Open `https://your-subdomain.duckdns.org`.
 
 ---
 
+## Country breakdown (nginx + GeoIP2)
+
+By design Tally never geolocates the IP itself — it reads the country from an
+edge header (`cf-ipcountry` and friends) so it never has to store the address.
+Behind Cloudflare/Vercel/Fastly that header is already there. On a plain nginx
+box it isn't, so the Countries panel stays empty until you add it.
+
+The fix is to let nginx resolve the country from the client IP and pass it on as
+`X-Country-Code` (which Tally already reads). The lookup happens in the proxy;
+the IP is still never stored.
+
+**1. Install the GeoIP2 module**
+
+```bash
+sudo apt install -y libnginx-mod-http-geoip2
+```
+
+**2. Grab a free country database** (db-ip's lite DB — no account needed,
+refreshed monthly):
+
+```bash
+sudo mkdir -p /etc/nginx/geoip
+month=$(date +%Y-%m)
+sudo curl -fL -o /etc/nginx/geoip/dbip-country-lite.mmdb.gz \
+  "https://download.db-ip.com/free/dbip-country-lite-$month.mmdb.gz"
+sudo gunzip -f /etc/nginx/geoip/dbip-country-lite.mmdb.gz
+```
+
+**3. Define the lookup** — create `/etc/nginx/conf.d/geoip2.conf`:
+
+```nginx
+geoip2 /etc/nginx/geoip/dbip-country-lite.mmdb {
+    auto_reload 60m;
+    $geoip2_country_code country iso_code;
+}
+```
+
+**4. Pass the header to Tally** — add one line inside the `location /` block of
+your Tally site (`/etc/nginx/sites-available/tally`):
+
+```nginx
+    proxy_set_header X-Country-Code $geoip2_country_code;
+```
+
+**5. Reload:**
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+No Tally restart needed — the header is read per request. New pageviews start
+carrying a country; already-stored events keep whatever they had. Visitors on a
+private/LAN IP (or some VPNs) resolve to nothing and simply don't count toward
+the breakdown. Re-run step 2 now and then to refresh the database.
+
+---
+
 ## Start collecting
 
 On any site you want to track, add the tracker pointing at your server:
@@ -170,9 +227,9 @@ rebuilds and updates.
 
 ## Notes
 
-- The country breakdown relies on an edge header (`cf-ipcountry` and friends).
-  Behind a plain nginx/apache/Caddy that header isn't set, so country stays empty
-  unless you also front the site with something like Cloudflare. Everything else
-  works as is.
+- The country breakdown relies on an edge header (`cf-ipcountry` and friends),
+  so behind a plain proxy it's empty until you set that header yourself — see
+  [Country breakdown](#country-breakdown-nginx--geoip2) above for the nginx
+  GeoIP2 setup. Everything else works as is.
 - Back up the database any time by copying the file out of the volume:
   `docker compose cp tally:/data/tally.sqlite ./backup.sqlite`
