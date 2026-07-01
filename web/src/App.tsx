@@ -49,12 +49,20 @@ export function App() {
   const [theme, setTheme] = useState<"light" | "dark">(
     () => (localStorage.getItem("tally_theme") === "dark" ? "dark" : "light"),
   );
+  // 12-hour (American, the default) vs 24-hour clock in the chart labels
+  const [hour12, setHour12] = useState(
+    () => localStorage.getItem("tally_hour12") !== "false",
+  );
 
   // reflect the theme on <html> so the CSS variables flip, and remember it
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem("tally_theme", theme);
   }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem("tally_hour12", String(hour12));
+  }, [hour12]);
 
   // Pull the list of sites once, then default to the most active one.
   useEffect(() => {
@@ -138,6 +146,10 @@ export function App() {
 
           <RangeTabs range={range} setRange={setRange} className="range-header" />
 
+          {/* on phones the clock toggle rides up here, since the range tabs move
+              under the chart down there */}
+          <ClockToggle hour12={hour12} setHour12={setHour12} className="clock-header" />
+
           <button
             className="theme-toggle"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
@@ -183,7 +195,7 @@ export function App() {
               <span className="eyebrow">last {range}</span>
             </div>
             <div className="chart-wrap">
-              {data && <Chart series={data.series} range={range} />}
+              {data && <Chart series={data.series} range={range} hour12={hour12} />}
               {/* spinner sits over the chart the moment a range is clicked, so the
                   switch never feels like a dead pause while stats are refetched */}
               {loading && (
@@ -194,6 +206,8 @@ export function App() {
             </div>
             {/* on phones the range tabs live here, under the chart */}
             <RangeTabs range={range} setRange={setRange} className="range-chart" />
+            {/* ...and on desktop the clock toggle sits under the chart instead */}
+            <ClockToggle hour12={hour12} setHour12={setHour12} className="clock-below" />
           </section>
 
           <div className="grid-two">
@@ -328,6 +342,42 @@ function RangeTabs({
         </button>
       ))}
     </div>
+  );
+}
+
+// 12h/24h clock switch for the chart labels. Rendered twice, like the range
+// tabs but mirrored: under the chart on desktop, up in the header on phones.
+function ClockToggle({
+  hour12,
+  setHour12,
+  className,
+}: {
+  hour12: boolean;
+  setHour12: (v: boolean) => void;
+  className: string;
+}) {
+  const other = hour12 ? "24" : "12";
+  return (
+    <button
+      type="button"
+      className={`clock-toggle ${className}`}
+      onClick={() => setHour12(!hour12)}
+      title={`Switch to ${other}-hour time`}
+      aria-label={`Switch to ${other}-hour time`}
+    >
+      <ClockIcon />
+      <span className="num">{hour12 ? "12h" : "24h"}</span>
+    </button>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </svg>
   );
 }
 

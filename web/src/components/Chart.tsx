@@ -13,10 +13,18 @@ const PAD = { top: 16, right: 14, bottom: 26, left: 40 };
 // locale -- the rest of the UI is in English too.
 const fmt = (n: number) => n.toLocaleString("en-US");
 
-function tickLabel(ms: number, range: Range): string {
+// Time part of a label. hour12 picks between the American 12-hour clock (3:00 PM)
+// and the 24-hour clock used across most of Europe (15:00). h23 keeps midnight as
+// 00:00 rather than the 24:00 en-US sometimes gives.
+const timeOpts = (hour12: boolean): Intl.DateTimeFormatOptions =>
+  hour12
+    ? { hour: "numeric", minute: "2-digit", hour12: true }
+    : { hour: "2-digit", minute: "2-digit", hourCycle: "h23" };
+
+function tickLabel(ms: number, range: Range, hour12: boolean): string {
   const d = new Date(ms);
   if (range === "24h") {
-    return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+    return d.toLocaleTimeString("en-US", timeOpts(hour12));
   }
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
@@ -25,16 +33,28 @@ function tickLabel(ms: number, range: Range): string {
 // bucket is an hour; on 7d/30d it's a day, but the time is shown too. Everything
 // is in the viewer's own timezone (toLocale*), so it reads correctly once real
 // traffic is flowing in.
-function tipWhen(ms: number, range: Range): string {
+function tipWhen(ms: number, range: Range, hour12: boolean): string {
   const d = new Date(ms);
-  const time = { hour: "2-digit", minute: "2-digit" } as const;
   if (range === "24h") {
-    return d.toLocaleString("en-US", { month: "short", day: "numeric", ...time });
+    return d.toLocaleString("en-US", { month: "short", day: "numeric", ...timeOpts(hour12) });
   }
-  return d.toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", ...time });
+  return d.toLocaleString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    ...timeOpts(hour12),
+  });
 }
 
-export function Chart({ series, range }: { series: Point[]; range: Range }) {
+export function Chart({
+  series,
+  range,
+  hour12,
+}: {
+  series: Point[];
+  range: Range;
+  hour12: boolean;
+}) {
   const svgRef = useRef<SVGSVGElement>(null);
   // continuous chart-x of the cursor (not snapped to a data point), or null
   const [cursorX, setCursorX] = useState<number | null>(null);
@@ -181,7 +201,7 @@ export function Chart({ series, range }: { series: Point[]; range: Range }) {
             const anchor = x < PAD.left + 18 ? "start" : x > W - PAD.right - 18 ? "end" : "middle";
             return (
               <text key={i} className="chart-axis" x={x} y={H - 6} textAnchor={anchor}>
-                {tickLabel(p.bucket, range)}
+                {tickLabel(p.bucket, range, hour12)}
               </text>
             );
           })}
@@ -200,7 +220,7 @@ export function Chart({ series, range }: { series: Point[]; range: Range }) {
             className="chart-tip"
             style={{ left: `${fx * 100}%`, top: `${tipTop}%`, transform: tipTransform }}
           >
-            <span className="chart-tip-when num">{tipWhen(near.bucket, range)}</span>
+            <span className="chart-tip-when num">{tipWhen(near.bucket, range, hour12)}</span>
             <span className="chart-tip-stat">
               <span className="dot dot-views" />
               <span className="num">{fmt(near.pageviews)}</span>
