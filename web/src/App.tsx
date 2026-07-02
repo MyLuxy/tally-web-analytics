@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import type { Range, Site, Stats } from "./api.js";
 import { fetchSites, fetchStats, getToken, setToken, Unauthorized } from "./api.js";
 import { TallyMarks } from "./components/TallyMarks.js";
@@ -46,6 +47,8 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [locked, setLocked] = useState(false); // server wants a token
   const [reload, setReload] = useState(0); // bumped to retry after unlocking
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [eventsOpen, setEventsOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">(
     () => (localStorage.getItem("tally_theme") === "dark" ? "dark" : "light"),
   );
@@ -54,10 +57,21 @@ export function App() {
     () => localStorage.getItem("tally_hour12") !== "false",
   );
 
-  // reflect the theme on <html> so the CSS variables flip, and remember it
+  // reflect the theme on <html> so the CSS variables flip, and remember it. On a
+  // real toggle (not the first mount) we briefly flag the document so the whole
+  // UI cross-fades between the two palettes instead of snapping.
+  const themeMounted = useRef(false);
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
+    const html = document.documentElement;
+    html.dataset.theme = theme;
     localStorage.setItem("tally_theme", theme);
+    if (!themeMounted.current) {
+      themeMounted.current = true;
+      return;
+    }
+    html.classList.add("theme-anim");
+    const t = window.setTimeout(() => html.classList.remove("theme-anim"), 450);
+    return () => window.clearTimeout(t);
   }, [theme]);
 
   useEffect(() => {
@@ -155,11 +169,12 @@ export function App() {
 
           <button
             className="theme-toggle"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            aria-label="Toggle dark mode"
-            title="Toggle theme"
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Settings"
+            aria-haspopup="dialog"
+            title="Settings"
           >
-            {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+            <GearIcon />
           </button>
         </div>
       </header>
@@ -224,20 +239,13 @@ export function App() {
             <StatList
               title="Referrers"
               unit="views"
-              info="Where your visitors came from — the external site or search engine that linked them to you."
+              info="Where your visitors came from: the external site or search engine that linked them to you."
               empty="All traffic came in direct."
               rows={(data?.topReferrers ?? []).map((r) => ({ label: r.source, value: r.views }))}
             />
           </div>
 
           <div className="breakdowns">
-            <StatList
-              title="Events"
-              unit="count"
-              info="Custom events your site reports with tally('name') — signups, downloads, clicks. Pageviews aren't counted here."
-              empty="No custom events tracked yet."
-              rows={(data?.events ?? []).map((e) => ({ label: e.name, value: e.count }))}
-            />
             <StatList
               title="Browsers"
               unit="views"
@@ -281,6 +289,58 @@ export function App() {
           </a>
         </span>
       </footer>
+
+      {settingsOpen && (
+        <Modal title="Settings" onClose={() => setSettingsOpen(false)}>
+          <div className="setting">
+            <div className="setting-text">
+              <span className="setting-name">Theme</span>
+              <span className="setting-hint">Light or dark appearance</span>
+            </div>
+            <div className="theme-seg" data-active={theme} role="group" aria-label="Theme">
+              <button
+                type="button"
+                className="theme-opt"
+                aria-pressed={theme === "light"}
+                onClick={() => setTheme("light")}
+              >
+                <SunIcon /> Light
+              </button>
+              <button
+                type="button"
+                className="theme-opt"
+                aria-pressed={theme === "dark"}
+                onClick={() => setTheme("dark")}
+              >
+                <MoonIcon /> Dark
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="setting setting-action"
+            onClick={() => {
+              setSettingsOpen(false);
+              setEventsOpen(true);
+            }}
+          >
+            <span className="setting-text">
+              <span className="setting-name">Custom events</span>
+              <span className="setting-hint">Conversions tracked with tally('name')</span>
+            </span>
+            <span className="setting-chevron">
+              <ChevronRightIcon />
+            </span>
+          </button>
+        </Modal>
+      )}
+
+      {eventsOpen && (
+        <Modal title="Events" onClose={() => setEventsOpen(false)}>
+          <EventsList events={data?.events ?? []} range={range} />
+        </Modal>
+      )}
     </div>
   );
 }
@@ -518,5 +578,113 @@ function Metric({ label, value, decimals = 0 }: { label: string; value: number; 
       <div className="metric-value num">{shown}</div>
       <div className="metric-label eyebrow">{label}</div>
     </div>
+  );
+}
+
+// A centered dialog over a dimmed backdrop. Closes on the backdrop, on the X, or
+// on Escape, and freezes the page scroll while it's up.
+function Modal({
+  title,
+  onClose,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [onClose]);
+
+  return (
+    <div className="modal-overlay" role="presentation" onClick={onClose}>
+      {/* stop clicks inside the dialog from bubbling up and closing it */}
+      <div
+        className="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="modal-head">
+          <h2 className="modal-title">{title}</h2>
+          <button
+            type="button"
+            className="modal-close"
+            onClick={onClose}
+            aria-label="Close"
+            title="Close"
+          >
+            <CloseIcon />
+          </button>
+        </div>
+        <div className="modal-body">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+// The custom-events list shown inside its modal. Same bar rows as the breakdown
+// panels, minus the panel chrome (the modal is the frame here).
+function EventsList({ events, range }: { events: Stats["events"]; range: Range }) {
+  if (events.length === 0) {
+    return (
+      <div className="modal-empty">
+        <TallyMarks count={3} className="panel-empty-mark" />
+        <p className="ink-soft">
+          No custom events in the last {range}. Fire one from your site with{" "}
+          <code className="num">tally('signup')</code> and it shows up here.
+        </p>
+      </div>
+    );
+  }
+  const max = Math.max(1, ...events.map((e) => e.count));
+  return (
+    <ul className="rows">
+      {events.map((e) => (
+        <li className="row" key={e.name}>
+          <span className="row-bar" style={{ width: `${(e.count / max) * 100}%` }} />
+          <span className="row-label">{e.name}</span>
+          <span className="row-value num">{e.count.toLocaleString("en-US")}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function GearIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M18 6 6 18M6 6l12 12" />
+    </svg>
+  );
+}
+
+function ChevronRightIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M9 6l6 6-6 6" />
+    </svg>
   );
 }

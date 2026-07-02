@@ -51,6 +51,14 @@
 html,
 body {
   margin: 0;
+  /* keep the page scrollable but without a visible scrollbar */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* legacy Edge/IE */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
 }
 
 body {
@@ -945,5 +953,284 @@ a {
   from {
     opacity: 0;
     transform: translateY(6px);
+  }
+}
+
+/* ---- modals (settings + events) ---- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: color-mix(in srgb, #000 44%, transparent);
+  backdrop-filter: blur(2px);
+}
+
+.modal {
+  width: 100%;
+  max-width: 540px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 18px 50px -12px rgba(0, 0, 0, 0.4);
+  /* let the body scroll if it overflows, but without a visible scrollbar */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* legacy Edge */
+}
+
+.modal::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--line);
+}
+
+.modal-title {
+  font-size: 18px;
+  margin: 0;
+}
+
+.modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.modal-close:hover {
+  color: var(--ink);
+  background: var(--accent-wash);
+}
+
+.modal-body {
+  padding: 20px 22px 22px;
+}
+
+/* a setting sits in its own soft card: label on the left, control on the right */
+.setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  width: 100%;
+  padding: 16px 18px;
+  text-align: left;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.setting + .setting {
+  margin-top: 12px;
+}
+
+.setting-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.setting-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.setting-hint {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+/* the events row is a whole-card button */
+.setting-action {
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.setting-action:hover {
+  border-color: var(--ink-faint);
+  background: var(--accent-wash);
+}
+
+.setting-action:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.setting-chevron {
+  flex-shrink: 0;
+  display: inline-flex;
+  color: var(--ink-faint);
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.setting-action:hover .setting-chevron {
+  color: var(--accent-ink);
+  transform: translateX(2px);
+}
+
+/* light / dark segmented switch: a black-on-white (and, in dark mode, white-on
+   black) thumb that slides under the active option with a little overshoot, so
+   it reads as a physical switch being flicked. */
+.theme-seg {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  width: 184px;
+  padding: 4px;
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+}
+
+.theme-seg::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  background: var(--ink);
+  border-radius: 999px;
+  transition: transform 0.34s cubic-bezier(0.34, 1.5, 0.55, 1);
+}
+
+.theme-seg[data-active="dark"]::before {
+  transform: translateX(100%);
+}
+
+.theme-opt {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 0;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  /* kill the blue flash mobile browsers paint on tap, and don't let a tap select
+     the label text */
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  /* the text colour eases as the thumb passes underneath */
+  transition: color 0.28s ease;
+}
+
+.theme-opt svg {
+  width: 15px;
+  height: 15px;
+}
+
+.theme-opt:hover {
+  color: var(--ink);
+}
+
+/* active label rides on top of the dark thumb, so it flips to the paper tone */
+.theme-opt[aria-pressed="true"],
+.theme-opt[aria-pressed="true"]:hover {
+  color: var(--paper);
+}
+
+.theme-opt:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-seg::before {
+    transition: none;
+  }
+}
+
+/* empty state inside the events modal */
+.modal-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 22px 6px;
+  text-align: center;
+}
+
+.modal-empty code {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+}
+
+/* When the theme is toggled we flag <html> for a moment so every surface eases
+   between the two palettes -- colours, borders and icons cross-fade instead of
+   flipping instantly. Scoped to the flag + reduced-motion so it never gets in
+   the way of normal interactions. */
+@media (prefers-reduced-motion: no-preference) {
+  html.theme-anim,
+  html.theme-anim *,
+  html.theme-anim *::before,
+  html.theme-anim *::after {
+    transition:
+      background-color 0.42s ease,
+      border-color 0.42s ease,
+      color 0.42s ease,
+      fill 0.42s ease,
+      stroke 0.42s ease,
+      transform 0.34s cubic-bezier(0.34, 1.5, 0.55, 1) !important;
+  }
+}
+
+/* narrow screens: let each setting stack so the switch never gets squeezed, and
+   grow the switch into a comfortable full-width touch target */
+@media (max-width: 480px) {
+  .setting {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .theme-seg {
+    width: 100%;
+  }
+  .theme-opt {
+    padding: 11px 0; /* ~44px tall -- a proper thumb-friendly tap target */
+    font-size: 14px;
+  }
+  .theme-opt svg {
+    width: 16px;
+    height: 16px;
+  }
+  /* the events row keeps its label + chevron side by side */
+  .setting-action {
+    flex-direction: row;
+    align-items: center;
   }
 }
