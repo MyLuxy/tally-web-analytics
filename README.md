@@ -112,6 +112,15 @@ server. The tracker is served by the server itself at `/tracker.js`.
   string you choose; a new site shows up on its own with its first event, so
   there's nothing to register first.
 
+> **`localhost` won't work in production, even if your site is public.** The
+> tracker runs in each *visitor's* browser, so the URL has to be reachable from
+> the outside — `localhost` and `192.168.x.x` point at the visitor's own machine,
+> not at yours, and no events ever arrive. `localhost` is only for local
+> development. The simplest setup: run Tally on the same box as your site, on a
+> subdomain like `analytics.your-site.com` over HTTPS, and lock the dashboard
+> with `TALLY_TOKEN` (see below) so `/api/collect` stays open to visitors while
+> the stats stay private to you.
+
 That covers it. The tracker sends a pageview on load and on every SPA route
 change, respects Do Not Track, ignores bots, and stores nothing on the visitor's
 device — no cookies, no localStorage.
