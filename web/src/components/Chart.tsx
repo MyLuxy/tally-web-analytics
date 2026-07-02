@@ -108,8 +108,10 @@ export function Chart({
         ` L ${xFor(n - 1)} ${baseline} Z`
       : "";
 
-  // three horizontal guides, labelled with rounded counts
-  const guides = [0.25, 0.5, 0.75, 1].map((f) => Math.round(maxY * f));
+  // horizontal guides, labelled with rounded counts. dedupe: at low traffic the
+  // rounded fractions collapse onto the same value (maxY=2 -> 1,1,2,2), which
+  // would draw doubled-up lines and repeat the axis labels.
+  const guides = [...new Set([0.25, 0.5, 0.75, 1].map((f) => Math.round(maxY * f)))];
 
   // fewer x labels on phones so they don't collide
   const tickStep = Math.max(1, Math.ceil(n / (narrow ? 4 : 8)));
