@@ -89,6 +89,9 @@ export function App() {
     setError(null);
     fetchStats(site, range)
       .then((s) => {
+        // a slower earlier request can resolve after this effect was torn down
+        // (we switched site/range) -- drop it so it can't clobber fresher data
+        if (ctrl.signal.aborted) return;
         setLocked(false);
         setData(s);
       })
