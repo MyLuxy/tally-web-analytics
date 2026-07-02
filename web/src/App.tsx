@@ -232,6 +232,13 @@ export function App() {
 
           <div className="breakdowns">
             <StatList
+              title="Events"
+              unit="count"
+              info="Custom events your site reports with tally('name') — signups, downloads, clicks. Pageviews aren't counted here."
+              empty="No custom events tracked yet."
+              rows={(data?.events ?? []).map((e) => ({ label: e.name, value: e.count }))}
+            />
+            <StatList
               title="Browsers"
               unit="views"
               empty="No browser data."

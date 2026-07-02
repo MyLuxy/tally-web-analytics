@@ -14,6 +14,7 @@ export type Stats = {
   systems: { name: string; views: number }[];
   devices: { name: string; views: number }[];
   countries: { name: string; views: number }[];
+  events: { name: string; count: number }[];
   series: { bucket: number; pageviews: number; visitors: number }[];
 };
 
