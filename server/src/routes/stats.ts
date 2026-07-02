@@ -53,17 +53,23 @@ export async function statsRoutes(app: FastifyInstance) {
     const nowBucket = Math.floor(Date.now() / bucketMs) * bucketMs;
     const since = nowBucket - (buckets - 1) * bucketMs;
 
+    // Pageviews count only real pageviews; custom events (name != 'pageview')
+    // get their own panel below and must not inflate the traffic numbers.
+    // Visitors stay counted across everything -- a person is a person whether
+    // they loaded a page or fired an event.
     const totals = db
       .prepare(
-        `SELECT COUNT(*) AS pageviews, COUNT(DISTINCT visitor_hash) AS visitors
+        `SELECT COUNT(*) FILTER (WHERE name = 'pageview') AS pageviews,
+                COUNT(DISTINCT visitor_hash) AS visitors
          FROM events WHERE site_id = ? AND ts >= ?`,
       )
       .get(site, since) as { pageviews: number; visitors: number };
 
+    // Everything from here down describes the traffic, so it's pageviews only.
     const topPages = db
       .prepare(
         `SELECT path, COUNT(*) AS views
-         FROM events WHERE site_id = ? AND ts >= ?
+         FROM events WHERE site_id = ? AND ts >= ? AND name = 'pageview'
          GROUP BY path ORDER BY views DESC LIMIT 10`,
       )
       .all(site, since);
@@ -71,7 +77,7 @@ export async function statsRoutes(app: FastifyInstance) {
     const topReferrers = db
       .prepare(
         `SELECT referrer AS source, COUNT(*) AS views
-         FROM events WHERE site_id = ? AND ts >= ? AND referrer IS NOT NULL
+         FROM events WHERE site_id = ? AND ts >= ? AND name = 'pageview' AND referrer IS NOT NULL
          GROUP BY referrer ORDER BY views DESC LIMIT 10`,
       )
       .all(site, since);
@@ -79,7 +85,7 @@ export async function statsRoutes(app: FastifyInstance) {
     const browsers = db
       .prepare(
         `SELECT browser AS name, COUNT(*) AS views
-         FROM events WHERE site_id = ? AND ts >= ?
+         FROM events WHERE site_id = ? AND ts >= ? AND name = 'pageview'
          GROUP BY browser ORDER BY views DESC`,
       )
       .all(site, since);
@@ -87,7 +93,7 @@ export async function statsRoutes(app: FastifyInstance) {
     const systems = db
       .prepare(
         `SELECT os AS name, COUNT(*) AS views
-         FROM events WHERE site_id = ? AND ts >= ?
+         FROM events WHERE site_id = ? AND ts >= ? AND name = 'pageview'
          GROUP BY os ORDER BY views DESC`,
       )
       .all(site, since);
@@ -95,7 +101,7 @@ export async function statsRoutes(app: FastifyInstance) {
     const devices = db
       .prepare(
         `SELECT device AS name, COUNT(*) AS views
-         FROM events WHERE site_id = ? AND ts >= ?
+         FROM events WHERE site_id = ? AND ts >= ? AND name = 'pageview'
          GROUP BY device ORDER BY views DESC`,
       )
       .all(site, since);
@@ -103,8 +109,18 @@ export async function statsRoutes(app: FastifyInstance) {
     const countries = db
       .prepare(
         `SELECT country AS name, COUNT(*) AS views
-         FROM events WHERE site_id = ? AND ts >= ? AND country IS NOT NULL
+         FROM events WHERE site_id = ? AND ts >= ? AND name = 'pageview' AND country IS NOT NULL
          GROUP BY country ORDER BY views DESC LIMIT 10`,
+      )
+      .all(site, since);
+
+    // Custom events -- anything the site reported with tally('name'). This is
+    // the flip side of the pageview filter above: only the non-pageview rows.
+    const events = db
+      .prepare(
+        `SELECT name, COUNT(*) AS count
+         FROM events WHERE site_id = ? AND ts >= ? AND name <> 'pageview'
+         GROUP BY name ORDER BY count DESC LIMIT 10`,
       )
       .all(site, since);
 
@@ -117,7 +133,7 @@ export async function statsRoutes(app: FastifyInstance) {
         // CAST forces integer division -- without it SQLite divides in floating
         // point and every event lands in its own bucket instead of snapping.
         `SELECT CAST(ts / ? AS INTEGER) * ? AS bucket,
-                COUNT(*) AS pageviews,
+                COUNT(*) FILTER (WHERE name = 'pageview') AS pageviews,
                 COUNT(DISTINCT visitor_hash) AS visitors
          FROM events WHERE site_id = ? AND ts >= ?
          GROUP BY bucket`,
@@ -142,6 +158,7 @@ export async function statsRoutes(app: FastifyInstance) {
       systems,
       devices,
       countries,
+      events,
       series,
     };
   });

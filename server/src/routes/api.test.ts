@@ -57,6 +57,21 @@ describe("POST /api/collect", () => {
     expect(stats.devices).toContainEqual({ name: "desktop", views: 1 });
   });
 
+  it("keeps custom events out of the traffic numbers and lists them on their own", async () => {
+    await collect({ site: "s1", path: "/pricing" }); // a real pageview
+    await collect({ site: "s1", name: "signup", path: "/pricing" }); // a custom event
+
+    const stats = (await app.inject({ url: "/api/stats?site=s1&range=7d" })).json();
+    // the event doesn't count as a view, but the visitor is still the same one
+    expect(stats.totals).toEqual({ pageviews: 1, visitors: 1 });
+    // ...and it doesn't inflate the page's view count either
+    expect(stats.topPages).toContainEqual({ path: "/pricing", views: 1 });
+    // it surfaces in its own panel instead
+    expect(stats.events).toContainEqual({ name: "signup", count: 1 });
+    // which never carries plain pageviews
+    expect(stats.events).not.toContainEqual({ name: "pageview", count: expect.anything() });
+  });
+
   it("rejects a payload with no site", async () => {
     const res = await collect({ path: "/x" });
     expect(res.statusCode).toBe(400);
