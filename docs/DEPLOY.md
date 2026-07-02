@@ -212,7 +212,7 @@ On any site you want to track, add the tracker pointing at your server:
 ```
 
 Reload that page a few times, then refresh the dashboard. The site appears in the
-picker on its first event — no seeding, no registration.
+picker on its first event — no setup, no registration.
 
 ## Updating
 

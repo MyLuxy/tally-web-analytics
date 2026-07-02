@@ -3,7 +3,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 
 // Optional bearer-token protection for the read API. Set TALLY_TOKEN to lock
 // down /api/stats and /api/sites; leave it unset and everything stays open,
-// which is what you want for a local demo. The collect endpoint is never
+// which is what you want while running locally. The collect endpoint is never
 // guarded -- the tracker has to be able to post from anywhere.
 
 // Compare in constant time so a wrong token can't be narrowed down by timing

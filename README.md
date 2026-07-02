@@ -81,7 +81,6 @@ In development it's two processes: the API server and the dashboard.
 # 1. API server (port 3000)
 cd server
 npm install
-npm run seed     # optional: fill the db with demo traffic
 npm run dev
 
 # 2. dashboard (port 5173), in a second terminal
@@ -90,11 +89,8 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173 for the dashboard, or
-http://localhost:3000/demo.html to generate live events with the tracker.
-
-> The `npm run seed` step is only for the demo. A real instance starts with an
-> empty database and fills up with your own traffic — don't run it in production.
+Open http://localhost:5173 for the dashboard. It starts empty — drop the tracker
+on a page (see below) and your first pageview shows up right away.
 
 ## Adding the tracker to a site
 
@@ -153,7 +149,7 @@ npm start           # serves API + dashboard on port 3000
 
 ### Protecting the dashboard
 
-By default the read API is open, which is what you want for a local demo. Set
+By default the read API is open, which is what you want while running locally. Set
 `TALLY_TOKEN` and the stats endpoints (`/api/stats`, `/api/sites`) require an
 `Authorization: Bearer <token>` header. The dashboard prompts for the token and
 remembers it. The `/api/collect` endpoint always stays open, since the tracker
@@ -179,8 +175,7 @@ server/         ingest + stats API, serves the tracker script
     db.ts       schema + connection
     privacy.ts  visitor hashing, daily salt, UA parsing, DNT
     auth.ts     optional bearer-token guard for the read API
-  public/       tracker.js + a demo page
-  scripts/      seed.ts — demo data generator
+  public/       tracker.js — the script sites embed
 web/            React dashboard (Vite)
   src/
     api.ts      typed client for /api/stats

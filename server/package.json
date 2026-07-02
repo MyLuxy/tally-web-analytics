@@ -9,7 +9,6 @@
     "build": "tsc",
     "build:web": "npm --prefix ../web run build",
     "start": "node dist/index.js",
-    "seed": "tsx scripts/seed.ts",
     "test": "vitest run"
   },
   "dependencies": {

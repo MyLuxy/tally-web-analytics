@@ -44,7 +44,7 @@ export async function buildApp(opts: { logger?: FastifyServerOptions["logger"] }
   if (existsSync(webDist)) roots.unshift(webDist);
 
   await app.register(staticFiles, {
-    root: roots, // looked up in order: dashboard first, then tracker/demo
+    root: roots, // looked up in order: dashboard first, then the tracker script
     prefix: "/",
   });
 
