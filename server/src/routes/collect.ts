@@ -36,6 +36,19 @@ function referrerHost(raw: string | null | undefined): string | null {
   }
 }
 
+// The host of the page the tracker is running on. The browser attaches it as
+// the Origin of the collect request (with Referer as a fallback), so we can read
+// it without the tracker having to send its own URL. Used to spot self-referrals.
+function pageHost(req: FastifyRequest): string | null {
+  const raw = req.headers["origin"] ?? req.headers["referer"];
+  if (typeof raw !== "string") return null;
+  try {
+    return new URL(raw).host || null;
+  } catch {
+    return null;
+  }
+}
+
 function clientIp(req: FastifyRequest): string {
   // Behind a proxy you'd trust x-forwarded-for; locally req.ip is fine. Note
   // the IP never gets stored -- it only feeds the daily visitor hash.
@@ -83,11 +96,17 @@ export async function collectRoutes(app: FastifyInstance) {
     const ua = req.headers["user-agent"] ?? "";
     const { browser, os, device } = parseUserAgent(ua);
 
+    // Drop self-referrals: someone clicking between your own pages shouldn't put
+    // your own domain in the Referrers list. If the referrer host matches the
+    // page's own host, it's internal navigation, so we file it as no referrer.
+    let referrer = referrerHost(body.referrer);
+    if (referrer && referrer === pageHost(req)) referrer = null;
+
     insertEvent({
       site_id: site,
       name: body.name?.trim() || "pageview",
       path: cleanPath(body.path),
-      referrer: referrerHost(body.referrer),
+      referrer,
       visitor_hash: visitorHash(site, clientIp(req), ua),
       browser,
       os,
