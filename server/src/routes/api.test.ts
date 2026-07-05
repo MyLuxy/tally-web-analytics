@@ -72,6 +72,25 @@ describe("POST /api/collect", () => {
     expect(stats.events).not.toContainEqual({ name: "pageview", count: expect.anything() });
   });
 
+  it("drops self-referrals so your own domain isn't in the referrers", async () => {
+    // a visitor clicking from one of your pages to another: the referrer host
+    // matches the page's own host, which the browser sends as the Origin
+    await app.inject({
+      method: "POST",
+      url: "/api/collect",
+      headers: { "user-agent": CHROME_UA, origin: "https://mysite.com" },
+      payload: { site: "s1", path: "/b", referrer: "https://mysite.com/a" },
+    });
+    // ...while a genuine external referrer still counts
+    await collect({ site: "s1", path: "/c", referrer: "https://twitter.com/x" }, { origin: "https://mysite.com" });
+
+    const stats = (await app.inject({ url: "/api/stats?site=s1&range=7d" })).json();
+    // internal navigation left no referrer row
+    expect(stats.topReferrers).toEqual([{ source: "twitter.com", views: 1 }]);
+    // but both hits still counted as pageviews
+    expect(stats.totals.pageviews).toBe(2);
+  });
+
   it("rejects a payload with no site", async () => {
     const res = await collect({ path: "/x" });
     expect(res.statusCode).toBe(400);
