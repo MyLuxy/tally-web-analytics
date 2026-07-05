@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
+import rateLimit from "@fastify/rate-limit";
 import { insertEvent } from "../db.js";
 import { optedOut, parseUserAgent, visitorHash } from "../privacy.js";
 
@@ -56,6 +57,17 @@ function country(req: FastifyRequest): string | null {
 }
 
 export async function collectRoutes(app: FastifyInstance) {
+  // Collect has to stay open to the world, which also means anyone can hammer
+  // it. Cap how fast a single IP can post so a runaway script (or a hostile
+  // one) can't flood the endpoint, skew the stats and bloat the db. Scoped to
+  // this plugin, so the dashboard API isn't affected. Both knobs are env-tunable
+  // for busy sites, or sites sitting behind a shared NAT. The limiter keys on
+  // req.ip, which trustProxy already resolves to the real client behind a proxy.
+  await app.register(rateLimit, {
+    max: Number(process.env.TALLY_RATE_MAX ?? 120),
+    timeWindow: process.env.TALLY_RATE_WINDOW ?? "1 minute",
+  });
+
   app.post("/api/collect", async (req, reply) => {
     if (optedOut(req.headers)) {
       // honour the opt-out, but don't make the tracker look broken
