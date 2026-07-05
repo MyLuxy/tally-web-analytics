@@ -49,6 +49,10 @@ In `.env`:
 
 - `TALLY_TOKEN` — a long random string to lock the dashboard, or leave empty to
   keep it open. A quick one: `openssl rand -hex 24`.
+- `TALLY_RATE_MAX` / `TALLY_RATE_WINDOW` — per-IP rate limit on `/api/collect`,
+  so nobody can flood it. Defaults to `120` requests per `1 minute`. Only worth
+  raising the max if a lot of your visitors share one IP (a big office behind a
+  NAT).
 - `TALLY_HOST_PORT` — the localhost port the container is published on. The
   default is `3000`; **change it if 3000 is already used** on the box.
 - `TALLY_DOMAIN` — only matters for Option B (Caddy). Set it to your DuckDNS

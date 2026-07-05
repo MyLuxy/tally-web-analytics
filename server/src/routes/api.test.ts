@@ -116,6 +116,23 @@ describe("POST /api/collect", () => {
     expect(res.statusCode).toBe(202);
   });
 
+  it("rate-limits an IP that floods the endpoint", async () => {
+    // spin up a throwaway app with a tiny limit so we don't burn the shared
+    // one's budget (its store is per-app and would leak into later tests)
+    process.env.TALLY_RATE_MAX = "2";
+    const limited = await buildApp();
+    try {
+      expect((await limited.inject({ method: "POST", url: "/api/collect", headers: { "user-agent": CHROME_UA }, payload: { site: "s1", path: "/" } })).statusCode).toBe(204);
+      expect((await limited.inject({ method: "POST", url: "/api/collect", headers: { "user-agent": CHROME_UA }, payload: { site: "s1", path: "/" } })).statusCode).toBe(204);
+      // third hit in the window is over the limit
+      const over = await limited.inject({ method: "POST", url: "/api/collect", headers: { "user-agent": CHROME_UA }, payload: { site: "s1", path: "/" } });
+      expect(over.statusCode).toBe(429);
+    } finally {
+      await limited.close();
+      delete process.env.TALLY_RATE_MAX;
+    }
+  });
+
   it("counts repeat hits from the same visitor as one unique", async () => {
     // same IP + UA + day => same visitor_hash, so pageviews climb but visitors don't
     await collect({ site: "s1", path: "/a" });

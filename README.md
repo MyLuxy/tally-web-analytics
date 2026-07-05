@@ -168,6 +168,10 @@ has to be able to post from any site.
 TALLY_TOKEN=a-long-random-string npm start
 ```
 
+The collect endpoint stays open, but it's rate-limited per IP so nobody can
+flood it — `120` requests a minute by default. Tune it with `TALLY_RATE_MAX` and
+`TALLY_RATE_WINDOW` if a lot of your traffic shares one IP.
+
 ### Self-hosting with Docker
 
 There's a `Dockerfile` and a `docker-compose.yml`. Tally can sit behind a web

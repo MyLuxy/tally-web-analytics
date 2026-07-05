@@ -19,6 +19,9 @@ services:
       - TALLY_DB=/data/tally.sqlite
       # leave empty to keep the dashboard open; set it to lock it down
       - TALLY_TOKEN=${TALLY_TOKEN:-}
+      # per-IP rate limit on /api/collect; defaults suit a single site
+      - TALLY_RATE_MAX=${TALLY_RATE_MAX:-120}
+      - TALLY_RATE_WINDOW=${TALLY_RATE_WINDOW:-1 minute}
     # published on localhost only, so an existing reverse proxy can reach it
     # without exposing Tally straight to the internet. Change the host port if
     # 3000 is already taken on the box.
