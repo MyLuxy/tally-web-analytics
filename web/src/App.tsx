@@ -6,7 +6,14 @@ import { TallyMarks } from "./components/TallyMarks.js";
 import { Chart } from "./components/Chart.js";
 import { StatList } from "./components/StatList.js";
 
-const RANGES: Range[] = ["24h", "7d", "30d"];
+const RANGES: Range[] = ["24h", "7d", "30d", "all"];
+
+// The numeric ranges read fine as-is; "all" gets a proper word on the tab.
+const RANGE_LABELS: Record<Range, string> = { "24h": "24h", "7d": "7d", "30d": "30d", all: "All" };
+
+// "last 7d" reads well for the fixed windows, but "last all" doesn't -- so the
+// all-time view says "all time" instead.
+const rangeEyebrow = (r: Range) => (r === "all" ? "all time" : `last ${r}`);
 
 // Country name from a 2-letter code, via Intl so we don't ship a lookup table.
 const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
@@ -194,7 +201,8 @@ export function App() {
           <h2>No counts yet</h2>
           <p className="ink-soft">
             Embed the tracker on your site, open a page, then reload. Events for{" "}
-            <span className="num">{site}</span> in the last {range} will show up here.
+            <span className="num">{site}</span>{" "}
+            {range === "all" ? "over all time" : `in the last ${range}`} will show up here.
           </p>
         </div>
       )}
@@ -210,7 +218,7 @@ export function App() {
           <section className="panel chart-panel">
             <div className="panel-head">
               <h2 className="panel-title">Traffic</h2>
-              <span className="eyebrow">last {range}</span>
+              <span className="eyebrow">{rangeEyebrow(range)}</span>
             </div>
             <div className="chart-wrap">
               {data && <Chart series={data.series} range={range} hour12={hour12} />}
@@ -408,7 +416,7 @@ function RangeTabs({
           aria-pressed={r === range}
           onClick={() => setRange(r)}
         >
-          {r}
+          {RANGE_LABELS[r]}
         </button>
       ))}
     </div>
@@ -641,8 +649,8 @@ function EventsList({ events, range }: { events: Stats["events"]; range: Range }
       <div className="modal-empty">
         <TallyMarks count={3} className="panel-empty-mark" />
         <p className="ink-soft">
-          No custom events in the last {range}. Fire one from your site with{" "}
-          <code className="num">tally('signup')</code> and it shows up here.
+          No custom events {range === "all" ? "yet" : `in the last ${range}`}. Fire one from your
+          site with <code className="num">tally('signup')</code> and it shows up here.
         </p>
       </div>
     );

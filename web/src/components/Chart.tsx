@@ -21,10 +21,15 @@ const timeOpts = (hour12: boolean): Intl.DateTimeFormatOptions =>
     ? { hour: "numeric", minute: "2-digit", hour12: true }
     : { hour: "2-digit", minute: "2-digit", hourCycle: "h23" };
 
-function tickLabel(ms: number, range: Range, hour12: boolean): string {
+function tickLabel(ms: number, range: Range, hour12: boolean, multiYear: boolean): string {
   const d = new Date(ms);
   if (range === "24h") {
     return d.toLocaleTimeString("en-US", timeOpts(hour12));
+  }
+  // all-time can stretch across years -- swap day-of-month for the year so the
+  // axis stays legible instead of repeating "Jan 5" across different years
+  if (range === "all" && multiYear) {
+    return d.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
   }
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
@@ -37,6 +42,11 @@ function tipWhen(ms: number, range: Range, hour12: boolean): string {
   const d = new Date(ms);
   if (range === "24h") {
     return d.toLocaleString("en-US", { month: "short", day: "numeric", ...timeOpts(hour12) });
+  }
+  // all-time buckets are days/weeks/months, so the time-of-day is meaningless --
+  // show the full date (with year) instead
+  if (range === "all") {
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   }
   return d.toLocaleString("en-US", {
     weekday: "short",
@@ -90,6 +100,10 @@ export function Chart({
   const H = narrow ? 300 : 260;
 
   const n = series.length;
+  // on all-time, once the span passes a year the axis labels switch to showing
+  // the year instead of the day (see tickLabel)
+  const multiYear =
+    range === "all" && n > 1 && series[n - 1]!.bucket - series[0]!.bucket > 365 * 24 * 60 * 60 * 1000;
   const innerW = W - PAD.left - PAD.right;
   const innerH = H - PAD.top - PAD.bottom;
   const maxY = Math.max(1, ...series.map((p) => p.pageviews));
@@ -203,7 +217,7 @@ export function Chart({
             const anchor = x < PAD.left + 18 ? "start" : x > W - PAD.right - 18 ? "end" : "middle";
             return (
               <text key={i} className="chart-axis" x={x} y={H - 6} textAnchor={anchor}>
-                {tickLabel(p.bucket, range, hour12)}
+                {tickLabel(p.bucket, range, hour12, multiYear)}
               </text>
             );
           })}

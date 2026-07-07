@@ -1,7 +1,7 @@
 // Shape of GET /api/stats. Mirrors what the server returns; if the two drift,
 // this is the one place to reconcile them.
 
-export type Range = "24h" | "7d" | "30d";
+export type Range = "24h" | "7d" | "30d" | "all";
 
 export type Stats = {
   site: string;
