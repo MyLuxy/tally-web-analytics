@@ -63,6 +63,16 @@ country is resolved at the edge and handed over as a header (`cf-ipcountry` and
 friends). Tally stores only the two-letter code; it never sees or stores the IP
 itself.
 
+**Counts run a little low, and that's fine.** Tally is a client-side script, so
+anyone who blocks it never gets counted: visitors on an ad/tracker blocker
+(uBlock Origin and friends), browsers with tracking protection turned up, people
+who send Do Not Track or Global Privacy Control, or anyone browsing with
+JavaScript off. Tally honours those signals by design rather than trying to
+dodge them, so treat the numbers as a consistent, honest floor — great for
+trends, not a to-the-visitor headcount. Every analytics tool that lives in the
+page has the same blind spot; the only way around it is server-side logging,
+which is a different tool for a different job.
+
 ## Stack
 
 - **Backend** — Node + TypeScript + Fastify
