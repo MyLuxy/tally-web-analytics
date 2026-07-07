@@ -6,12 +6,44 @@ import { bearerGuard } from "../auth.js";
 // given site + time range in a single round trip. If this grows we can split
 // it, but for now a fat summary object beats six chatty endpoints.
 
-// each range is a fixed number of evenly spaced buckets
+const DAY = 24 * 60 * 60 * 1000;
+
+// each fixed range is a set number of evenly spaced buckets. "all" is handled
+// separately below, since its window depends on how far back the data goes.
 const RANGES: Record<string, { buckets: number; bucketMs: number }> = {
   "24h": { buckets: 24, bucketMs: 60 * 60 * 1000 },
-  "7d": { buckets: 7, bucketMs: 24 * 60 * 60 * 1000 },
-  "30d": { buckets: 30, bucketMs: 24 * 60 * 60 * 1000 },
+  "7d": { buckets: 7, bucketMs: DAY },
+  "30d": { buckets: 30, bucketMs: DAY },
 };
+
+// The window for a stats request: where it starts, the last (aligned) bucket,
+// and how wide each bucket is. Fixed ranges read straight off the table; "all"
+// runs from the site's first event, with a bucket size that scales to the span
+// so the chart never turns into hundreds of points.
+function resolveWindow(
+  db: ReturnType<typeof openDb>,
+  site: string,
+  range: string,
+): { since: number; nowBucket: number; bucketMs: number } | null {
+  if (range === "all") {
+    const row = db
+      .prepare(`SELECT MIN(ts) AS first FROM events WHERE site_id = ?`)
+      .get(site) as { first: number | null };
+    const firstTs = row.first ?? Date.now();
+    const span = Date.now() - firstTs;
+    // daily up to ~2 months, weekly up to ~2 years, monthly beyond that
+    const bucketMs = span <= 60 * DAY ? DAY : span <= 730 * DAY ? 7 * DAY : 30 * DAY;
+    const nowBucket = Math.floor(Date.now() / bucketMs) * bucketMs;
+    const since = Math.floor(firstTs / bucketMs) * bucketMs;
+    return { since, nowBucket, bucketMs };
+  }
+
+  const cfg = RANGES[range];
+  if (!cfg) return null;
+  const { buckets, bucketMs } = cfg;
+  const nowBucket = Math.floor(Date.now() / bucketMs) * bucketMs;
+  return { since: nowBucket - (buckets - 1) * bucketMs, nowBucket, bucketMs };
+}
 
 type Query = { site?: string; range?: string };
 
@@ -39,19 +71,16 @@ export async function statsRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: "missing site" });
     }
 
-    const cfg = RANGES[range];
-    if (!cfg) {
+    const db = openDb();
+    const win = resolveWindow(db, site, range);
+    if (!win) {
       return reply
         .code(400)
-        .send({ error: `range must be one of ${Object.keys(RANGES).join(", ")}` });
+        .send({ error: `range must be one of ${[...Object.keys(RANGES), "all"].join(", ")}` });
     }
-
-    const db = openDb();
-    const { buckets, bucketMs } = cfg;
-    // align "now" down to the current bucket, then step back N-1 buckets, so the
-    // window always lands on clean hour/day boundaries
-    const nowBucket = Math.floor(Date.now() / bucketMs) * bucketMs;
-    const since = nowBucket - (buckets - 1) * bucketMs;
+    // since: window start, aligned to a clean hour/day/bucket boundary.
+    // nowBucket: the last bucket. bucketMs: how wide each bucket is.
+    const { since, nowBucket, bucketMs } = win;
 
     // Pageviews count only real pageviews; custom events (name != 'pageview')
     // get their own panel below and must not inflate the traffic numbers.

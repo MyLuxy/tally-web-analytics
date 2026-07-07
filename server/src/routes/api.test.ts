@@ -6,7 +6,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 process.env.TALLY_DB = ":memory:";
 
 import { buildApp } from "../index.js";
-import { openDb } from "../db.js";
+import { openDb, insertEvent } from "../db.js";
 
 let app: Awaited<ReturnType<typeof buildApp>>;
 
@@ -170,6 +170,28 @@ describe("GET /api/stats", () => {
 
   it("rejects an unknown range", async () => {
     expect((await app.inject({ url: "/api/stats?site=s1&range=99y" })).statusCode).toBe(400);
+  });
+
+  it("range=all reaches back to the very first event", async () => {
+    // a pageview from over a year ago -- older than any fixed window covers.
+    // insertEvent lets us backdate ts, which the collect route never would.
+    const old = Date.now() - 400 * 24 * 60 * 60 * 1000;
+    insertEvent({
+      site_id: "s1", name: "pageview", path: "/ancient", referrer: null,
+      visitor_hash: "old-visitor", browser: "Chrome", os: "Windows", device: "desktop",
+      country: null, ts: old,
+    });
+    await collect({ site: "s1", path: "/today" }); // and one just now
+
+    // the 7-day window only sees the recent hit...
+    const week = (await app.inject({ url: "/api/stats?site=s1&range=7d" })).json();
+    expect(week.totals.pageviews).toBe(1);
+
+    // ...while all-time sees both, and its window starts at/before the old event
+    const all = (await app.inject({ url: "/api/stats?site=s1&range=all" })).json();
+    expect(all.totals.pageviews).toBe(2);
+    expect(all.since).toBeLessThanOrEqual(old);
+    expect(all.series.length).toBeGreaterThan(1);
   });
 });
 
