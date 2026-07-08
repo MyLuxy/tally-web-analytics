@@ -577,13 +577,19 @@ function SunIcon() {
 }
 
 function Metric({ label, value, decimals = 0 }: { label: string; value: number; decimals?: number }) {
-  const shown = value.toLocaleString("en-US", {
+  const full = value.toLocaleString("en-US", {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });
+  // seven-figure counts get compact notation (1.24M) so the tile can't spill
+  // over; the exact figure stays a hover away.
+  const big = value >= 1_000_000;
+  const shown = big
+    ? value.toLocaleString("en-US", { notation: "compact", maximumFractionDigits: 2 })
+    : full;
   return (
     <div className="metric">
-      <div className="metric-value num">{shown}</div>
+      <div className="metric-value num" title={big ? full : undefined}>{shown}</div>
       <div className="metric-label eyebrow">{label}</div>
     </div>
   );
