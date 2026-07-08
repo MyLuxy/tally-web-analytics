@@ -30,7 +30,8 @@ export function StatList({
           {title}
           {info && <InfoDot text={info} />}
         </h2>
-        <span className="eyebrow">{unit}</span>
+        {/* the unit ("views") is a fixed label -- keep browser auto-translate off it */}
+        <span className="eyebrow" translate="no">{unit}</span>
       </div>
 
       {rows.length === 0 ? (

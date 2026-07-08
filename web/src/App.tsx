@@ -147,7 +147,7 @@ export function App() {
         <div className="brand">
           <img src="/brand.png" className="brand-logo" alt="Tally" />
           <div>
-            <div className="brand-name">Tally</div>
+            <div className="brand-name" translate="no">Tally</div>
             <div className="brand-sub">self-hosted analytics</div>
           </div>
         </div>
