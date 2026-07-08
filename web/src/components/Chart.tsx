@@ -34,26 +34,22 @@ function tickLabel(ms: number, range: Range, hour12: boolean, multiYear: boolean
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-// Fuller label for the tooltip -- always with the bucket's local time. On 24h a
-// bucket is an hour; on 7d/30d it's a day, but the time is shown too. Everything
-// is in the viewer's own timezone (toLocale*), so it reads correctly once real
-// traffic is flowing in.
+// Fuller label for the tooltip. Only 24h shows a time -- there a bucket is an
+// hour, so the clock is meaningful. On 7d/30d/all a bucket is a day (or wider),
+// so the time-of-day would just be misleading noise; show the date alone.
+// Everything is in the viewer's own timezone (toLocale*), so it reads correctly
+// once real traffic is flowing in.
 function tipWhen(ms: number, range: Range, hour12: boolean): string {
   const d = new Date(ms);
   if (range === "24h") {
     return d.toLocaleString("en-US", { month: "short", day: "numeric", ...timeOpts(hour12) });
   }
-  // all-time buckets are days/weeks/months, so the time-of-day is meaningless --
-  // show the full date (with year) instead
+  // all-time can span years, so it carries the year; the day ranges stay within
+  // one so a weekday + month/day reads best
   if (range === "all") {
     return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   }
-  return d.toLocaleString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    ...timeOpts(hour12),
-  });
+  return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 }
 
 export function Chart({
