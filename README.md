@@ -34,54 +34,27 @@ addresses or persistent identifiers ever hit the database.
 
 ## Features
 
-- **One script tag** — around 1kb of vanilla JS, no dependencies, SPA-aware.
-- **No cookies, no consent banner** — nothing that needs a GDPR pop-up.
-- **Unique visitors without tracking** — a daily-rotating hash, never a stored
-  identifier (see below).
-- **The numbers that matter** — pageviews, unique visitors, top pages,
-  referrers, and traffic over time on a hand-drawn chart.
-- **Breakdowns** — browser, operating system, device and country.
-- **Multi-site** — one server tracks many sites, switchable from the dashboard.
-- **Optional access token** — lock the dashboard down with a single env var.
-- **One process in production** — the API also serves the built dashboard.
+- One script tag, about 1kb of vanilla JS with no dependencies, SPA-aware out of the box.
+- No cookies, so no consent banner to bolt on.
+- Unique visitors without tracking anyone: a hash that rotates every day, not a stored identifier (details below).
+- Pageviews, unique visitors, top pages and referrers, plus a traffic chart and breakdowns by browser, OS, device and country. Any panel can expand to its full list, not just the top 10.
+- One server can run multiple sites at once, switchable from the dashboard.
+- Lock the dashboard down with a single access-token env var if you want to.
+- Ships as one process in production, and can sit at the root of its own domain or behind a reverse proxy on a sub-path.
 
 ## How the privacy works
 
-Most analytics either bloat your page with a 40kb script that follows people
-around the web, or they're so stripped down you can't answer basic questions.
-Tally sits in the middle: enough to be genuinely useful, nothing that needs a
-cookie banner.
+Most analytics tools either bloat your page with a script that follows people around the web, or strip things down so far you can't answer basic questions. Tally tries to land in between: useful enough to actually check, without needing a cookie banner.
 
-**Unique visitors, without cookies.** Each event is reduced to a `visitor_hash`
-of `daily_salt + site + ip + user_agent`. The salt rotates every night and is
-never stored in a reversible way, so the same person looks like a brand new
-visitor tomorrow. Good enough for counting, useless for tracking. (The same
-approach Plausible and Fathom take.)
+**Unique visitors, without cookies.** Each event gets reduced to a `visitor_hash` built from `daily_salt + site + ip + user_agent`. The salt rotates every night and is never stored in a way that can be reversed, so the same person looks like a new visitor the next day. It's enough to count people, not enough to track them — the same approach Plausible and Fathom use.
 
-**Country, without an IP.** Behind Cloudflare, Vercel or Fastly, the visitor's
-country is resolved at the edge and handed over as a header (`cf-ipcountry` and
-friends). Tally stores only the two-letter code; it never sees or stores the IP
-itself.
+**Country, without an IP.** Behind Cloudflare, Vercel or Fastly, the visitor's country gets resolved at the edge and passed along as a header (`cf-ipcountry` and its equivalents). Tally only stores the two-letter code. It never sees the IP address in the first place.
 
-**Counts run a little low, and that's fine.** Tally is a client-side script, so
-anyone who blocks it never gets counted: visitors on an ad/tracker blocker
-(uBlock Origin and friends), browsers with tracking protection turned up, people
-who send Do Not Track or Global Privacy Control, or anyone browsing with
-JavaScript off. Tally honours those signals by design rather than trying to
-dodge them, so treat the numbers as a consistent, honest floor — great for
-trends, not a to-the-visitor headcount. Every analytics tool that lives in the
-page has the same blind spot; the only way around it is server-side logging,
-which is a different tool for a different job.
+**The numbers run a little low, and that's fine.** Tally is a client-side script, so anyone blocking it doesn't get counted: ad/tracker blockers like uBlock Origin, browsers with tracking protection turned up, people sending Do Not Track or Global Privacy Control, anyone with JavaScript off. Tally respects those signals instead of working around them, so treat the totals as an honest floor rather than an exact headcount. Every in-page analytics tool has this same blind spot; the only real fix is server-side logging, which solves a different problem.
 
 ## Stack
 
-- **Backend** — Node + TypeScript + Fastify
-- **Storage** — SQLite (via `better-sqlite3`), kept behind a thin module so it
-  can move to Postgres/Timescale later without touching the routes
-- **Tracker** — around 1kb of vanilla JS, no dependencies
-- **Dashboard** — React + Vite, with a hand-rolled SVG chart (no charting
-  library), self-hosted fonts, and a light/dark theme. The only external asset
-  is the country flag images (from flagcdn)
+Backend is Node, TypeScript and Fastify, with SQLite (`better-sqlite3`) behind a thin storage module so it could move to Postgres later without touching the routes. The tracker is the same ~1kb of vanilla JS mentioned above. The dashboard is React and Vite, with a hand-rolled SVG chart instead of a charting library, self-hosted fonts, and a light/dark theme. The only thing it pulls in from elsewhere is the country flag images, from flagcdn.
 
 ## Quick start
 
@@ -99,13 +72,11 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173 for the dashboard. It starts empty — drop the tracker
-on a page (see below) and your first pageview shows up right away.
+Open http://localhost:5173 for the dashboard. It starts empty — drop the tracker on a page (see below) and your first pageview shows up right away.
 
 ## Adding the tracker to a site
 
-Drop one script tag on any page you want to measure, pointing it at your Tally
-server. The tracker is served by the server itself at `/tracker.js`.
+Drop one script tag on any page you want to measure, pointing it at your Tally server. The tracker is served by the server itself at `/tracker.js`.
 
 ```html
 <script
@@ -115,25 +86,12 @@ server. The tracker is served by the server itself at `/tracker.js`.
 ></script>
 ```
 
-- **`src`** — your Tally server's URL. Use `http://localhost:3000/tracker.js`
-  while developing; in production it must be reachable over HTTPS so it loads on
-  HTTPS pages.
-- **`data-site`** — the name this site appears as in the dashboard. It's any
-  string you choose; a new site shows up on its own with its first event, so
-  there's nothing to register first.
+- **`src`** points at your Tally server. Use `http://localhost:3000/tracker.js` locally; in production it needs to be reachable over HTTPS so it loads on HTTPS pages.
+- **`data-site`** is whatever name you want this site to show up as in the dashboard. Pick any string and it appears on its own with the first event — nothing to register ahead of time.
 
-> **`localhost` won't work in production, even if your site is public.** The
-> tracker runs in each *visitor's* browser, so the URL has to be reachable from
-> the outside — `localhost` and `192.168.x.x` point at the visitor's own machine,
-> not at yours, and no events ever arrive. `localhost` is only for local
-> development. The simplest setup: run Tally on the same box as your site, on a
-> subdomain like `analytics.your-site.com` over HTTPS, and lock the dashboard
-> with `TALLY_TOKEN` (see below) so `/api/collect` stays open to visitors while
-> the stats stay private to you.
+> **`localhost` won't work in production, even if your site is public.** The tracker runs in each *visitor's* browser, so the URL has to be reachable from the outside — `localhost` and `192.168.x.x` point at the visitor's own machine, not at yours, and no events ever arrive. `localhost` is only for local development. The simplest setup: run Tally on the same box as your site, on a subdomain like `analytics.your-site.com` over HTTPS, and lock the dashboard with `TALLY_TOKEN` (see below) so `/api/collect` stays open to visitors while the stats stay private to you.
 
-That covers it. The tracker sends a pageview on load and on every SPA route
-change, respects Do Not Track, ignores bots, and stores nothing on the visitor's
-device — no cookies, no localStorage.
+That covers it. The tracker fires a pageview on load and on every SPA route change, respects Do Not Track, ignores bots, and leaves nothing behind on the visitor's device: no cookies, no localStorage.
 
 Custom events are a one-liner. The tracker exposes a global `tally()`:
 
@@ -141,8 +99,7 @@ Custom events are a one-liner. The tracker exposes a global `tally()`:
 <button onclick="tally('signup')">Sign up</button>
 ```
 
-If you serve the script from a different host than your server, point it at the
-collector explicitly:
+If the script is served from a different host than your API, e.g. a CDN, point `data-endpoint` at the collector directly:
 
 ```html
 <script
@@ -155,9 +112,7 @@ collector explicitly:
 
 ## Production
 
-In production there's just one process. Vite builds the dashboard into
-`server/web-dist` and Fastify serves it from the same port as the API, with a
-SPA fallback so client-side routes resolve.
+In production there's just one process. Vite builds the dashboard into `server/web-dist` and Fastify serves it from the same port as the API, with a SPA fallback so client-side routes resolve.
 
 ```bash
 cd server
@@ -168,26 +123,28 @@ npm start           # serves API + dashboard on port 3000
 
 ### Protecting the dashboard
 
-By default the read API is open, which is what you want while running locally. Set
-`TALLY_TOKEN` and the stats endpoints (`/api/stats`, `/api/sites`) require an
-`Authorization: Bearer <token>` header. The dashboard prompts for the token and
-remembers it. The `/api/collect` endpoint always stays open, since the tracker
-has to be able to post from any site.
+By default the read API is open, which is what you want while running locally. Set `TALLY_TOKEN` and the stats endpoints (`/api/stats`, `/api/sites`) require an `Authorization: Bearer <token>` header. The dashboard prompts for the token and remembers it. The `/api/collect` endpoint always stays open, since the tracker has to be able to post from any site.
 
 ```bash
 TALLY_TOKEN=a-long-random-string npm start
 ```
 
-The collect endpoint stays open, but it's rate-limited per IP so nobody can
-flood it — `120` requests a minute by default. Tune it with `TALLY_RATE_MAX` and
-`TALLY_RATE_WINDOW` if a lot of your traffic shares one IP.
+The collect endpoint stays open, but it's rate-limited per IP so nobody can flood it: 120 requests a minute by default. Tune it with `TALLY_RATE_MAX` and `TALLY_RATE_WINDOW` if a lot of your traffic shares one IP.
+
+### Running under a sub-path
+
+By default Tally expects to live at the root of its own domain. If you'd rather mount it under a path on a domain you already use, like `yoursite.com/analytics/`, set `TALLY_BASE_PATH` on the server and build the dashboard with a matching `base`:
+
+```bash
+TALLY_BASE_PATH=/analytics npm start        # server
+VITE_BASE=/analytics/ npm run build         # dashboard (web/)
+```
+
+Both are empty by default, so a standard subdomain deployment needs neither. Whatever reverse proxy sits in front should forward the path through as-is, not strip it.
 
 ### Self-hosting with Docker
 
-There's a `Dockerfile` and a `docker-compose.yml`. Tally can sit behind a web
-server you already run (nginx/apache + certbot), or bring up the bundled Caddy
-for automatic HTTPS on a fresh box. The full walkthrough — including a free HTTPS
-hostname with no domain to buy — is in [docs/DEPLOY.md](docs/DEPLOY.md).
+There's a `Dockerfile` and a `docker-compose.yml`. Tally can sit behind a web server you already run (nginx/apache + certbot), or bring up the bundled Caddy for automatic HTTPS on a fresh box. The full walkthrough, including a free HTTPS hostname with no domain to buy, is in [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## Layout
 
