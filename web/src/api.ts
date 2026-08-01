@@ -20,6 +20,19 @@ export type Stats = {
 
 export type Site = { site: string; events: number; lastSeen: number };
 
+// The panels above only show a top-10 slice; this backs each panel's
+// "View all" button with the same grouping, uncapped.
+export type BreakdownMetric =
+  | "pages"
+  | "referrers"
+  | "browsers"
+  | "systems"
+  | "devices"
+  | "countries"
+  | "events";
+
+export type BreakdownRow = { key: string; value: number };
+
 // When the server runs with TALLY_TOKEN set, the read API needs a bearer token.
 // We keep whatever the user typed in localStorage and send it along.
 const TOKEN_KEY = "tally_token";
@@ -40,8 +53,14 @@ function authHeaders(): HeadersInit {
   return token ? { authorization: `Bearer ${token}` } : {};
 }
 
-async function readApi<T>(url: string): Promise<T> {
-  const res = await fetch(url, { headers: authHeaders() });
+// Matches whatever `base` the dashboard was built with (see vite.config.ts)
+// -- "/" at root (default), or e.g. "/analytics/" when reverse-proxied under
+// a sub-path on someone else's domain. Trailing slash stripped so paths
+// below don't end up with a doubled "//api/...".
+const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+async function readApi<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { headers: authHeaders() });
   if (res.status === 401) throw new Unauthorized();
   if (!res.ok) {
     const detail = await res.json().catch(() => ({}));
@@ -57,4 +76,14 @@ export async function fetchSites(): Promise<Site[]> {
 
 export function fetchStats(site: string, range: Range): Promise<Stats> {
   return readApi<Stats>(`/api/stats?site=${encodeURIComponent(site)}&range=${range}`);
+}
+
+export function fetchBreakdown(
+  site: string,
+  range: Range,
+  metric: BreakdownMetric,
+): Promise<BreakdownRow[]> {
+  return readApi<{ rows: BreakdownRow[] }>(
+    `/api/stats/breakdown?site=${encodeURIComponent(site)}&range=${range}&metric=${metric}`,
+  ).then((body) => body.rows);
 }

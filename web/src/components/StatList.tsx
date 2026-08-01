@@ -14,15 +14,15 @@ export function StatList({
   rows,
   empty,
   info,
+  onViewAll,
 }: {
   title: string;
   unit: string;
   rows: Row[];
   empty: string;
   info?: string; // optional one-liner explaining the section
+  onViewAll?: () => void; // panels only show a top-10 slice; opens the full list in a modal
 }) {
-  const max = Math.max(1, ...rows.map((r) => r.value));
-
   return (
     <section className="panel">
       <div className="panel-head">
@@ -34,26 +34,44 @@ export function StatList({
         <span className="eyebrow" translate="no">{unit}</span>
       </div>
 
-      {rows.length === 0 ? (
-        <div className="panel-empty">
-          <TallyMarks count={3} className="panel-empty-mark" />
-          <p className="ink-soft">{empty}</p>
-        </div>
-      ) : (
-        <ul className="rows">
-          {rows.map((r, i) => {
-            const title = r.title ?? (typeof r.label === "string" ? r.label : undefined);
-            return (
-              <li className="row" key={title ?? i}>
-                <span className="row-bar" style={{ width: `${(r.value / max) * 100}%` }} />
-                <span className="row-label" title={title}>{r.label}</span>
-                <span className="row-value num">{r.value.toLocaleString("en-US")}</span>
-              </li>
-            );
-          })}
-        </ul>
+      <Rows rows={rows} empty={empty} />
+
+      {onViewAll && rows.length > 0 && (
+        <button type="button" className="view-all-btn" onClick={onViewAll}>
+          View all
+        </button>
       )}
     </section>
+  );
+}
+
+// The bar-chart-style row list, shared between a panel's top-10 slice and the
+// "View all" modal's full list -- same look, just a different row count.
+export function Rows({ rows, empty }: { rows: Row[]; empty: string }) {
+  const max = Math.max(1, ...rows.map((r) => r.value));
+
+  if (rows.length === 0) {
+    return (
+      <div className="panel-empty">
+        <TallyMarks count={3} className="panel-empty-mark" />
+        <p className="ink-soft">{empty}</p>
+      </div>
+    );
+  }
+
+  return (
+    <ul className="rows">
+      {rows.map((r, i) => {
+        const title = r.title ?? (typeof r.label === "string" ? r.label : undefined);
+        return (
+          <li className="row" key={title ?? i}>
+            <span className="row-bar" style={{ width: `${(r.value / max) * 100}%` }} />
+            <span className="row-label" title={title}>{r.label}</span>
+            <span className="row-value num">{r.value.toLocaleString("en-US")}</span>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
