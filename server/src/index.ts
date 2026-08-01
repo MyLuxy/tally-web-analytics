@@ -43,26 +43,41 @@ export async function buildApp(opts: { logger?: FastifyServerOptions["logger"] }
   const roots = [join(here, "..", "public")];
   if (existsSync(webDist)) roots.unshift(webDist);
 
-  await app.register(staticFiles, {
-    root: roots, // looked up in order: dashboard first, then the tracker script
-    prefix: "/",
-  });
+  // Everything below lives under this optional prefix -- empty by default,
+  // so a standalone/subdomain deployment (Tally at the root of its own
+  // domain) is unaffected. Set it when Tally is reverse-proxied under a
+  // sub-path on someone else's domain (e.g. TALLY_BASE_PATH=/analytics),
+  // matching whatever nginx/Caddy forwards the request as (unmodified, not
+  // prefix-stripped) and whatever `base` the dashboard was built with (see
+  // web/vite.config.ts + web/src/api.ts).
+  const basePath = process.env.TALLY_BASE_PATH ?? "";
 
-  app.get("/health", async () => ({ ok: true }));
+  await app.register(
+    async (instance) => {
+      await instance.register(staticFiles, {
+        root: roots, // looked up in order: dashboard first, then the tracker script
+        prefix: "/",
+      });
 
-  await app.register(collectRoutes);
-  await app.register(statsRoutes);
+      instance.get("/health", async () => ({ ok: true }));
 
-  // SPA fallback: anything that isn't an API call or a real file gets index.html
-  // so client-side routes resolve. Only makes sense once the dashboard is built.
-  if (existsSync(join(webDist, "index.html"))) {
-    app.setNotFoundHandler((req, reply) => {
-      if (req.method === "GET" && !req.url.startsWith("/api")) {
-        return reply.sendFile("index.html");
+      await instance.register(collectRoutes);
+      await instance.register(statsRoutes);
+
+      // SPA fallback: anything that isn't an API call or a real file gets
+      // index.html so client-side routes resolve. Only makes sense once the
+      // dashboard is built.
+      if (existsSync(join(webDist, "index.html"))) {
+        instance.setNotFoundHandler((req, reply) => {
+          if (req.method === "GET" && !req.url.startsWith(`${basePath}/api`)) {
+            return reply.sendFile("index.html");
+          }
+          reply.code(404).send({ error: "not found" });
+        });
       }
-      reply.code(404).send({ error: "not found" });
-    });
-  }
+    },
+    { prefix: basePath },
+  );
 
   return app;
 }
