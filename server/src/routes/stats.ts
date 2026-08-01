@@ -47,6 +47,38 @@ function resolveWindow(
 
 type Query = { site?: string; range?: string };
 
+// Panels only ever show a top-N slice of these breakdowns (see the LIMITs
+// below); "View all" in the dashboard re-runs the same grouping without a
+// cap so nothing that got tracked looks "missing" just because it fell
+// outside the panel's top 10. A generous LIMIT still applies here so one
+// pathological site (e.g. thousands of distinct referrer URLs) can't hand
+// the dashboard an unbounded response.
+const BREAKDOWN_METRICS = {
+  pages: `SELECT path AS key, COUNT(*) AS value FROM events
+          WHERE site_id = ? AND ts >= ? AND name = 'pageview'
+          GROUP BY path ORDER BY value DESC LIMIT 500`,
+  referrers: `SELECT referrer AS key, COUNT(*) AS value FROM events
+              WHERE site_id = ? AND ts >= ? AND name = 'pageview' AND referrer IS NOT NULL
+              GROUP BY referrer ORDER BY value DESC LIMIT 500`,
+  browsers: `SELECT browser AS key, COUNT(*) AS value FROM events
+             WHERE site_id = ? AND ts >= ? AND name = 'pageview'
+             GROUP BY browser ORDER BY value DESC LIMIT 500`,
+  systems: `SELECT os AS key, COUNT(*) AS value FROM events
+            WHERE site_id = ? AND ts >= ? AND name = 'pageview'
+            GROUP BY os ORDER BY value DESC LIMIT 500`,
+  devices: `SELECT device AS key, COUNT(*) AS value FROM events
+            WHERE site_id = ? AND ts >= ? AND name = 'pageview'
+            GROUP BY device ORDER BY value DESC LIMIT 500`,
+  countries: `SELECT country AS key, COUNT(*) AS value FROM events
+              WHERE site_id = ? AND ts >= ? AND name = 'pageview' AND country IS NOT NULL
+              GROUP BY country ORDER BY value DESC LIMIT 500`,
+  events: `SELECT name AS key, COUNT(*) AS value FROM events
+           WHERE site_id = ? AND ts >= ? AND name <> 'pageview'
+           GROUP BY name ORDER BY value DESC LIMIT 500`,
+} as const;
+
+type BreakdownMetric = keyof typeof BREAKDOWN_METRICS;
+
 export async function statsRoutes(app: FastifyInstance) {
   // Guard the whole read side. Scoped to this plugin, so /api/collect (a
   // separate plugin) stays open. No-ops unless TALLY_TOKEN is set.
@@ -115,7 +147,7 @@ export async function statsRoutes(app: FastifyInstance) {
       .prepare(
         `SELECT browser AS name, COUNT(*) AS views
          FROM events WHERE site_id = ? AND ts >= ? AND name = 'pageview'
-         GROUP BY browser ORDER BY views DESC`,
+         GROUP BY browser ORDER BY views DESC LIMIT 10`,
       )
       .all(site, since);
 
@@ -123,7 +155,7 @@ export async function statsRoutes(app: FastifyInstance) {
       .prepare(
         `SELECT os AS name, COUNT(*) AS views
          FROM events WHERE site_id = ? AND ts >= ? AND name = 'pageview'
-         GROUP BY os ORDER BY views DESC`,
+         GROUP BY os ORDER BY views DESC LIMIT 10`,
       )
       .all(site, since);
 
@@ -131,7 +163,7 @@ export async function statsRoutes(app: FastifyInstance) {
       .prepare(
         `SELECT device AS name, COUNT(*) AS views
          FROM events WHERE site_id = ? AND ts >= ? AND name = 'pageview'
-         GROUP BY device ORDER BY views DESC`,
+         GROUP BY device ORDER BY views DESC LIMIT 10`,
       )
       .all(site, since);
 
@@ -190,5 +222,33 @@ export async function statsRoutes(app: FastifyInstance) {
       events,
       series,
     };
+  });
+
+  // Backs the "View all" button on each panel: same grouping as above, same
+  // site/range window, but without the top-10 cap.
+  app.get("/api/stats/breakdown", async (req, reply) => {
+    const { site, range = "7d", metric } = req.query as Query & { metric?: string };
+    if (!site) {
+      return reply.code(400).send({ error: "missing site" });
+    }
+    if (!metric || !(metric in BREAKDOWN_METRICS)) {
+      return reply
+        .code(400)
+        .send({ error: `metric must be one of ${Object.keys(BREAKDOWN_METRICS).join(", ")}` });
+    }
+
+    const db = openDb();
+    const win = resolveWindow(db, site, range);
+    if (!win) {
+      return reply
+        .code(400)
+        .send({ error: `range must be one of ${[...Object.keys(RANGES), "all"].join(", ")}` });
+    }
+
+    const rows = db
+      .prepare(BREAKDOWN_METRICS[metric as BreakdownMetric])
+      .all(site, win.since);
+
+    return { metric, rows };
   });
 }

@@ -1,10 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import type { Range, Site, Stats } from "./api.js";
-import { fetchSites, fetchStats, getToken, setToken, Unauthorized } from "./api.js";
+import type { BreakdownMetric, Range, Site, Stats } from "./api.js";
+import { fetchBreakdown, fetchSites, fetchStats, getToken, setToken, Unauthorized } from "./api.js";
 import { TallyMarks } from "./components/TallyMarks.js";
 import { Chart } from "./components/Chart.js";
-import { StatList } from "./components/StatList.js";
+import { Rows, StatList } from "./components/StatList.js";
+import type { Row } from "./components/StatList.js";
+
+// Set at build time (e.g. `VITE_BACK_LINK_URL=/admin npm run build`) when
+// Tally is embedded inside another app's admin panel, so a "Back to CMS"
+// link can point back there. Undefined for a standalone deployment -- Tally
+// stays a generic tool with no hardcoded knowledge of any particular site.
+const BACK_LINK_URL = import.meta.env.VITE_BACK_LINK_URL as string | undefined;
+const BACK_LINK_LABEL = (import.meta.env.VITE_BACK_LINK_LABEL as string | undefined) ?? "Back to CMS";
 
 const RANGES: Range[] = ["24h", "7d", "30d", "all"];
 
@@ -45,6 +53,34 @@ function CountryLabel({ code }: { code: string }) {
   );
 }
 
+// One entry per panel that has a "View all" button. Maps the flat
+// {key, value} rows from /api/stats/breakdown back to each panel's own
+// title/empty copy and row rendering (e.g. countries get a flag).
+const VIEW_ALL_CONFIG: Record<
+  BreakdownMetric,
+  { title: string; empty: string; toRow: (row: { key: string; value: number }) => Row }
+> = {
+  pages: { title: "Top pages", empty: "No pages recorded.", toRow: (r) => ({ label: r.key, value: r.value }) },
+  referrers: {
+    title: "Referrers",
+    empty: "All traffic came in direct.",
+    toRow: (r) => ({ label: r.key, value: r.value }),
+  },
+  browsers: { title: "Browsers", empty: "No browser data.", toRow: (r) => ({ label: r.key, value: r.value }) },
+  systems: { title: "Operating systems", empty: "No OS data.", toRow: (r) => ({ label: r.key, value: r.value }) },
+  devices: { title: "Devices", empty: "No device data.", toRow: (r) => ({ label: r.key, value: r.value }) },
+  countries: {
+    title: "Countries",
+    empty: "No country data.",
+    toRow: (r) => ({ label: <CountryLabel code={r.key} />, title: countryName(r.key), value: r.value }),
+  },
+  events: {
+    title: "Events",
+    empty: "No custom events recorded. Fire one from your site with tally('name') and it shows up here.",
+    toRow: (r) => ({ label: r.key, value: r.value }),
+  },
+};
+
 export function App() {
   const [sites, setSites] = useState<Site[]>([]);
   const [site, setSite] = useState<string | null>(null);
@@ -55,7 +91,9 @@ export function App() {
   const [locked, setLocked] = useState(false); // server wants a token
   const [reload, setReload] = useState(0); // bumped to retry after unlocking
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [eventsOpen, setEventsOpen] = useState(false);
+  const [viewAllMetric, setViewAllMetric] = useState<BreakdownMetric | null>(null);
+  const [viewAllRows, setViewAllRows] = useState<Row[] | null>(null);
+  const [viewAllError, setViewAllError] = useState<string | null>(null);
   const [theme, setTheme] = useState<"light" | "dark">(
     () => (localStorage.getItem("tally_theme") === "dark" ? "dark" : "light"),
   );
@@ -130,6 +168,25 @@ export function App() {
     return () => ctrl.abort();
   }, [site, range, reload]);
 
+  // Fetches the full (uncapped) list for whichever panel's "View all" was
+  // clicked. Closing the modal (viewAllMetric -> null) needs no fetch.
+  useEffect(() => {
+    if (!viewAllMetric || !site) return;
+    const ctrl = new AbortController();
+    setViewAllRows(null);
+    setViewAllError(null);
+    fetchBreakdown(site, range, viewAllMetric)
+      .then((rows) => {
+        if (ctrl.signal.aborted) return;
+        setViewAllRows(rows.map(VIEW_ALL_CONFIG[viewAllMetric].toRow));
+      })
+      .catch((e: unknown) => {
+        if (ctrl.signal.aborted) return;
+        setViewAllError(e instanceof Error ? e.message : "something went wrong");
+      });
+    return () => ctrl.abort();
+  }, [viewAllMetric, site, range]);
+
   function unlock(token: string) {
     setToken(token);
     setLocked(false);
@@ -145,7 +202,7 @@ export function App() {
     <div className="shell">
       <header className="topbar">
         <div className="brand">
-          <img src="/brand.png" className="brand-logo" alt="Tally" />
+          <img src={`${import.meta.env.BASE_URL}brand.png`} className="brand-logo" alt="Tally" />
           <div>
             <div className="brand-name" translate="no">Tally</div>
             <div className="brand-sub">self-hosted analytics</div>
@@ -153,6 +210,13 @@ export function App() {
         </div>
 
         <div className="controls">
+          {BACK_LINK_URL && (
+            <a className="back-link" href={BACK_LINK_URL}>
+              <BackIcon />
+              {BACK_LINK_LABEL}
+            </a>
+          )}
+
           {sites.length > 1 ? (
             <SitePicker sites={sites} site={site ?? ""} onChange={setSite} />
           ) : (
@@ -243,6 +307,7 @@ export function App() {
               info="Your most-visited pages in the selected time range, ranked by pageviews."
               empty="No pages recorded."
               rows={(data?.topPages ?? []).map((p) => ({ label: p.path, value: p.views }))}
+              onViewAll={() => setViewAllMetric("pages")}
             />
             <StatList
               title="Referrers"
@@ -250,6 +315,7 @@ export function App() {
               info="Where your visitors came from: the external site or search engine that linked them to you."
               empty="All traffic came in direct."
               rows={(data?.topReferrers ?? []).map((r) => ({ label: r.source, value: r.views }))}
+              onViewAll={() => setViewAllMetric("referrers")}
             />
           </div>
 
@@ -259,18 +325,21 @@ export function App() {
               unit="views"
               empty="No browser data."
               rows={(data?.browsers ?? []).map((b) => ({ label: b.name, value: b.views }))}
+              onViewAll={() => setViewAllMetric("browsers")}
             />
             <StatList
               title="Operating systems"
               unit="views"
               empty="No OS data."
               rows={(data?.systems ?? []).map((s) => ({ label: s.name, value: s.views }))}
+              onViewAll={() => setViewAllMetric("systems")}
             />
             <StatList
               title="Devices"
               unit="views"
               empty="No device data."
               rows={(data?.devices ?? []).map((d) => ({ label: d.name, value: d.views }))}
+              onViewAll={() => setViewAllMetric("devices")}
             />
             <StatList
               title="Countries"
@@ -281,6 +350,7 @@ export function App() {
                 title: countryName(c.name),
                 value: c.views,
               }))}
+              onViewAll={() => setViewAllMetric("countries")}
             />
           </div>
         </main>
@@ -330,7 +400,7 @@ export function App() {
             className="setting setting-action"
             onClick={() => {
               setSettingsOpen(false);
-              setEventsOpen(true);
+              setViewAllMetric("events");
             }}
           >
             <span className="setting-text">
@@ -344,12 +414,31 @@ export function App() {
         </Modal>
       )}
 
-      {eventsOpen && (
-        <Modal title="Events" onClose={() => setEventsOpen(false)}>
-          <EventsList events={data?.events ?? []} range={range} />
+      {viewAllMetric && (
+        <Modal title={VIEW_ALL_CONFIG[viewAllMetric].title} onClose={() => setViewAllMetric(null)}>
+          {viewAllError ? (
+            <div className="notice notice-error">
+              <strong>Couldn't load the full list.</strong> {viewAllError}
+            </div>
+          ) : viewAllRows === null ? (
+            <div className="modal-loading" role="status" aria-label="Loading">
+              <span className="spinner" />
+            </div>
+          ) : (
+            <Rows rows={viewAllRows} empty={VIEW_ALL_CONFIG[viewAllMetric].empty} />
+          )}
         </Modal>
       )}
     </div>
+  );
+}
+
+function BackIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M19 12H5M12 19l-7-7 7-7" />
+    </svg>
   );
 }
 
@@ -644,34 +733,6 @@ function Modal({
         <div className="modal-body">{children}</div>
       </div>
     </div>
-  );
-}
-
-// The custom-events list shown inside its modal. Same bar rows as the breakdown
-// panels, minus the panel chrome (the modal is the frame here).
-function EventsList({ events, range }: { events: Stats["events"]; range: Range }) {
-  if (events.length === 0) {
-    return (
-      <div className="modal-empty">
-        <TallyMarks count={3} className="panel-empty-mark" />
-        <p className="ink-soft">
-          No custom events {range === "all" ? "yet" : `in the last ${range}`}. Fire one from your
-          site with <code className="num">tally('signup')</code> and it shows up here.
-        </p>
-      </div>
-    );
-  }
-  const max = Math.max(1, ...events.map((e) => e.count));
-  return (
-    <ul className="rows">
-      {events.map((e) => (
-        <li className="row" key={e.name}>
-          <span className="row-bar" style={{ width: `${(e.count / max) * 100}%` }} />
-          <span className="row-label">{e.name}</span>
-          <span className="row-value num">{e.count.toLocaleString("en-US")}</span>
-        </li>
-      ))}
-    </ul>
   );
 }
 
