@@ -6,12 +6,14 @@ import { ExpandIcon } from "./StatList.js";
 
 // direct/search/social/referral, in the fixed order they should always list
 // in -- not sorted by size, so the legend doesn't reshuffle every time the
-// range changes.
-const CATEGORIES: { key: keyof Stats["trafficSources"]; label: string; colorVar: string }[] = [
-  { key: "direct", label: "Direct", colorVar: "--ink-faint" },
-  { key: "search", label: "Search", colorVar: "--accent-search" },
-  { key: "social", label: "Social", colorVar: "--accent-2" },
-  { key: "referral", label: "Referral", colorVar: "--accent-3" },
+// range changes. One accent, shaded from full strength down to neutral,
+// rather than a different hue per category -- Direct (no signal at all)
+// stays plain grey.
+const CATEGORIES: { key: keyof Stats["trafficSources"]; label: string; color: string }[] = [
+  { key: "direct", label: "Direct", color: "var(--ink-faint)" },
+  { key: "search", label: "Search", color: "var(--accent)" },
+  { key: "social", label: "Social", color: "color-mix(in srgb, var(--accent) 65%, var(--ink-faint))" },
+  { key: "referral", label: "Referral", color: "color-mix(in srgb, var(--accent) 35%, var(--ink-faint))" },
 ];
 
 // The donut + legend body, shared between the compact card below and the
@@ -39,7 +41,7 @@ export function TrafficSourcesContent({
     <div className="traffic-sources">
       <Donut
         size={donutSize}
-        segments={CATEGORIES.map((c) => ({ value: sources[c.key], colorVar: c.colorVar }))}
+        segments={CATEGORIES.map((c) => ({ value: sources[c.key], color: c.color }))}
         centerLabel={total.toLocaleString("en-US", { notation: total >= 100_000 ? "compact" : undefined })}
         centerSub="views"
       />
@@ -49,7 +51,7 @@ export function TrafficSourcesContent({
           const pct = total > 0 ? Math.round((value / total) * 100) : 0;
           return (
             <li key={c.key} className="traffic-source-row">
-              <span className="dot" style={{ background: `var(${c.colorVar})` }} />
+              <span className="dot" style={{ background: c.color }} />
               <span className="traffic-source-label">{c.label}</span>
               <span className="traffic-source-pct num">{pct}%</span>
               <span className="traffic-source-value num">{value.toLocaleString("en-US")}</span>

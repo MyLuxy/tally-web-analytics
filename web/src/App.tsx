@@ -7,6 +7,7 @@ import { TallyMarks } from "./components/TallyMarks.js";
 import { Chart } from "./components/Chart.js";
 import { Sparkline } from "./components/Sparkline.js";
 import { ExportCsvButton, ExpandIcon, Rows, StatList } from "./components/StatList.js";
+import { BreakdownCard } from "./components/BreakdownCard.js";
 import { TrafficSourcesCard, TrafficSourcesContent } from "./components/TrafficSources.js";
 import { ClickableCard } from "./components/ClickableCard.js";
 import type { Row } from "./components/StatList.js";
@@ -372,10 +373,11 @@ export function App() {
 
       {!locked && !error && (hasData || loading) && (
         <main className={`content ${data ? "fade-in" : ""}`} aria-busy={loading}>
-          {/* a ticker strip, not three more cards -- full-bleed, dark year-round,
-              divided by hairlines instead of gaps, each column striped in the
-              same colour as its line on the chart below. Deliberately reads as
-              one fused instrument panel, not another tile in the bento grid. */}
+          {/* one full-bleed strip, not three more cards -- divided by hairlines
+              instead of gaps. Pageviews gets the accent colour and the larger
+              type size, since it's the one number that matters most; the
+              other two stay plain -- the palette's one accent stays reserved
+              for the metric that earns it, not spread across all three. */}
           <section className="ledger ledger-hero">
             <Metric
               label="Pageviews"
@@ -388,14 +390,12 @@ export function App() {
               label="Unique visitors"
               value={totals?.visitors ?? 0}
               delta={prev && deltaOf(totals?.visitors ?? 0, prev.visitors)}
-              accent="--accent-2"
             />
             <Metric
               label="Views / visitor"
               value={perVisitor}
               decimals={1}
               delta={prev && deltaOf(perVisitor, prevPerVisitor)}
-              accent="--accent-3"
             />
           </section>
 
@@ -460,45 +460,43 @@ export function App() {
               onExpand={() => openCard("referrers")}
               className="card-span-2"
             />
-            <StatList
-              cardKey="browsers"
-              expanded={expanded === "browsers"}
-              title="Browsers"
-              unit="views"
-              empty="No browser data."
-              rows={(data?.browsers ?? []).map((b) => ({ label: b.name, value: b.views }))}
-              onExpand={() => openCard("browsers")}
-            />
-            <StatList
-              cardKey="systems"
-              expanded={expanded === "systems"}
-              title="Operating systems"
-              unit="views"
-              empty="No OS data."
-              rows={(data?.systems ?? []).map((s) => ({ label: s.name, value: s.views }))}
-              onExpand={() => openCard("systems")}
-            />
-            <StatList
-              cardKey="devices"
-              expanded={expanded === "devices"}
-              title="Devices"
-              unit="views"
-              empty="No device data."
-              rows={(data?.devices ?? []).map((d) => ({ label: d.name, value: d.views }))}
-              onExpand={() => openCard("devices")}
-            />
-            <StatList
-              cardKey="countries"
-              expanded={expanded === "countries"}
-              title="Countries"
-              unit="views"
-              empty="No country data."
-              rows={(data?.countries ?? []).map((c) => ({
-                label: <CountryLabel code={c.name} />,
-                title: countryName(c.name),
-                value: c.views,
-              }))}
-              onExpand={() => openCard("countries")}
+            <BreakdownCard
+              tabs={[
+                {
+                  key: "browsers",
+                  label: "Browsers",
+                  unit: "views",
+                  empty: "No browser data.",
+                  rows: (data?.browsers ?? []).map((b) => ({ label: b.name, value: b.views })),
+                },
+                {
+                  key: "systems",
+                  label: "OS",
+                  unit: "views",
+                  empty: "No OS data.",
+                  rows: (data?.systems ?? []).map((s) => ({ label: s.name, value: s.views })),
+                },
+                {
+                  key: "devices",
+                  label: "Devices",
+                  unit: "views",
+                  empty: "No device data.",
+                  rows: (data?.devices ?? []).map((d) => ({ label: d.name, value: d.views })),
+                },
+                {
+                  key: "countries",
+                  label: "Countries",
+                  unit: "views",
+                  empty: "No country data.",
+                  rows: (data?.countries ?? []).map((c) => ({
+                    label: <CountryLabel code={c.name} />,
+                    title: countryName(c.name),
+                    value: c.views,
+                  })),
+                },
+              ]}
+              expanded={expanded}
+              onExpand={(key) => openCard(key as ExpandTarget)}
             />
           </div>
         </main>
@@ -700,7 +698,6 @@ function TokenGate({ onSubmit }: { onSubmit: (token: string) => void }) {
 function LivePill({ count }: { count: number }) {
   return (
     <span className="live-pill" title="Visitors active in the last 5 minutes">
-      <span className={`live-dot${count > 0 ? " live-dot-active" : ""}`} />
       <span className="num">{count}</span> live
     </span>
   );
@@ -947,7 +944,7 @@ function Metric({
   value: number;
   decimals?: number;
   delta?: Delta | null;
-  accent?: string; // a CSS custom property name, e.g. "--accent" -- stripes the ledger-hero column
+  accent?: string; // a CSS custom property name, e.g. "--accent" -- colours just the number, sparingly
   size?: "md" | "lg";
 }) {
   const full = value.toLocaleString("en-US", {
@@ -960,11 +957,11 @@ function Metric({
   const shown = big
     ? value.toLocaleString("en-US", { notation: "compact", maximumFractionDigits: 2 })
     : full;
-  const style = accent ? ({ "--metric-accent": `var(${accent})` } as CSSProperties) : undefined;
+  const valueStyle = accent ? ({ color: `var(${accent})` } as CSSProperties) : undefined;
   return (
-    <div className={`metric${size === "lg" ? " metric-lg" : ""}`} style={style}>
+    <div className={`metric${size === "lg" ? " metric-lg" : ""}`}>
       <div className="metric-value-row">
-        <div className="metric-value num" title={big ? full : undefined}>{shown}</div>
+        <div className="metric-value num" style={valueStyle} title={big ? full : undefined}>{shown}</div>
         {delta && <DeltaChip delta={delta} />}
       </div>
       <div className="metric-label eyebrow">{label}</div>

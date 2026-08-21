@@ -4,7 +4,7 @@
 
 export type DonutSegment = {
   value: number;
-  colorVar: string; // a CSS custom property name, e.g. "--accent"
+  color: string; // any CSS colour expression, e.g. "var(--accent)" or a color-mix()
 };
 
 export function Donut({
@@ -42,7 +42,7 @@ export function Donut({
                   key={i}
                   r={r}
                   fill="none"
-                  stroke={`var(${s.colorVar})`}
+                  stroke={s.color}
                   strokeWidth={thickness}
                   strokeDasharray={`${dash} ${circumference - dash}`}
                   strokeDashoffset={-offset}

@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Range, Stats } from "../api.js";
 
 // A small hand-drawn area+line chart. No charting library on purpose -- the
@@ -62,10 +62,6 @@ export function Chart({
   hour12: boolean;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
-  // gradient id needs to be unique per instance, not just per component --
-  // two Chart mounts sharing one id would have the second silently reuse (or
-  // clobber) the first's <linearGradient>
-  const gradientId = `chart-area-fill-${useId()}`;
   // continuous chart-x of the cursor (not snapped to a data point), or null
   const [cursorX, setCursorX] = useState<number | null>(null);
   const [narrow, setNarrow] = useState(
@@ -191,15 +187,6 @@ export function Chart({
             if (e.pointerType === "mouse") setCursorX(null);
           }}
         >
-          {/* opaque near the line, fading to nothing at the baseline -- the
-              classic trading-chart area fill, instead of a flat wash */}
-          <defs>
-            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.28" />
-              <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-
           {guides.map((g) => (
             <g key={g}>
               <line className="chart-grid" x1={PAD.left} x2={W - PAD.right} y1={yFor(g)} y2={yFor(g)} />
@@ -209,7 +196,7 @@ export function Chart({
             </g>
           ))}
 
-          <path className="chart-area" d={areaPath} fill={`url(#${gradientId})`} />
+          <path className="chart-area" d={areaPath} />
           <path className="chart-line-visitors" d={linePath("visitors")} />
           <path className="chart-line-views" d={linePath("pageviews")} />
 

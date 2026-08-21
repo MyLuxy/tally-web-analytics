@@ -1,72 +1,46 @@
-/* Tally design tokens -- a quiet, data-dense "terminal" palette: near-black
-   (or near-white) ground, hairline borders, one signal green and everything
-   else kept deliberately neutral so the numbers are always the loudest thing
-   on screen. Dark is the primary look (see index.html's inline theme script);
-   light is a full, equally-finished second coat, not an afterthought. */
+/* Tally design tokens -- neutral, desaturated slate grays throughout, one
+   single accent used sparingly (key metrics, links, active/hover states --
+   never decoration), no second or third "series" colour anywhere. A chart
+   with two lines tells them apart by weight and dash, not by a second hue;
+   a breakdown with several slices shades the one accent instead of reaching
+   for a new colour per slice. Dark is the primary look (see index.html's
+   inline theme script); light is a full second coat, not an afterthought. */
 :root {
-  --paper: #f4f5f7;
+  --paper: #f8f9fa;
   --panel: #ffffff;
-  --ink: #11151b;
-  --ink-soft: #5b6472;
-  --ink-faint: #99a1ad;
-  --line: #e5e7ec;
-  --line-strong: #d3d7de;
-  --accent: #0f9f74;
-  --accent-ink: #0b7d5b;
-  --accent-wash: #e5f4ee;
-  /* second series (visitors) */
-  --accent-2: #b8791e;
-  /* third series, used only by the traffic-sources donut (referral slice) */
-  --accent-3: #3b6fc4;
-  /* the traffic-sources "search" slice always stays this green, in both
-     themes -- in light it's just --accent restated, since --accent already
-     is that green there */
-  --accent-search: var(--accent);
-  /* negative deltas -- the one warm, alarm-toned colour in an otherwise cool
-     palette, so a drop actually reads as a drop */
-  --negative: #d1392e;
-  --negative-wash: #fbeae8;
+  --ink: #1c1f24;
+  --ink-soft: #5c6370;
+  --ink-faint: #9298a3;
+  --line: #e7e9ec;
+  --line-strong: #d6d9de;
+  --accent: #3b5bdb;
+  --accent-ink: #2c46b0;
+  --accent-wash: #eef1fc;
+  /* negative deltas -- the one other colour in the palette, and purely
+     functional (a drop has to read as a drop), never decorative */
+  --negative: #c8402f;
+  --negative-wash: #faeeec;
 
   --font-body: "IBM Plex Sans", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
-  --radius: 10px;
-  --gap: 16px;
-
-  /* the slight depth every card/pill/button shares -- a soft ambient shadow,
-     not a hard drop shadow, so surfaces read as gently raised rather than
-     cut out and pasted on */
-  --shadow-card: 0 1px 2px rgba(17, 21, 27, 0.05), 0 10px 24px -16px rgba(17, 21, 27, 0.22);
-  --shadow-card-hover: 0 2px 4px rgba(17, 21, 27, 0.06), 0 18px 34px -16px rgba(17, 21, 27, 0.28);
-  --shadow-pill: 0 1px 2px rgba(17, 21, 27, 0.05);
+  --radius: 8px;
+  --gap: 20px;
 }
 
-/* The dark take isn't a dimmed light theme -- panels sit a shade above the
-   near-black ground so the layout still reads as stacked surfaces. The
-   primary accent is a cool sky blue here rather than green -- green stayed
-   reserved for the traffic-sources "search" slice (--accent-search) so it
-   doesn't also double as "click here" on every button and hover state. */
 [data-theme="dark"] {
-  --paper: #0a0d12;
-  --panel: #11151c;
-  --ink: #e7eaf0;
-  --ink-soft: #8a92a1;
-  --ink-faint: #4d5462;
-  --line: #1c212b;
-  --line-strong: #272d3a;
-  --accent: #38bdf8;
-  --accent-ink: #7dd3fc;
-  --accent-wash: #142230;
-  --accent-2: #e0a53f;
-  --accent-3: #5b93e0;
-  --accent-search: #22c58e;
-  --negative: #f0574a;
-  --negative-wash: #2a1917;
-  /* on dark, the readable cue is a faint top highlight (a beveled sheen) plus
-     a real drop shadow -- a shadow alone barely shows up against near-black */
-  --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.045), 0 10px 24px -12px rgba(0, 0, 0, 0.6);
-  --shadow-card-hover: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 18px 36px -12px rgba(0, 0, 0, 0.7);
-  --shadow-pill: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --paper: #101114;
+  --panel: #17181c;
+  --ink: #e8e9ec;
+  --ink-soft: #9498a3;
+  --ink-faint: #5b5f68;
+  --line: #232428;
+  --line-strong: #2e3035;
+  --accent: #6c8cf5;
+  --accent-ink: #93aefb;
+  --accent-wash: #1a2130;
+  --negative: #e2685a;
+  --negative-wash: #2b1917;
   color-scheme: dark;
 }
 
@@ -231,7 +205,6 @@ a {
   border: 1px solid var(--line-strong);
   border-radius: 999px;
   background: var(--panel);
-  box-shadow: var(--shadow-pill);
 }
 
 .back-link {
@@ -246,15 +219,12 @@ a {
   font-size: 14px;
   font-weight: 500;
   text-decoration: none;
-  box-shadow: var(--shadow-pill);
-  transition: color 0.15s, border-color 0.15s, transform 0.15s ease, box-shadow 0.15s ease;
+  transition: color 0.15s ease, border-color 0.15s ease;
 }
 
 .back-link:hover {
   color: var(--ink);
   border-color: var(--ink-faint);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-card);
 }
 
 .back-link:focus-visible {
@@ -347,47 +317,17 @@ a {
 }
 
 /* "N live" pulse in the header -- visitors active in the last 5 minutes */
+/* plain text, no dot -- a number is enough signal without borrowing the
+   "live pulsing indicator" language every AI-generated dashboard reaches for */
 .live-pill {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
   padding: 6px 12px;
   border: 1px solid var(--line-strong);
   border-radius: 999px;
   background: var(--panel);
   color: var(--ink-soft);
   font-size: 13px;
-  box-shadow: var(--shadow-pill);
-}
-
-.live-dot {
-  width: 8px;
-  height: 8px;
-  flex-shrink: 0;
-  border-radius: 999px;
-  background: var(--ink-faint);
-}
-
-/* a calm breathing fade, like a terminal cursor -- not an expanding glow ring */
-.live-dot-active {
-  background: var(--accent);
-  animation: live-pulse 2.4s ease-in-out infinite;
-}
-
-@keyframes live-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.35;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .live-dot-active {
-    animation: none;
-  }
 }
 
 @media (min-width: 641px) {
@@ -404,7 +344,6 @@ a {
   background: var(--panel);
   border: 1px solid var(--line-strong);
   border-radius: 999px;
-  box-shadow: var(--shadow-pill);
 }
 
 .segment {
@@ -415,7 +354,7 @@ a {
   padding: 5px 14px;
   border-radius: 999px;
   cursor: pointer;
-  transition: color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  transition: color 0.15s ease, background 0.15s ease;
 }
 
 .segment:hover {
@@ -442,15 +381,12 @@ a {
   border-radius: 999px;
   font-size: 13px;
   cursor: pointer;
-  box-shadow: var(--shadow-pill);
-  transition: color 0.15s ease, border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  transition: color 0.15s ease, border-color 0.15s ease;
 }
 
 .clock-toggle:hover {
   color: var(--ink);
   border-color: var(--ink-faint);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-card);
 }
 
 .clock-toggle:focus-visible {
@@ -480,15 +416,12 @@ a {
   color: var(--ink-soft);
   border-radius: 999px;
   cursor: pointer;
-  box-shadow: var(--shadow-pill);
-  transition: color 0.15s ease, border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  transition: color 0.15s ease, border-color 0.15s ease;
 }
 
 .theme-toggle:hover {
   color: var(--ink);
   border-color: var(--ink-faint);
-  transform: translateY(-1px) rotate(-8deg);
-  box-shadow: var(--shadow-card);
 }
 
 .theme-toggle:focus-visible {
@@ -496,10 +429,26 @@ a {
   outline-offset: 2px;
 }
 
-.segment[aria-pressed="true"] {
+.segment[aria-pressed="true"],
+.segment[aria-selected="true"] {
   background: var(--ink);
   color: var(--paper);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22);
+}
+
+/* the breakdown card's browsers/OS/devices/countries tab switcher -- same
+   pill styling as the range tabs, just smaller, since it lives inside a
+   card header rather than the page header */
+.breakdown-tabs {
+  display: inline-flex;
+  padding: 2px;
+  background: var(--paper);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+}
+
+.breakdown-tabs .segment {
+  font-size: 12px;
+  padding: 4px 10px;
 }
 
 .segment:focus-visible {
@@ -560,57 +509,37 @@ a {
   margin-top: 24px;
 }
 
-/* a fixed dark tile -- not a token that flips with the theme, deliberately:
-   these three stay dark in light mode too, so they read as a permanent
-   "headline" block instead of just another card. Text/chip colours below are
-   likewise fixed light-on-dark rather than the usual theme tokens, since this
-   card's own internal contrast never changes. */
 .metric {
-  background: #080a10;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--panel);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 18px 20px;
-  box-shadow: var(--shadow-card);
+  padding: 20px 22px;
 }
 
 /* ---- ledger-hero: the main dashboard's headline strip. Not three more
-   cards -- one fused, full-bleed instrument band divided by hairlines
-   instead of gaps, each column striped in the same colour as its line on
-   the chart below, Pageviews given more width since it's the number that
-   matters most. This is what actually separates it from the card grid
-   underneath, rather than just being a fourth dark card among lighter ones. */
+   cards -- one full-bleed band divided by hairlines instead of gaps, with
+   Pageviews given more width and the palette's one accent colour, since it's
+   the number that matters most. Follows the theme like everything else --
+   the separation from the card grid below comes from the layout and the
+   typography, not from a colour trick. */
 .ledger-hero {
   display: flex;
-  margin: 24px calc(-1 * var(--shell-pad-x)) 24px;
-  background: #080a10;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: var(--shadow-card);
+  margin: var(--gap) calc(-1 * var(--shell-pad-x)) var(--gap);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
 }
 
 .ledger-hero .metric {
-  position: relative;
   flex: 1;
   background: none;
   border: 0;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  border-right: 1px solid var(--line);
   border-radius: 0;
-  box-shadow: none;
-  padding: 22px var(--shell-pad-x);
+  padding: 24px var(--shell-pad-x);
 }
 
 .ledger-hero .metric:last-child {
   border-right: 0;
-}
-
-/* the accent stripe -- --metric-accent is set inline per column (see
-   App.tsx's <Metric accent=.../>), matching that series' colour on the chart */
-.ledger-hero .metric::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 3px;
-  background: var(--metric-accent, transparent);
 }
 
 .ledger-hero .metric-lg {
@@ -618,7 +547,7 @@ a {
 }
 
 .ledger-hero .metric-lg .metric-value {
-  font-size: 52px;
+  font-size: 48px;
 }
 
 @media (max-width: 700px) {
@@ -627,7 +556,7 @@ a {
   }
   .ledger-hero .metric {
     border-right: 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--line);
   }
   .ledger-hero .metric:last-child {
     border-bottom: 0;
@@ -636,7 +565,7 @@ a {
     flex: 1;
   }
   .ledger-hero .metric-lg .metric-value {
-    font-size: 40px;
+    font-size: 36px;
   }
 }
 
@@ -648,15 +577,14 @@ a {
 }
 
 .metric-value {
-  font-size: 40px;
+  font-size: 32px;
   font-weight: 600;
   line-height: 1.05;
-  color: #f3f5f9;
+  color: var(--ink);
 }
 
 .metric-label {
   margin-top: 6px;
-  color: rgba(243, 245, 249, 0.55);
 }
 
 /* period-over-period change chip next to a headline metric */
@@ -668,22 +596,22 @@ a {
   border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.09);
-  color: rgba(243, 245, 249, 0.7);
+  background: var(--line);
+  color: var(--ink-soft);
 }
 
 .metric-delta-up {
-  background: rgba(56, 189, 248, 0.16);
-  color: #7dd3fc;
+  background: var(--accent-wash);
+  color: var(--accent-ink);
 }
 
 .metric-delta-down {
-  background: rgba(240, 87, 74, 0.18);
-  color: #ff9086;
+  background: var(--negative-wash);
+  color: var(--negative);
 }
 
 .metric-delta-new {
-  color: #e0a53f;
+  color: var(--ink-soft);
 }
 
 /* ---- panels ---- */
@@ -692,28 +620,25 @@ a {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 14px 16px 15px;
-  box-shadow: var(--shadow-card);
+  padding: 18px 20px;
 }
 
-/* the whole card is the click target for cards with a fuller list behind them
-   (see StatList) -- a fixed 3D tilt + lift on hover, like a physical card
-   being picked up off the table. Always the same angle regardless of where
-   the cursor is over the card -- deliberately not cursor-tracked. */
+/* the whole card is the click target for cards with a fuller list behind
+   them (see StatList) -- the interaction itself is the point, so the hover
+   state stays quiet: the border darkens a touch and the card nudges up a
+   couple of pixels, nothing that tilts, glows or spins. */
 .panel-clickable {
   cursor: pointer;
-  transform: perspective(800px) rotateX(0deg) rotateY(0deg) translateZ(0px);
-  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease, border-color 0.15s ease;
+  transition: border-color 0.15s ease, transform 0.15s ease;
 }
 
 .panel-clickable:hover {
-  transform: perspective(800px) rotateX(4deg) rotateY(-4deg) translateZ(12px);
-  box-shadow: var(--shadow-card-hover);
   border-color: var(--line-strong);
+  transform: translateY(-1px);
 }
 
 .panel-clickable:hover .expand-icon {
-  color: var(--accent-ink);
+  color: var(--ink);
 }
 
 .panel-clickable:focus-visible {
@@ -722,13 +647,14 @@ a {
 }
 
 .panel-clickable:active {
-  transform: perspective(800px) rotateX(1.5deg) rotateY(-1.5deg) translateZ(4px);
+  transform: translateY(0);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .panel-clickable,
-  .panel-clickable:hover,
-  .panel-clickable:active {
+  .panel-clickable {
+    transition: border-color 0.15s ease;
+  }
+  .panel-clickable:hover {
     transform: none;
   }
 }
@@ -1150,20 +1076,23 @@ a {
   font-size: 11px;
 }
 
-/* fill is set inline per-instance (a <linearGradient> fading to the baseline)
-   -- nothing to set here, this class just exists as a hook if that changes */
+.chart-area {
+  fill: var(--accent-wash);
+}
 
 .chart-line-views {
   fill: none;
   stroke: var(--accent);
-  stroke-width: 2.5;
+  stroke-width: 2;
   stroke-linejoin: round;
   stroke-linecap: round;
 }
 
+/* the second series is told apart by weight and dash, not by a second colour
+   -- this palette only has the one accent */
 .chart-line-visitors {
   fill: none;
-  stroke: var(--accent-2);
+  stroke: var(--ink-faint);
   stroke-width: 1.5;
   stroke-dasharray: 3 4;
   stroke-linecap: round;
@@ -1187,7 +1116,7 @@ a {
 }
 
 .chart-dot-visitors {
-  fill: var(--accent-2);
+  fill: var(--ink-soft);
 }
 
 /* tooltip: a pill that follows the dot and sits above it (positioning -- the
@@ -1278,7 +1207,7 @@ a {
 }
 
 .dot-visitors {
-  background: var(--accent-2);
+  background: var(--ink-soft);
 }
 
 /* ---- empty + error states ---- */
@@ -1335,14 +1264,11 @@ a {
   border: 0;
   border-radius: 999px;
   cursor: pointer;
-  box-shadow: 0 2px 8px -2px color-mix(in srgb, var(--accent) 45%, transparent);
-  transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  transition: background 0.15s ease;
 }
 
 .token-submit:hover {
   background: var(--accent-ink);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 14px -3px color-mix(in srgb, var(--accent) 55%, transparent);
 }
 
 .notice {
