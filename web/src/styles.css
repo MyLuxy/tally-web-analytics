@@ -1,46 +1,70 @@
-/* Tally design tokens -- neutral, desaturated slate grays throughout, one
-   single accent used sparingly (key metrics, links, active/hover states --
-   never decoration), no second or third "series" colour anywhere. A chart
-   with two lines tells them apart by weight and dash, not by a second hue;
-   a breakdown with several slices shades the one accent instead of reaching
-   for a new colour per slice. Dark is the primary look (see index.html's
-   inline theme script); light is a full second coat, not an afterthought. */
+/* Tally design tokens. Light mode: cool off-white ground, pure white cards
+   lifted with a soft, low, wide shadow (never a hard drop shadow), bold near
+   -black type. Dark mode: deep navy/slate ground, cards a step up in two
+   tones (--panel for most cards, --panel-elevated for ones that want to
+   stand out) with a barely-there border instead of a shadow (shadows don't
+   read on near-black). Three accents run through both -- blue, cyan and
+   violet -- plus a green/red pair reserved strictly for trend direction. */
 :root {
-  --paper: #f8f9fa;
+  --paper: #f3f4f6;
   --panel: #ffffff;
-  --ink: #1c1f24;
-  --ink-soft: #5c6370;
-  --ink-faint: #9298a3;
-  --line: #e7e9ec;
-  --line-strong: #d6d9de;
-  --accent: #3b5bdb;
-  --accent-ink: #2c46b0;
-  --accent-wash: #eef1fc;
-  /* negative deltas -- the one other colour in the palette, and purely
-     functional (a drop has to read as a drop), never decorative */
-  --negative: #c8402f;
-  --negative-wash: #faeeec;
+  --panel-elevated: #ffffff;
+  --ink: #0f172a;
+  --ink-soft: #475569;
+  --ink-faint: #94a3b8;
+  --line: #e2e8f0;
+  --line-strong: #cbd5e1;
 
-  --font-body: "IBM Plex Sans", system-ui, sans-serif;
+  --accent: #2563eb;
+  --accent-ink: #1d4ed8;
+  --accent-wash: #e8f0fe;
+  --accent-2: #06b6d4;
+  --accent-2-wash: #e3f8fb;
+  --accent-3: #8b5cf6;
+  --accent-3-wash: #f1ecfe;
+
+  /* trend direction only -- never used decoratively */
+  --positive: #16a34a;
+  --positive-wash: #e9f7ee;
+  --negative: #dc2626;
+  --negative-wash: #fdeceb;
+
+  --font-body: "Inter Variable", "Inter", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
-  --radius: 8px;
+  --radius: 20px;
+  --radius-sm: 12px;
   --gap: 20px;
+
+  --shadow-card: 0 4px 20px rgba(15, 23, 42, 0.05);
+  --shadow-float: 0 20px 45px rgba(15, 23, 42, 0.12);
 }
 
 [data-theme="dark"] {
-  --paper: #101114;
-  --panel: #17181c;
-  --ink: #e8e9ec;
-  --ink-soft: #9498a3;
-  --ink-faint: #5b5f68;
-  --line: #232428;
-  --line-strong: #2e3035;
-  --accent: #6c8cf5;
-  --accent-ink: #93aefb;
-  --accent-wash: #1a2130;
-  --negative: #e2685a;
-  --negative-wash: #2b1917;
+  --paper: #0b0f19;
+  --panel: #111827;
+  --panel-elevated: #1f2937;
+  --ink: #f9fafb;
+  --ink-soft: #9aa4b2;
+  --ink-faint: #626c7a;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.14);
+
+  --accent: #3b82f6;
+  --accent-ink: #60a5fa;
+  --accent-wash: rgba(59, 130, 246, 0.14);
+  --accent-2: #22d3ee;
+  --accent-2-wash: rgba(34, 211, 238, 0.14);
+  --accent-3: #a78bfa;
+  --accent-3-wash: rgba(167, 139, 250, 0.14);
+
+  --positive: #34d399;
+  --positive-wash: rgba(52, 211, 153, 0.14);
+  --negative: #f87171;
+  --negative-wash: rgba(248, 113, 113, 0.14);
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-float: 0 24px 50px rgba(0, 0, 0, 0.5);
   color-scheme: dark;
 }
 
@@ -107,15 +131,118 @@ a {
 }
 
 /* ---- layout shell ---- */
-/* full-bleed on purpose -- no centered column. Padding scales with the
-   viewport instead of a fixed max-width, so the dashboard actually uses a
-   wide monitor instead of floating a narrow card in the middle of it.
-   --shell-pad-x/-top are shared with .topbar below, which cancels them out
-   with a negative margin so the bar itself reaches the true page edges. */
+.app-shell {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  min-height: 100vh;
+  padding: 16px;
+  background: var(--paper);
+}
+
+/* a slim, floating icon rail -- not a full-height edge-to-edge bar -- styled
+   like every other card (same radius, same soft shadow) so it reads as part
+   of the same system instead of a different kind of surface. */
+.sidebar {
+  position: sticky;
+  top: 16px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 76px;
+  min-height: calc(100vh - 32px);
+  padding: 18px 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+}
+
+.sidebar-logo {
+  height: 30px;
+  width: auto;
+  margin-bottom: 8px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sidebar-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-faint);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-item:hover {
+  background: var(--line);
+  color: var(--ink);
+}
+
+.sidebar-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.sidebar-item[aria-current="page"] {
+  background: var(--accent-wash);
+  color: var(--accent);
+}
+
+@media (max-width: 760px) {
+  .app-shell {
+    flex-direction: column;
+  }
+  .sidebar {
+    position: static;
+    width: 100%;
+    min-height: 0;
+    flex-direction: row;
+    padding: 8px;
+  }
+  .sidebar-logo {
+    margin: 0 4px 0 6px;
+  }
+  .sidebar-nav {
+    flex-direction: row;
+  }
+  .sidebar-footer {
+    flex-direction: row;
+    margin-top: 0;
+    margin-left: auto;
+  }
+}
+
+/* full-bleed on purpose within its own column -- no centered column inside
+   the content area either. Padding scales with the viewport instead of a
+   fixed max-width. --shell-pad-x/-top are shared with .topbar below, which
+   cancels them out with a negative margin so the bar reaches this column's
+   own edges. */
 .shell {
-  --shell-pad-x: clamp(20px, 3.5vw, 56px);
+  --shell-pad-x: clamp(20px, 3vw, 48px);
   --shell-pad-top: 28px;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   padding: var(--shell-pad-top) var(--shell-pad-x) 48px;
 }
 
@@ -361,15 +488,8 @@ a {
   color: var(--ink);
 }
 
-/* range tabs also appear a second time inside the expanded traffic sheet,
-   next to the full chart -- plain and always visible there, no swap needed */
-.range-sheet {
-  margin-bottom: 4px;
-}
-
-/* 12h/24h clock switch -- pill-shaped like the site controls. Lives in the
-   header (always visible now that the chart itself is a compact card, not a
-   full-width panel with room of its own for a second copy underneath). */
+/* 12h/24h clock switch -- pill-shaped like the site controls, lives in the
+   header next to the range tabs. */
 .clock-toggle {
   display: inline-flex;
   align-items: center;
@@ -396,37 +516,6 @@ a {
 
 .clock-toggle .num {
   font-size: 13px;
-}
-
-/* the clock toggle's second copy, inside the expanded traffic sheet */
-.clock-sheet {
-  margin: 12px auto 0;
-  width: fit-content;
-}
-
-/* dark/light switch */
-.theme-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: 1px solid var(--line-strong);
-  background: var(--panel);
-  color: var(--ink-soft);
-  border-radius: 999px;
-  cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease;
-}
-
-.theme-toggle:hover {
-  color: var(--ink);
-  border-color: var(--ink-faint);
-}
-
-.theme-toggle:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
 }
 
 .segment[aria-pressed="true"],
@@ -489,128 +578,85 @@ a {
   .clock-toggle {
     padding: 8px 15px;
   }
-  .theme-toggle {
-    width: 40px;
-    height: 40px;
-  }
 }
 
 .content {
   padding-top: 28px;
 }
 
-/* ---- ledger header (the headline metrics) ---- */
-/* the plain grid-of-tiles version -- used inside the expanded traffic sheet,
-   where a full-bleed band (see .ledger-hero below) wouldn't make sense */
-.ledger {
+/* ---- KPI cards (the headline metrics) ---- */
+.kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: var(--gap);
   margin-top: 24px;
 }
 
-.metric {
+.kpi-card {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 20px 22px;
+  padding: 22px 24px;
+  box-shadow: var(--shadow-card);
 }
 
-/* ---- ledger-hero: the main dashboard's headline strip. Not three more
-   cards -- one full-bleed band divided by hairlines instead of gaps, with
-   Pageviews given more width and the palette's one accent colour, since it's
-   the number that matters most. Follows the theme like everything else --
-   the separation from the card grid below comes from the layout and the
-   typography, not from a colour trick. */
-.ledger-hero {
+.kpi-card-head {
   display: flex;
-  margin: var(--gap) calc(-1 * var(--shell-pad-x)) var(--gap);
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
+  align-items: center;
+  justify-content: space-between;
 }
 
-.ledger-hero .metric {
-  flex: 1;
-  background: none;
-  border: 0;
-  border-right: 1px solid var(--line);
-  border-radius: 0;
-  padding: 24px var(--shell-pad-x);
+/* each KPI gets its own colour, a circle at a time -- not spread across
+   lines/borders/backgrounds elsewhere, just this one accent touch per card */
+.kpi-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--kpi-icon) 16%, transparent);
+  color: var(--kpi-icon);
 }
 
-.ledger-hero .metric:last-child {
-  border-right: 0;
-}
-
-.ledger-hero .metric-lg {
-  flex: 1.6;
-}
-
-.ledger-hero .metric-lg .metric-value {
-  font-size: 48px;
-}
-
-@media (max-width: 700px) {
-  .ledger-hero {
-    flex-direction: column;
-  }
-  .ledger-hero .metric {
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
-  }
-  .ledger-hero .metric:last-child {
-    border-bottom: 0;
-  }
-  .ledger-hero .metric-lg {
-    flex: 1;
-  }
-  .ledger-hero .metric-lg .metric-value {
-    font-size: 36px;
-  }
-}
-
-.metric-value-row {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.metric-value {
+.kpi-value {
+  margin-top: 18px;
   font-size: 32px;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.05;
   color: var(--ink);
+  letter-spacing: -0.01em;
 }
 
-.metric-label {
+.kpi-label {
   margin-top: 6px;
 }
 
-/* period-over-period change chip next to a headline metric */
-.metric-delta {
+/* period-over-period change badge -- green/red is purely functional here
+   (a drop has to read as a drop), the only place the palette uses either */
+.kpi-delta {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  padding: 2px 7px;
+  padding: 3px 8px;
   border-radius: 999px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   background: var(--line);
   color: var(--ink-soft);
 }
 
-.metric-delta-up {
-  background: var(--accent-wash);
-  color: var(--accent-ink);
+.kpi-delta-up {
+  background: var(--positive-wash);
+  color: var(--positive);
 }
 
-.metric-delta-down {
+.kpi-delta-down {
   background: var(--negative-wash);
   color: var(--negative);
 }
 
-.metric-delta-new {
+.kpi-delta-new {
   color: var(--ink-soft);
 }
 
@@ -620,7 +666,8 @@ a {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 18px 20px;
+  padding: 22px 24px;
+  box-shadow: var(--shadow-card);
 }
 
 /* the whole card is the click target for cards with a fuller list behind
@@ -629,12 +676,13 @@ a {
    couple of pixels, nothing that tilts, glows or spins. */
 .panel-clickable {
   cursor: pointer;
-  transition: border-color 0.15s ease, transform 0.15s ease;
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .panel-clickable:hover {
   border-color: var(--line-strong);
-  transform: translateY(-1px);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-float);
 }
 
 .panel-clickable:hover .expand-icon {
@@ -969,30 +1017,6 @@ a {
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
 }
 
-/* ---- compact traffic card (sparkline preview; the full <Chart> only
-   renders in the expanded sheet) ---- */
-.chart-card .panel-head {
-  margin-bottom: 10px;
-}
-
-.sparkline {
-  display: block;
-  width: 100%;
-  height: 56px;
-}
-
-.sparkline-area {
-  fill: color-mix(in srgb, var(--accent) 16%, transparent);
-}
-
-.sparkline-line {
-  fill: none;
-  stroke: var(--accent);
-  stroke-width: 2;
-  stroke-linejoin: round;
-  stroke-linecap: round;
-}
-
 /* ---- chart ---- */
 .chart {
   position: relative;
@@ -1076,23 +1100,19 @@ a {
   font-size: 11px;
 }
 
-.chart-area {
-  fill: var(--accent-wash);
-}
+/* fill is set inline per-instance (a <linearGradient>, see Chart.tsx) */
 
 .chart-line-views {
   fill: none;
   stroke: var(--accent);
-  stroke-width: 2;
+  stroke-width: 2.5;
   stroke-linejoin: round;
   stroke-linecap: round;
 }
 
-/* the second series is told apart by weight and dash, not by a second colour
-   -- this palette only has the one accent */
 .chart-line-visitors {
   fill: none;
-  stroke: var(--ink-faint);
+  stroke: var(--accent-2);
   stroke-width: 1.5;
   stroke-dasharray: 3 4;
   stroke-linecap: round;
@@ -1116,7 +1136,7 @@ a {
 }
 
 .chart-dot-visitors {
-  fill: var(--ink-soft);
+  fill: var(--accent-2);
 }
 
 /* tooltip: a pill that follows the dot and sits above it (positioning -- the
@@ -1207,7 +1227,7 @@ a {
 }
 
 .dot-visitors {
-  background: var(--ink-soft);
+  background: var(--accent-2);
 }
 
 /* ---- empty + error states ---- */
@@ -1285,14 +1305,11 @@ a {
 }
 
 @media (max-width: 680px) {
-  .ledger {
+  .kpi-grid {
     grid-template-columns: 1fr;
   }
-  .grid-two {
-    grid-template-columns: 1fr;
-  }
-  .metric-value {
-    font-size: 32px;
+  .kpi-value {
+    font-size: 28px;
   }
 }
 

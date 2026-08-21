@@ -5,17 +5,15 @@ import type { BreakdownMetric, Range, Site, Stats } from "./api.js";
 import { fetchBreakdown, fetchLive, fetchSites, fetchStats, getToken, setToken, Unauthorized } from "./api.js";
 import { TallyMarks } from "./components/TallyMarks.js";
 import { Chart } from "./components/Chart.js";
-import { Sparkline } from "./components/Sparkline.js";
-import { ExportCsvButton, ExpandIcon, Rows, StatList } from "./components/StatList.js";
+import { ExportCsvButton, Rows, StatList } from "./components/StatList.js";
 import { BreakdownCard } from "./components/BreakdownCard.js";
 import { TrafficSourcesCard, TrafficSourcesContent } from "./components/TrafficSources.js";
-import { ClickableCard } from "./components/ClickableCard.js";
 import type { Row } from "./components/StatList.js";
 
 // A card that expands into a full-screen sheet -- the breakdown panels
 // (pages, referrers, ...) plus the two hand-built ones, traffic and traffic
 // sources, that don't come from a single fetchBreakdown call.
-type ExpandTarget = BreakdownMetric | "traffic" | "trafficSources";
+type ExpandTarget = BreakdownMetric | "trafficSources";
 
 // Runs `fn` inside the View Transitions API when the browser has it (every
 // Chromium browser, Safari 18+; not yet Firefox) so the clicked card visibly
@@ -234,11 +232,11 @@ export function App() {
     };
   }, [site, locked]);
 
-  // Fetches the full (uncapped) list for whichever card expanded -- "traffic"
-  // needs no fetch (the sheet just renders the same `data` bigger); closing a
-  // sheet (expanded -> null) needs no fetch either.
+  // Fetches the full (uncapped) list for whichever card expanded -- closing a
+  // sheet (expanded -> null) needs no fetch, and neither does trafficSources
+  // (see the next effect, which fetches its own bonus "all referrers" list).
   useEffect(() => {
-    if (!site || expanded === null || expanded === "traffic" || expanded === "trafficSources") return;
+    if (!site || expanded === null || expanded === "trafficSources") return;
     const metric = expanded;
     const ctrl = new AbortController();
     setBreakdownRows(null);
@@ -297,24 +295,62 @@ export function App() {
   const prevPerVisitor = prev && prev.visitors > 0 ? prev.pageviews / prev.visitors : 0;
 
   return (
-    <div className="shell">
+    <div className="app-shell">
+      <aside className="sidebar">
+        <img src={`${import.meta.env.BASE_URL}brand.png`} className="sidebar-logo" alt="Tally" />
+
+        <nav className="sidebar-nav" aria-label="Primary">
+          <span className="sidebar-item" aria-current="page" title="Dashboard">
+            <HomeIcon />
+          </span>
+          <button
+            type="button"
+            className="sidebar-item"
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Settings"
+            aria-haspopup="dialog"
+            title="Settings"
+          >
+            <GearIcon />
+          </button>
+        </nav>
+
+        <div className="sidebar-footer">
+          {BACK_LINK_URL && (
+            <a className="sidebar-item" href={BACK_LINK_URL} title={BACK_LINK_LABEL} aria-label={BACK_LINK_LABEL}>
+              <BackIcon />
+            </a>
+          )}
+          <a
+            className="sidebar-item"
+            href="https://github.com/MyLuxy/tally-web-analytics"
+            target="_blank"
+            rel="noreferrer"
+            title="GitHub"
+            aria-label="GitHub"
+          >
+            <GithubIcon />
+          </a>
+          <button
+            type="button"
+            className="sidebar-item"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+            title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+          >
+            {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+          </button>
+        </div>
+      </aside>
+
+      <div className="shell">
       <header className="topbar">
         <div className="brand">
-          <img src={`${import.meta.env.BASE_URL}brand.png`} className="brand-logo" alt="Tally" />
-          <div>
-            <div className="brand-name" translate="no">Tally</div>
-            <div className="brand-sub">self-hosted analytics</div>
-          </div>
+          <div className="brand-name" translate="no">Dashboard</div>
+          <div className="brand-sub">self-hosted analytics</div>
         </div>
 
         <div className="controls">
-          {BACK_LINK_URL && (
-            <a className="back-link" href={BACK_LINK_URL}>
-              <BackIcon />
-              {BACK_LINK_LABEL}
-            </a>
-          )}
-
           {sites.length > 1 ? (
             <SitePicker sites={sites} site={site ?? ""} onChange={setSite} />
           ) : (
@@ -337,16 +373,6 @@ export function App() {
           {/* on phones the clock toggle rides up here, since the range tabs move
               under the chart down there */}
           <ClockToggle hour12={hour12} setHour12={setHour12} className="clock-header" />
-
-          <button
-            className="theme-toggle"
-            onClick={() => setSettingsOpen(true)}
-            aria-label="Settings"
-            aria-haspopup="dialog"
-            title="Settings"
-          >
-            <GearIcon />
-          </button>
         </div>
       </header>
 
@@ -373,25 +399,24 @@ export function App() {
 
       {!locked && !error && (hasData || loading) && (
         <main className={`content ${data ? "fade-in" : ""}`} aria-busy={loading}>
-          {/* one full-bleed strip, not three more cards -- divided by hairlines
-              instead of gaps. Pageviews gets the accent colour and the larger
-              type size, since it's the one number that matters most; the
-              other two stay plain -- the palette's one accent stays reserved
-              for the metric that earns it, not spread across all three. */}
-          <section className="ledger ledger-hero">
-            <Metric
+          <section className="kpi-grid">
+            <KpiCard
+              icon={<EyeIcon />}
+              iconVar="--accent"
               label="Pageviews"
               value={totals?.pageviews ?? 0}
               delta={prev && deltaOf(totals?.pageviews ?? 0, prev.pageviews)}
-              accent="--accent"
-              size="lg"
             />
-            <Metric
+            <KpiCard
+              icon={<UsersIcon />}
+              iconVar="--accent-2"
               label="Unique visitors"
               value={totals?.visitors ?? 0}
               delta={prev && deltaOf(totals?.visitors ?? 0, prev.visitors)}
             />
-            <Metric
+            <KpiCard
+              icon={<RatioIcon />}
+              iconVar="--accent-3"
               label="Views / visitor"
               value={perVisitor}
               decimals={1}
@@ -399,27 +424,26 @@ export function App() {
             />
           </section>
 
-          {/* every card below is compact and clickable -- one dense grid instead
-              of a full-width hero chart plus two differently-sized grids, so the
-              whole dashboard fits together as a single bento of tiles */}
-          <div className="card-grid">
-            <ClickableCard
-              cardKey="traffic"
-              expanded={expanded === "traffic"}
-              onExpand={() => openCard("traffic")}
-              ariaLabel="Traffic: view full chart"
-              className="chart-card card-span-2"
-            >
-              <div className="panel-head">
-                <h2 className="panel-title">Traffic</h2>
-                <div className="panel-head-actions">
-                  <span className="eyebrow">{rangeEyebrow(range)}</span>
-                  <ExpandIcon />
+          {/* the main chart is always fully rendered here, not tucked behind a
+              click-to-expand preview -- it's the centrepiece of the page */}
+          <section className="panel chart-panel">
+            <div className="panel-head">
+              <h2 className="panel-title">Traffic</h2>
+              <span className="eyebrow">{rangeEyebrow(range)}</span>
+            </div>
+            <div className="chart-wrap">
+              {data && <Chart series={data.series} range={range} hour12={hour12} />}
+              {loading && (
+                <div className="chart-loading" role="status" aria-label="Loading">
+                  <span className="spinner" />
                 </div>
-              </div>
-              {data && <Sparkline series={data.series} />}
-            </ClickableCard>
+              )}
+            </div>
+          </section>
 
+          {/* every card below is compact and clickable -- one dense grid so
+              the breakdowns fit together as a single bento of tiles */}
+          <div className="card-grid">
             {data && (
               <TrafficSourcesCard
                 sources={data.trafficSources}
@@ -563,51 +587,18 @@ export function App() {
       {expanded && (
         <ExpandSheet
           cardKey={expanded}
-          title={
-            expanded === "traffic" ? "Traffic" : expanded === "trafficSources" ? "Traffic sources" : VIEW_ALL_CONFIG[expanded].title
-          }
-          eyebrow={expanded === "traffic" || expanded === "trafficSources" ? rangeEyebrow(range) : undefined}
+          title={expanded === "trafficSources" ? "Traffic sources" : VIEW_ALL_CONFIG[expanded].title}
+          eyebrow={expanded === "trafficSources" ? rangeEyebrow(range) : undefined}
           onClose={closeCard}
           actions={
-            expanded === "traffic" ? undefined : expanded === "trafficSources" ? (
+            expanded === "trafficSources" ? (
               sourceRows && sourceRows.length > 0 ? <ExportCsvButton title="Traffic sources" rows={sourceRows} /> : undefined
             ) : breakdownRows && breakdownRows.length > 0 ? (
               <ExportCsvButton title={VIEW_ALL_CONFIG[expanded].title} rows={breakdownRows} />
             ) : undefined
           }
         >
-          {expanded === "traffic" ? (
-            <div className="sheet-traffic">
-              <section className="ledger">
-                <Metric
-                  label="Pageviews"
-                  value={totals?.pageviews ?? 0}
-                  delta={prev && deltaOf(totals?.pageviews ?? 0, prev.pageviews)}
-                />
-                <Metric
-                  label="Unique visitors"
-                  value={totals?.visitors ?? 0}
-                  delta={prev && deltaOf(totals?.visitors ?? 0, prev.visitors)}
-                />
-                <Metric
-                  label="Views / visitor"
-                  value={perVisitor}
-                  decimals={1}
-                  delta={prev && deltaOf(perVisitor, prevPerVisitor)}
-                />
-              </section>
-              <div className="chart-wrap">
-                {data && <Chart series={data.series} range={range} hour12={hour12} />}
-                {loading && (
-                  <div className="chart-loading" role="status" aria-label="Loading">
-                    <span className="spinner" />
-                  </div>
-                )}
-              </div>
-              <RangeTabs range={range} setRange={setRange} className="range-sheet" />
-              <ClockToggle hour12={hour12} setHour12={setHour12} className="clock-sheet" />
-            </div>
-          ) : expanded === "trafficSources" ? (
+          {expanded === "trafficSources" ? (
             <div className="sheet-traffic-sources">
               {data && <TrafficSourcesContent sources={data.trafficSources} donutSize={200} />}
               <h3 className="sheet-subhead">All referrers</h3>
@@ -636,7 +627,18 @@ export function App() {
           )}
         </ExpandSheet>
       )}
+      </div>
     </div>
+  );
+}
+
+function HomeIcon() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 11.5 12 4l9 7.5" />
+      <path d="M5.5 10v9a1 1 0 0 0 1 1H9a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h2.5a1 1 0 0 0 1-1v-9" />
+    </svg>
   );
 }
 
@@ -906,7 +908,7 @@ function DeltaChip({ delta }: { delta: Delta }) {
         ? "flat"
         : `${delta.pct > 0 ? "+" : ""}${Math.round(delta.pct)}%`;
   return (
-    <span className={`metric-delta metric-delta-${delta.kind} num`} title="vs. previous period">
+    <span className={`kpi-delta kpi-delta-${delta.kind} num`} title="vs. previous period">
       {delta.kind === "up" && <DeltaUpIcon />}
       {delta.kind === "down" && <DeltaDownIcon />}
       {label}
@@ -932,20 +934,20 @@ function DeltaDownIcon() {
   );
 }
 
-function Metric({
+function KpiCard({
+  icon,
+  iconVar,
   label,
   value,
   decimals = 0,
   delta,
-  accent,
-  size = "md",
 }: {
+  icon: ReactNode;
+  iconVar: string; // a CSS custom property name, e.g. "--accent" -- the icon circle's colour
   label: string;
   value: number;
   decimals?: number;
   delta?: Delta | null;
-  accent?: string; // a CSS custom property name, e.g. "--accent" -- colours just the number, sparingly
-  size?: "md" | "lg";
 }) {
   const full = value.toLocaleString("en-US", {
     minimumFractionDigits: decimals,
@@ -957,15 +959,46 @@ function Metric({
   const shown = big
     ? value.toLocaleString("en-US", { notation: "compact", maximumFractionDigits: 2 })
     : full;
-  const valueStyle = accent ? ({ color: `var(${accent})` } as CSSProperties) : undefined;
+  const iconStyle = { "--kpi-icon": `var(${iconVar})` } as CSSProperties;
   return (
-    <div className={`metric${size === "lg" ? " metric-lg" : ""}`}>
-      <div className="metric-value-row">
-        <div className="metric-value num" style={valueStyle} title={big ? full : undefined}>{shown}</div>
+    <div className="kpi-card">
+      <div className="kpi-card-head">
+        <span className="kpi-icon" style={iconStyle}>{icon}</span>
         {delta && <DeltaChip delta={delta} />}
       </div>
-      <div className="metric-label eyebrow">{label}</div>
+      <div className="kpi-value num" title={big ? full : undefined}>{shown}</div>
+      <div className="kpi-label eyebrow">{label}</div>
     </div>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7-10.5-7-10.5-7Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function UsersIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
+}
+
+function RatioIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 19V10M12 19V5M20 19v-6" />
+    </svg>
   );
 }
 

@@ -6,14 +6,13 @@ import { ExpandIcon } from "./StatList.js";
 
 // direct/search/social/referral, in the fixed order they should always list
 // in -- not sorted by size, so the legend doesn't reshuffle every time the
-// range changes. One accent, shaded from full strength down to neutral,
-// rather than a different hue per category -- Direct (no signal at all)
-// stays plain grey.
+// range changes. Each category gets its own accent from the palette; Direct
+// (no signal at all) stays plain grey.
 const CATEGORIES: { key: keyof Stats["trafficSources"]; label: string; color: string }[] = [
   { key: "direct", label: "Direct", color: "var(--ink-faint)" },
   { key: "search", label: "Search", color: "var(--accent)" },
-  { key: "social", label: "Social", color: "color-mix(in srgb, var(--accent) 65%, var(--ink-faint))" },
-  { key: "referral", label: "Referral", color: "color-mix(in srgb, var(--accent) 35%, var(--ink-faint))" },
+  { key: "social", label: "Social", color: "var(--accent-2)" },
+  { key: "referral", label: "Referral", color: "var(--accent-3)" },
 ];
 
 // The donut + legend body, shared between the compact card below and the
