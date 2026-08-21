@@ -551,6 +551,8 @@ a {
 }
 
 /* ---- ledger header (the headline metrics) ---- */
+/* the plain grid-of-tiles version -- used inside the expanded traffic sheet,
+   where a full-bleed band (see .ledger-hero below) wouldn't make sense */
 .ledger {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -569,6 +571,73 @@ a {
   border-radius: var(--radius);
   padding: 18px 20px;
   box-shadow: var(--shadow-card);
+}
+
+/* ---- ledger-hero: the main dashboard's headline strip. Not three more
+   cards -- one fused, full-bleed instrument band divided by hairlines
+   instead of gaps, each column striped in the same colour as its line on
+   the chart below, Pageviews given more width since it's the number that
+   matters most. This is what actually separates it from the card grid
+   underneath, rather than just being a fourth dark card among lighter ones. */
+.ledger-hero {
+  display: flex;
+  margin: 24px calc(-1 * var(--shell-pad-x)) 24px;
+  background: #080a10;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: var(--shadow-card);
+}
+
+.ledger-hero .metric {
+  position: relative;
+  flex: 1;
+  background: none;
+  border: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0;
+  box-shadow: none;
+  padding: 22px var(--shell-pad-x);
+}
+
+.ledger-hero .metric:last-child {
+  border-right: 0;
+}
+
+/* the accent stripe -- --metric-accent is set inline per column (see
+   App.tsx's <Metric accent=.../>), matching that series' colour on the chart */
+.ledger-hero .metric::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--metric-accent, transparent);
+}
+
+.ledger-hero .metric-lg {
+  flex: 1.6;
+}
+
+.ledger-hero .metric-lg .metric-value {
+  font-size: 52px;
+}
+
+@media (max-width: 700px) {
+  .ledger-hero {
+    flex-direction: column;
+  }
+  .ledger-hero .metric {
+    border-right: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .ledger-hero .metric:last-child {
+    border-bottom: 0;
+  }
+  .ledger-hero .metric-lg {
+    flex: 1;
+  }
+  .ledger-hero .metric-lg .metric-value {
+    font-size: 40px;
+  }
 }
 
 .metric-value-row {

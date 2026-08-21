@@ -372,22 +372,30 @@ export function App() {
 
       {!locked && !error && (hasData || loading) && (
         <main className={`content ${data ? "fade-in" : ""}`} aria-busy={loading}>
-          <section className="ledger">
+          {/* a ticker strip, not three more cards -- full-bleed, dark year-round,
+              divided by hairlines instead of gaps, each column striped in the
+              same colour as its line on the chart below. Deliberately reads as
+              one fused instrument panel, not another tile in the bento grid. */}
+          <section className="ledger ledger-hero">
             <Metric
               label="Pageviews"
               value={totals?.pageviews ?? 0}
               delta={prev && deltaOf(totals?.pageviews ?? 0, prev.pageviews)}
+              accent="--accent"
+              size="lg"
             />
             <Metric
               label="Unique visitors"
               value={totals?.visitors ?? 0}
               delta={prev && deltaOf(totals?.visitors ?? 0, prev.visitors)}
+              accent="--accent-2"
             />
             <Metric
               label="Views / visitor"
               value={perVisitor}
               decimals={1}
               delta={prev && deltaOf(perVisitor, prevPerVisitor)}
+              accent="--accent-3"
             />
           </section>
 
@@ -932,11 +940,15 @@ function Metric({
   value,
   decimals = 0,
   delta,
+  accent,
+  size = "md",
 }: {
   label: string;
   value: number;
   decimals?: number;
   delta?: Delta | null;
+  accent?: string; // a CSS custom property name, e.g. "--accent" -- stripes the ledger-hero column
+  size?: "md" | "lg";
 }) {
   const full = value.toLocaleString("en-US", {
     minimumFractionDigits: decimals,
@@ -948,8 +960,9 @@ function Metric({
   const shown = big
     ? value.toLocaleString("en-US", { notation: "compact", maximumFractionDigits: 2 })
     : full;
+  const style = accent ? ({ "--metric-accent": `var(${accent})` } as CSSProperties) : undefined;
   return (
-    <div className="metric">
+    <div className={`metric${size === "lg" ? " metric-lg" : ""}`} style={style}>
       <div className="metric-value-row">
         <div className="metric-value num" title={big ? full : undefined}>{shown}</div>
         {delta && <DeltaChip delta={delta} />}
