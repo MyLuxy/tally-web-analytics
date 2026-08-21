@@ -61,6 +61,11 @@ const VIEW_ALL_CONFIG: Record<
   { title: string; empty: string; toRow: (row: { key: string; value: number }) => Row }
 > = {
   pages: { title: "Top pages", empty: "No pages recorded.", toRow: (r) => ({ label: r.key, value: r.value }) },
+  entryPages: {
+    title: "Entry pages",
+    empty: "No entry pages recorded.",
+    toRow: (r) => ({ label: r.key, value: r.value }),
+  },
   referrers: {
     title: "Referrers",
     empty: "All traffic came in direct.",
@@ -353,6 +358,14 @@ export function App() {
               empty="No pages recorded."
               rows={(data?.topPages ?? []).map((p) => ({ label: p.path, value: p.views }))}
               onViewAll={() => setViewAllMetric("pages")}
+            />
+            <StatList
+              title="Entry pages"
+              unit="visitors"
+              info="The first page each visitor landed on -- where your traffic actually enters the site, as opposed to every page it later views."
+              empty="No entry pages recorded."
+              rows={(data?.entryPages ?? []).map((p) => ({ label: p.path, value: p.views }))}
+              onViewAll={() => setViewAllMetric("entryPages")}
             />
             <StatList
               title="Referrers"

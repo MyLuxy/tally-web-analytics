@@ -10,6 +10,7 @@ export type Stats = {
   totals: { pageviews: number; visitors: number };
   previousTotals: { pageviews: number; visitors: number } | null;
   topPages: { path: string; views: number }[];
+  entryPages: { path: string; views: number }[];
   topReferrers: { source: string; views: number }[];
   browsers: { name: string; views: number }[];
   systems: { name: string; views: number }[];
@@ -25,6 +26,7 @@ export type Site = { site: string; events: number; lastSeen: number };
 // "View all" button with the same grouping, uncapped.
 export type BreakdownMetric =
   | "pages"
+  | "entryPages"
   | "referrers"
   | "browsers"
   | "systems"
