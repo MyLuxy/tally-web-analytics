@@ -9,8 +9,17 @@ const PAD = { top: 12, bottom: 24, x: 10 };
 
 // Each bar gets its own colour, cycling through the palette -- with several
 // different event names on screen at once, one flat colour made them
-// impossible to tell apart at a glance.
-const PALETTE = ["var(--accent)", "var(--accent-3)", "var(--accent-4)", "var(--accent-5)", "var(--accent-2)"];
+// impossible to tell apart at a glance. Muted on purpose (blended toward
+// --ink-faint) rather than the full-strength accents used elsewhere, and
+// amber's dropped entirely -- a "sandy yellow" bar didn't fit next to the
+// others. Server caps custom events at 10 (see stats.ts), so with more than
+// 4 distinct events the colours start repeating.
+const PALETTE = [
+  "color-mix(in srgb, var(--accent) 70%, var(--ink-faint))",
+  "color-mix(in srgb, var(--accent-2) 70%, var(--ink-faint))",
+  "color-mix(in srgb, var(--accent-3) 70%, var(--ink-faint))",
+  "color-mix(in srgb, var(--accent-5) 70%, var(--ink-faint))",
+];
 
 export function BarChart({ bars }: { bars: Bar[] }) {
   const max = Math.max(1, ...bars.map((b) => b.value));
