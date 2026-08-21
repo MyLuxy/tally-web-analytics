@@ -63,8 +63,11 @@ export function StatList({
 
       <Rows rows={rows.slice(0, PREVIEW_ROWS)} empty={empty} />
 
+      {/* rows is only ever a top-10 slice from the server, so it can't say
+          exactly how many more there are -- the full count only comes back
+          once the modal actually fetches the uncapped breakdown */}
       {clickable && rows.length > PREVIEW_ROWS && (
-        <div className="panel-more">+{rows.length - PREVIEW_ROWS} more</div>
+        <div className="panel-more">View full list</div>
       )}
     </section>
   );
