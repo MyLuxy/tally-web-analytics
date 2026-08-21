@@ -126,6 +126,22 @@ export async function statsRoutes(app: FastifyInstance) {
       )
       .get(site, since) as { pageviews: number; visitors: number };
 
+    // Same-length window immediately before this one, so the dashboard can show
+    // "+12% vs last period" next to the headline metrics. Doesn't apply to
+    // "all" -- there's no period before all of recorded history.
+    let previousTotals: { pageviews: number; visitors: number } | null = null;
+    if (range !== "all") {
+      const windowMs = nowBucket - since + bucketMs;
+      const prevSince = since - windowMs;
+      previousTotals = db
+        .prepare(
+          `SELECT COUNT(*) FILTER (WHERE name = 'pageview') AS pageviews,
+                  COUNT(DISTINCT visitor_hash) AS visitors
+           FROM events WHERE site_id = ? AND ts >= ? AND ts < ?`,
+        )
+        .get(site, prevSince, since) as { pageviews: number; visitors: number };
+    }
+
     // Everything from here down describes the traffic, so it's pageviews only.
     const topPages = db
       .prepare(
@@ -213,6 +229,7 @@ export async function statsRoutes(app: FastifyInstance) {
       range,
       since,
       totals,
+      previousTotals,
       topPages,
       topReferrers,
       browsers,
