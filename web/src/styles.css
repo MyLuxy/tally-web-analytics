@@ -609,6 +609,36 @@ a {
   font-size: 16px;
 }
 
+.panel-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* small icon-only button, shared by the panel header and the "View all" modal */
+.export-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-faint);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.export-btn:hover {
+  color: var(--accent-ink);
+  background: var(--accent-wash);
+}
+
+.export-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* info dot next to a section title + the blurb it pops */
 .info {
   position: relative;
@@ -1237,6 +1267,13 @@ a {
 .modal-title {
   font-size: 18px;
   margin: 0;
+}
+
+.modal-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .modal-close {

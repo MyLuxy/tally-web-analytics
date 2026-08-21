@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { TallyMarks } from "./TallyMarks.js";
+import { downloadCsv, rowsToCsv } from "../lib/csv.js";
 
 // Ledger-style breakdown: a label, a count, and a faint bar behind each row
 // scaled to the leader. Used for pages, referrers and browsers alike.
@@ -30,8 +31,11 @@ export function StatList({
           {title}
           {info && <InfoDot text={info} />}
         </h2>
-        {/* the unit ("views") is a fixed label -- keep browser auto-translate off it */}
-        <span className="eyebrow" translate="no">{unit}</span>
+        <div className="panel-head-actions">
+          {rows.length > 0 && <ExportCsvButton title={title} rows={rows} />}
+          {/* the unit ("views") is a fixed label -- keep browser auto-translate off it */}
+          <span className="eyebrow" translate="no">{unit}</span>
+        </div>
       </div>
 
       <Rows rows={rows} empty={empty} />
@@ -72,6 +76,40 @@ export function Rows({ rows, empty }: { rows: Row[]; empty: string }) {
         );
       })}
     </ul>
+  );
+}
+
+// Downloads whatever rows are currently shown (the panel's top-10 slice, or
+// the full list when used inside the "View all" modal) as a two-column CSV.
+export function ExportCsvButton({ title, rows }: { title: string; rows: Row[] }) {
+  return (
+    <button
+      type="button"
+      className="export-btn"
+      title={`Export "${title}" as CSV`}
+      aria-label={`Export ${title} as CSV`}
+      onClick={() => {
+        const csvRows = rows.map((r) => ({
+          label: r.title ?? (typeof r.label === "string" ? r.label : String(r.value)),
+          value: r.value,
+        }));
+        const csv = rowsToCsv([title, "count"], csvRows);
+        const stamp = new Date().toISOString().slice(0, 10);
+        const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+        downloadCsv(`tally-${slug}-${stamp}.csv`, csv);
+      }}
+    >
+      <DownloadIcon />
+    </button>
+  );
+}
+
+function DownloadIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 3v12m0 0-4-4m4 4 4-4M4 19h16" />
+    </svg>
   );
 }
 

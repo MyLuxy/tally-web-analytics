@@ -4,7 +4,7 @@ import type { BreakdownMetric, Range, Site, Stats } from "./api.js";
 import { fetchBreakdown, fetchLive, fetchSites, fetchStats, getToken, setToken, Unauthorized } from "./api.js";
 import { TallyMarks } from "./components/TallyMarks.js";
 import { Chart } from "./components/Chart.js";
-import { Rows, StatList } from "./components/StatList.js";
+import { ExportCsvButton, Rows, StatList } from "./components/StatList.js";
 import { TrafficSources } from "./components/TrafficSources.js";
 import type { Row } from "./components/StatList.js";
 
@@ -476,7 +476,15 @@ export function App() {
       )}
 
       {viewAllMetric && (
-        <Modal title={VIEW_ALL_CONFIG[viewAllMetric].title} onClose={() => setViewAllMetric(null)}>
+        <Modal
+          title={VIEW_ALL_CONFIG[viewAllMetric].title}
+          onClose={() => setViewAllMetric(null)}
+          actions={
+            viewAllRows && viewAllRows.length > 0 ? (
+              <ExportCsvButton title={VIEW_ALL_CONFIG[viewAllMetric].title} rows={viewAllRows} />
+            ) : undefined
+          }
+        >
           {viewAllError ? (
             <div className="notice notice-error">
               <strong>Couldn't load the full list.</strong> {viewAllError}
@@ -825,10 +833,12 @@ function Modal({
   title,
   onClose,
   children,
+  actions,
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  actions?: ReactNode;
 }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -855,15 +865,18 @@ function Modal({
       >
         <div className="modal-head">
           <h2 className="modal-title">{title}</h2>
-          <button
-            type="button"
-            className="modal-close"
-            onClick={onClose}
-            aria-label="Close"
-            title="Close"
-          >
-            <CloseIcon />
-          </button>
+          <div className="modal-head-actions">
+            {actions}
+            <button
+              type="button"
+              className="modal-close"
+              onClick={onClose}
+              aria-label="Close"
+              title="Close"
+            >
+              <CloseIcon />
+            </button>
+          </div>
         </div>
         <div className="modal-body">{children}</div>
       </div>
