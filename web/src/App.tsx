@@ -5,15 +5,18 @@ import type { BreakdownMetric, Range, Site, Stats } from "./api.js";
 import { fetchBreakdown, fetchLive, fetchSites, fetchStats, getToken, setToken, Unauthorized } from "./api.js";
 import { TallyMarks } from "./components/TallyMarks.js";
 import { Chart } from "./components/Chart.js";
-import { ExportCsvButton, Rows, StatList } from "./components/StatList.js";
+import { Sparkline } from "./components/Sparkline.js";
+import { BarChart } from "./components/BarChart.js";
+import { ExportCsvButton, ExpandIcon, Rows, StatList } from "./components/StatList.js";
 import { BreakdownCard } from "./components/BreakdownCard.js";
 import { TrafficSourcesCard, TrafficSourcesContent } from "./components/TrafficSources.js";
+import { ClickableCard } from "./components/ClickableCard.js";
 import type { Row } from "./components/StatList.js";
 
 // A card that expands into a full-screen sheet -- the breakdown panels
 // (pages, referrers, ...) plus the two hand-built ones, traffic and traffic
 // sources, that don't come from a single fetchBreakdown call.
-type ExpandTarget = BreakdownMetric | "trafficSources";
+type ExpandTarget = BreakdownMetric | "traffic" | "trafficSources" | "activity";
 
 // Runs `fn` inside the View Transitions API when the browser has it (every
 // Chromium browser, Safari 18+; not yet Firefox) so the clicked card visibly
@@ -122,6 +125,9 @@ export function App() {
   const [reload, setReload] = useState(0); // bumped to retry after unlocking
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [liveCount, setLiveCount] = useState<number | null>(null);
+  // the Activity card is always the last 24h, independent of whatever range
+  // is selected for the main chart -- its own small fetch, not derived from `data`
+  const [activityData, setActivityData] = useState<Stats | null>(null);
   const [expanded, setExpanded] = useState<ExpandTarget | null>(null);
   const [breakdownRows, setBreakdownRows] = useState<Row[] | null>(null);
   const [breakdownError, setBreakdownError] = useState<string | null>(null);
@@ -232,11 +238,27 @@ export function App() {
     };
   }, [site, locked]);
 
+  // Activity card: always the last 24h, on its own schedule -- unaffected by
+  // the range picker on the main Statistics chart.
+  useEffect(() => {
+    if (!site) return;
+    const ctrl = new AbortController();
+    fetchStats(site, "24h")
+      .then((s) => {
+        if (!ctrl.signal.aborted) setActivityData(s);
+      })
+      .catch(() => {
+        // the main fetch above already surfaces a real error notice; this
+        // card just stays empty rather than showing a second one
+      });
+    return () => ctrl.abort();
+  }, [site, reload]);
+
   // Fetches the full (uncapped) list for whichever card expanded -- closing a
   // sheet (expanded -> null) needs no fetch, and neither does trafficSources
   // (see the next effect, which fetches its own bonus "all referrers" list).
   useEffect(() => {
-    if (!site || expanded === null || expanded === "trafficSources") return;
+    if (!site || expanded === null || expanded === "traffic" || expanded === "trafficSources" || expanded === "activity") return;
     const metric = expanded;
     const ctrl = new AbortController();
     setBreakdownRows(null);
@@ -368,10 +390,6 @@ export function App() {
 
           {liveCount != null && <LivePill count={liveCount} />}
 
-          <RangeTabs range={range} setRange={setRange} className="range-header" />
-
-          {/* on phones the clock toggle rides up here, since the range tabs move
-              under the chart down there */}
           <ClockToggle hour12={hour12} setHour12={setHour12} className="clock-header" />
         </div>
       </header>
@@ -424,26 +442,33 @@ export function App() {
             />
           </section>
 
-          {/* the main chart is always fully rendered here, not tucked behind a
-              click-to-expand preview -- it's the centrepiece of the page */}
-          <section className="panel chart-panel">
-            <div className="panel-head">
-              <h2 className="panel-title">Traffic</h2>
-              <span className="eyebrow">{rangeEyebrow(range)}</span>
-            </div>
-            <div className="chart-wrap">
-              {data && <Chart series={data.series} range={range} hour12={hour12} />}
-              {loading && (
-                <div className="chart-loading" role="status" aria-label="Loading">
-                  <span className="spinner" />
+          {/* Statistics (wide) + Traffic sources (narrow) -- the range picker
+              lives inside the Statistics card itself now, not the top bar,
+              since it's the one thing that actually controls this chart. */}
+          <div className="chart-row">
+            <ClickableCard
+              cardKey="traffic"
+              expanded={expanded === "traffic"}
+              onExpand={() => openCard("traffic")}
+              ariaLabel="Traffic: view full chart"
+            >
+              <div className="panel-head">
+                <h2 className="panel-title">Statistics</h2>
+                <div className="panel-head-actions">
+                  <RangeTabs range={range} setRange={setRange} className="range-header" />
+                  <ExpandIcon />
                 </div>
-              )}
-            </div>
-          </section>
+              </div>
+              <div className="chart-wrap">
+                {data && <Chart series={data.series} range={range} hour12={hour12} />}
+                {loading && (
+                  <div className="chart-loading" role="status" aria-label="Loading">
+                    <span className="spinner" />
+                  </div>
+                )}
+              </div>
+            </ClickableCard>
 
-          {/* every card below is compact and clickable -- one dense grid so
-              the breakdowns fit together as a single bento of tiles */}
-          <div className="card-grid">
             {data && (
               <TrafficSourcesCard
                 sources={data.trafficSources}
@@ -451,7 +476,61 @@ export function App() {
                 onExpand={() => openCard("trafficSources")}
               />
             )}
+          </div>
 
+          {/* Activity (always the last 24h) + Events */}
+          <div className="chart-row">
+            <ClickableCard
+              cardKey="activity"
+              expanded={expanded === "activity"}
+              onExpand={() => openCard("activity")}
+              ariaLabel="Activity: view details"
+            >
+              <div className="panel-head">
+                <h2 className="panel-title">Activity</h2>
+                <span className="eyebrow">last 24h</span>
+              </div>
+              <div className="activity-stats">
+                <div>
+                  <span className="activity-stat-value num">
+                    {(activityData?.totals.pageviews ?? 0).toLocaleString("en-US")}
+                  </span>
+                  <span className="activity-stat-label eyebrow">Pageviews</span>
+                </div>
+                <div>
+                  <span className="activity-stat-value num">
+                    {(activityData?.totals.visitors ?? 0).toLocaleString("en-US")}
+                  </span>
+                  <span className="activity-stat-label eyebrow">Visitors</span>
+                </div>
+              </div>
+              {activityData && <Sparkline series={activityData.series} />}
+            </ClickableCard>
+
+            <ClickableCard
+              cardKey="events"
+              expanded={expanded === "events"}
+              onExpand={() => openCard("events")}
+              ariaLabel="Events: view all"
+            >
+              <div className="panel-head">
+                <h2 className="panel-title">Events</h2>
+                <span className="eyebrow">{rangeEyebrow(range)}</span>
+              </div>
+              {data && data.events.length > 0 ? (
+                <BarChart bars={data.events.map((e) => ({ label: e.name, value: e.count }))} />
+              ) : (
+                <div className="panel-empty">
+                  <TallyMarks count={3} className="panel-empty-mark" />
+                  <p className="ink-soft">No custom events recorded.</p>
+                </div>
+              )}
+            </ClickableCard>
+          </div>
+
+          {/* every card below is compact and clickable -- one dense grid so
+              the breakdowns fit together as a single bento of tiles */}
+          <div className="card-grid">
             <StatList
               cardKey="pages"
               expanded={expanded === "pages"}
@@ -587,20 +666,64 @@ export function App() {
       {expanded && (
         <ExpandSheet
           cardKey={expanded}
-          title={expanded === "trafficSources" ? "Traffic sources" : VIEW_ALL_CONFIG[expanded].title}
-          eyebrow={expanded === "trafficSources" ? rangeEyebrow(range) : undefined}
+          title={
+            expanded === "traffic"
+              ? "Traffic"
+              : expanded === "trafficSources"
+                ? "Traffic sources"
+                : expanded === "activity"
+                  ? "Activity"
+                  : VIEW_ALL_CONFIG[expanded].title
+          }
+          eyebrow={
+            expanded === "traffic" ? rangeEyebrow(range) : expanded === "trafficSources" ? rangeEyebrow(range) : expanded === "activity" ? "last 24h" : undefined
+          }
           onClose={closeCard}
           actions={
-            expanded === "trafficSources" ? (
+            expanded === "traffic" || expanded === "activity" ? undefined : expanded === "trafficSources" ? (
               sourceRows && sourceRows.length > 0 ? <ExportCsvButton title="Traffic sources" rows={sourceRows} /> : undefined
             ) : breakdownRows && breakdownRows.length > 0 ? (
               <ExportCsvButton title={VIEW_ALL_CONFIG[expanded].title} rows={breakdownRows} />
             ) : undefined
           }
         >
-          {expanded === "trafficSources" ? (
+          {expanded === "traffic" ? (
+            <div className="sheet-traffic">
+              <div className="chart-wrap">
+                {data && <Chart series={data.series} range={range} hour12={hour12} />}
+                {loading && (
+                  <div className="chart-loading" role="status" aria-label="Loading">
+                    <span className="spinner" />
+                  </div>
+                )}
+              </div>
+              <RangeTabs range={range} setRange={setRange} className="range-sheet" />
+            </div>
+          ) : expanded === "activity" ? (
+            <div className="sheet-traffic">
+              <section className="kpi-grid">
+                <KpiCard
+                  icon={<EyeIcon />}
+                  iconVar="--accent"
+                  label="Pageviews"
+                  value={activityData?.totals.pageviews ?? 0}
+                  delta={activityData?.previousTotals && deltaOf(activityData.totals.pageviews, activityData.previousTotals.pageviews)}
+                />
+                <KpiCard
+                  icon={<UsersIcon />}
+                  iconVar="--accent-2"
+                  label="Unique visitors"
+                  value={activityData?.totals.visitors ?? 0}
+                  delta={activityData?.previousTotals && deltaOf(activityData.totals.visitors, activityData.previousTotals.visitors)}
+                />
+              </section>
+              <div className="chart-wrap">
+                {activityData && <Chart series={activityData.series} range="24h" hour12={hour12} />}
+              </div>
+            </div>
+          ) : expanded === "trafficSources" ? (
             <div className="sheet-traffic-sources">
-              {data && <TrafficSourcesContent sources={data.trafficSources} donutSize={200} />}
+              {data && <TrafficSourcesContent sources={data.trafficSources} radarSize={260} />}
               <h3 className="sheet-subhead">All referrers</h3>
               {sourceError ? (
                 <div className="notice notice-error">
@@ -717,7 +840,14 @@ function RangeTabs({
   className: string;
 }) {
   return (
-    <div className={`segmented ${className}`} role="group" aria-label="Time range">
+    // stopPropagation: this can sit inside a whole-card click target (the
+    // Statistics chart card) and shouldn't also trigger it
+    <div
+      className={`segmented ${className}`}
+      role="group"
+      aria-label="Time range"
+      onClick={(e) => e.stopPropagation()}
+    >
       {RANGES.map((r) => (
         <button
           key={r}
@@ -963,11 +1093,11 @@ function KpiCard({
   return (
     <div className="kpi-card">
       <div className="kpi-card-head">
+        <div className="kpi-label eyebrow">{label}</div>
         <span className="kpi-icon" style={iconStyle}>{icon}</span>
-        {delta && <DeltaChip delta={delta} />}
       </div>
       <div className="kpi-value num" title={big ? full : undefined}>{shown}</div>
-      <div className="kpi-label eyebrow">{label}</div>
+      {delta && <DeltaChip delta={delta} />}
     </div>
   );
 }

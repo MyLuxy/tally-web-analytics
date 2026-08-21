@@ -41,9 +41,9 @@
 }
 
 [data-theme="dark"] {
-  --paper: #0b0f19;
-  --panel: #111827;
-  --panel-elevated: #1f2937;
+  --paper: #050608;
+  --panel: #0c0d10;
+  --panel-elevated: #16171b;
   --ink: #f9fafb;
   --ink-soft: #9aa4b2;
   --ink-faint: #626c7a;
@@ -602,8 +602,9 @@ a {
 
 .kpi-card-head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  gap: 12px;
 }
 
 /* each KPI gets its own colour, a circle at a time -- not spread across
@@ -612,16 +613,17 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
   border-radius: 999px;
   background: color-mix(in srgb, var(--kpi-icon) 16%, transparent);
   color: var(--kpi-icon);
 }
 
 .kpi-value {
-  margin-top: 18px;
-  font-size: 32px;
+  margin-top: 16px;
+  font-size: 30px;
   font-weight: 700;
   line-height: 1.05;
   color: var(--ink);
@@ -629,7 +631,11 @@ a {
 }
 
 .kpi-label {
-  margin-top: 6px;
+  padding-top: 2px;
+}
+
+.kpi-delta {
+  margin-top: 10px;
 }
 
 /* period-over-period change badge -- green/red is purely functional here
@@ -886,6 +892,118 @@ a {
   stroke: var(--line);
 }
 
+/* ---- radar chart (traffic sources) ---- */
+.radar-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 260px;
+  margin: 0 auto;
+}
+
+.radar-ring {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.radar-axis-line {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.radar-area {
+  fill: color-mix(in srgb, var(--accent-3) 30%, transparent);
+  stroke: var(--accent-3);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.radar-dot {
+  fill: var(--accent-3);
+}
+
+.radar-label {
+  fill: var(--ink-soft);
+  font-family: var(--font-body);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+/* ---- bar chart (events) ---- */
+.bar-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.bar-rect {
+  fill: var(--accent);
+  transition: fill 0.15s ease;
+}
+
+.bar-rect:hover {
+  fill: var(--accent-ink);
+}
+
+.bar-label {
+  fill: var(--ink-faint);
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+/* ---- activity card (sparkline preview) ---- */
+.sparkline {
+  display: block;
+  width: 100%;
+  height: 64px;
+  margin-top: 14px;
+}
+
+.sparkline-area {
+  fill: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.sparkline-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.activity-stats {
+  display: flex;
+  gap: 28px;
+}
+
+.activity-stat-value {
+  display: block;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.activity-stat-label {
+  margin-top: 2px;
+}
+
+/* ---- two-up chart rows (Statistics+Traffic sources, Activity+Events) ---- */
+.chart-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--gap);
+  margin-top: var(--gap);
+}
+
+@media (max-width: 760px) {
+  .chart-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 .donut-center {
   position: absolute;
   inset: 0;
@@ -1027,6 +1145,12 @@ a {
 .chart-wrap {
   position: relative;
   min-height: 240px;
+}
+
+/* the range tabs' second copy, inside the expanded traffic sheet */
+.range-sheet {
+  margin: 16px auto 0;
+  width: fit-content;
 }
 
 /* dims the current chart and floats a spinner while the next range is fetched */

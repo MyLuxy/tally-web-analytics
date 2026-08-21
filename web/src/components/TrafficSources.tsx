@@ -1,13 +1,13 @@
 import type { Stats } from "../api.js";
-import { Donut } from "./Donut.js";
+import { RadarChart } from "./RadarChart.js";
 import { TallyMarks } from "./TallyMarks.js";
 import { ClickableCard } from "./ClickableCard.js";
 import { ExpandIcon } from "./StatList.js";
 
 // direct/search/social/referral, in the fixed order they should always list
-// in -- not sorted by size, so the legend doesn't reshuffle every time the
+// in -- not sorted by size, so the chart doesn't reshuffle every time the
 // range changes. Each category gets its own accent from the palette; Direct
-// (no signal at all) stays plain grey.
+// (no signal at all) stays plain grey in the legend below.
 const CATEGORIES: { key: keyof Stats["trafficSources"]; label: string; color: string }[] = [
   { key: "direct", label: "Direct", color: "var(--ink-faint)" },
   { key: "search", label: "Search", color: "var(--accent)" },
@@ -15,15 +15,15 @@ const CATEGORIES: { key: keyof Stats["trafficSources"]; label: string; color: st
   { key: "referral", label: "Referral", color: "var(--accent-3)" },
 ];
 
-// The donut + legend body, shared between the compact card below and the
+// The radar + legend body, shared between the compact card below and the
 // bigger rendering inside its expanded sheet (see App.tsx) -- no card chrome
 // of its own, so it can't accidentally nest a clickable card inside another.
 export function TrafficSourcesContent({
   sources,
-  donutSize = 116,
+  radarSize = 200,
 }: {
   sources: Stats["trafficSources"];
-  donutSize?: number;
+  radarSize?: number;
 }) {
   const total = CATEGORIES.reduce((sum, c) => sum + sources[c.key], 0);
 
@@ -38,12 +38,7 @@ export function TrafficSourcesContent({
 
   return (
     <div className="traffic-sources">
-      <Donut
-        size={donutSize}
-        segments={CATEGORIES.map((c) => ({ value: sources[c.key], color: c.color }))}
-        centerLabel={total.toLocaleString("en-US", { notation: total >= 100_000 ? "compact" : undefined })}
-        centerSub="views"
-      />
+      <RadarChart size={radarSize} axes={CATEGORIES.map((c) => ({ label: c.label, value: sources[c.key] }))} />
       <ul className="traffic-sources-legend">
         {CATEGORIES.map((c) => {
           const value = sources[c.key];
@@ -77,7 +72,6 @@ export function TrafficSourcesCard({
       expanded={expanded}
       onExpand={onExpand}
       ariaLabel="Traffic sources: view full breakdown"
-      className="card-span-2"
     >
       <div className="panel-head">
         <h2 className="panel-title">Traffic sources</h2>
@@ -86,7 +80,7 @@ export function TrafficSourcesCard({
           <ExpandIcon />
         </div>
       </div>
-      <TrafficSourcesContent sources={sources} />
+      <TrafficSourcesContent sources={sources} radarSize={160} />
     </ClickableCard>
   );
 }

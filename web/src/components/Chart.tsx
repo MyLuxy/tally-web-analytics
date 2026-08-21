@@ -39,6 +39,28 @@ function tickLabel(ms: number, range: Range, hour12: boolean, multiYear: boolean
 // so the time-of-day would just be misleading noise; show the date alone.
 // Everything is in the viewer's own timezone (toLocale*), so it reads correctly
 // once real traffic is flowing in.
+// A smooth curve through every point (Catmull-Rom, converted to cubic bezier
+// segments) instead of straight lines between them -- reads as a soft wave
+// rather than a jagged EKG trace. `close` is used for the area fill, which
+// needs the same curve but landing back on the baseline afterwards.
+function smoothLine(pts: { x: number; y: number }[]): string {
+  if (pts.length === 0) return "";
+  if (pts.length < 3) return pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+  let d = `M ${pts[0]!.x} ${pts[0]!.y}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] ?? pts[i]!;
+    const p1 = pts[i]!;
+    const p2 = pts[i + 1]!;
+    const p3 = pts[i + 2] ?? p2;
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+    d += ` C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${p2.x} ${p2.y}`;
+  }
+  return d;
+}
+
 function tipWhen(ms: number, range: Range, hour12: boolean): string {
   const d = new Date(ms);
   if (range === "24h") {
@@ -113,12 +135,12 @@ export function Chart({
   const baseline = PAD.top + innerH;
 
   const linePath = (key: "pageviews" | "visitors") =>
-    series.map((p, i) => `${i === 0 ? "M" : "L"} ${xFor(i)} ${yFor(p[key])}`).join(" ");
+    smoothLine(series.map((p, i) => ({ x: xFor(i), y: yFor(p[key]) })));
 
   const areaPath =
     n > 0
-      ? `M ${xFor(0)} ${baseline} ` +
-        series.map((p, i) => `L ${xFor(i)} ${yFor(p.pageviews)}`).join(" ") +
+      ? `M ${xFor(0)} ${baseline} L ` +
+        smoothLine(series.map((p, i) => ({ x: xFor(i), y: yFor(p.pageviews) }))).slice(2) +
         ` L ${xFor(n - 1)} ${baseline} Z`
       : "";
 
