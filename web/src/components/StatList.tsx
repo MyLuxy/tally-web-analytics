@@ -1,6 +1,7 @@
-import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { TallyMarks } from "./TallyMarks.js";
+import { ClickableCard } from "./ClickableCard.js";
 import { downloadCsv, rowsToCsv } from "../lib/csv.js";
 
 // Ledger-style breakdown: a label, a count, and a faint bar behind each row
@@ -14,68 +15,73 @@ export type Row = { label: ReactNode; value: number; title?: string };
 const PREVIEW_ROWS = 5;
 
 export function StatList({
+  cardKey,
+  expanded,
   title,
   unit,
   rows,
   empty,
   info,
-  onViewAll,
+  onExpand,
 }: {
+  cardKey: string;
+  expanded: boolean;
   title: string;
   unit: string;
   rows: Row[];
   empty: string;
   info?: string; // optional one-liner explaining the section
-  onViewAll?: () => void; // cards show a short preview; clicking opens the full list in a modal
+  onExpand?: () => void; // cards show a short preview; clicking opens the full list full-screen
 }) {
-  const clickable = Boolean(onViewAll && rows.length > 0);
+  const clickable = Boolean(onExpand && rows.length > 0);
 
-  return (
-    <section
-      className={`panel${clickable ? " panel-clickable" : ""}`}
-      {...(clickable
-        ? {
-            role: "button",
-            tabIndex: 0,
-            "aria-label": `${title}: view all`,
-            onClick: onViewAll,
-            onKeyDown: (e: ReactKeyboardEvent) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onViewAll?.();
-              }
-            },
-          }
-        : {})}
-    >
-      <div className="panel-head">
-        <h2 className="panel-title">
-          {title}
-          {info && <InfoDot text={info} />}
-        </h2>
-        <div className="panel-head-actions">
-          {rows.length > 0 && <ExportCsvButton title={title} rows={rows} />}
-          {/* the unit ("views") is a fixed label -- keep browser auto-translate off it */}
-          <span className="eyebrow" translate="no">{unit}</span>
-          {clickable && <ExpandIcon />}
-        </div>
+  const head = (
+    <div className="panel-head">
+      <h2 className="panel-title">
+        {title}
+        {info && <InfoDot text={info} />}
+      </h2>
+      <div className="panel-head-actions">
+        {rows.length > 0 && <ExportCsvButton title={title} rows={rows} />}
+        {/* the unit ("views") is a fixed label -- keep browser auto-translate off it */}
+        <span className="eyebrow" translate="no">{unit}</span>
+        {clickable && <ExpandIcon />}
       </div>
+    </div>
+  );
 
+  const body = (
+    <>
       <Rows rows={rows.slice(0, PREVIEW_ROWS)} empty={empty} />
-
       {/* rows is only ever a top-10 slice from the server, so it can't say
           exactly how many more there are -- the full count only comes back
-          once the modal actually fetches the uncapped breakdown */}
+          once the sheet actually fetches the uncapped breakdown */}
       {clickable && rows.length > PREVIEW_ROWS && (
         <div className="panel-more">View full list</div>
       )}
-    </section>
+    </>
+  );
+
+  if (!clickable) {
+    return (
+      <section className="panel">
+        {head}
+        {body}
+      </section>
+    );
+  }
+
+  return (
+    <ClickableCard cardKey={cardKey} expanded={expanded} onExpand={onExpand!} ariaLabel={`${title}: view all`}>
+      {head}
+      {body}
+    </ClickableCard>
   );
 }
 
-// Purely decorative -- the whole card is the click target (see role="button"
-// above); this just hints that it's one.
-function ExpandIcon() {
+// Purely decorative -- the whole card is the click target (see ClickableCard);
+// this just hints that it's one.
+export function ExpandIcon() {
   return (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"

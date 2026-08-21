@@ -1,12 +1,37 @@
 import { useEffect, useRef, useState } from "react";
-import type { ReactNode } from "react";
+import { flushSync } from "react-dom";
+import type { CSSProperties, ReactNode } from "react";
 import type { BreakdownMetric, Range, Site, Stats } from "./api.js";
 import { fetchBreakdown, fetchLive, fetchSites, fetchStats, getToken, setToken, Unauthorized } from "./api.js";
 import { TallyMarks } from "./components/TallyMarks.js";
 import { Chart } from "./components/Chart.js";
-import { ExportCsvButton, Rows, StatList } from "./components/StatList.js";
-import { TrafficSources } from "./components/TrafficSources.js";
+import { Sparkline } from "./components/Sparkline.js";
+import { ExportCsvButton, ExpandIcon, Rows, StatList } from "./components/StatList.js";
+import { TrafficSourcesCard, TrafficSourcesContent } from "./components/TrafficSources.js";
+import { ClickableCard } from "./components/ClickableCard.js";
 import type { Row } from "./components/StatList.js";
+
+// A card that expands into a full-screen sheet -- the breakdown panels
+// (pages, referrers, ...) plus the two hand-built ones, traffic and traffic
+// sources, that don't come from a single fetchBreakdown call.
+type ExpandTarget = BreakdownMetric | "traffic" | "trafficSources";
+
+// Runs `fn` inside the View Transitions API when the browser has it (every
+// Chromium browser, Safari 18+; not yet Firefox) so the clicked card visibly
+// grows into the full-screen sheet instead of just swapping. Where it's
+// unsupported, `fn` still runs -- the sheet just relies on its own CSS
+// fade/scale-in instead (see ExpandSheet's fallbackAnim).
+function withViewTransition(fn: () => void) {
+  const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
+  if (typeof doc.startViewTransition === "function") {
+    // React batches state updates, so without flushSync the DOM wouldn't
+    // actually reflect the change yet by the time the browser grabs its
+    // "after" snapshot -- the transition would silently no-op.
+    doc.startViewTransition(() => flushSync(fn));
+  } else {
+    fn();
+  }
+}
 
 // Set at build time (e.g. `VITE_BACK_LINK_URL=/admin npm run build`) when
 // Tally is embedded inside another app's admin panel, so a "Back to CMS"
@@ -98,9 +123,13 @@ export function App() {
   const [reload, setReload] = useState(0); // bumped to retry after unlocking
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [liveCount, setLiveCount] = useState<number | null>(null);
-  const [viewAllMetric, setViewAllMetric] = useState<BreakdownMetric | null>(null);
-  const [viewAllRows, setViewAllRows] = useState<Row[] | null>(null);
-  const [viewAllError, setViewAllError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<ExpandTarget | null>(null);
+  const [breakdownRows, setBreakdownRows] = useState<Row[] | null>(null);
+  const [breakdownError, setBreakdownError] = useState<string | null>(null);
+  // the expanded traffic-sources sheet shows the full, uncapped referrer
+  // list underneath the same donut -- data the compact card never fetches
+  const [sourceRows, setSourceRows] = useState<Row[] | null>(null);
+  const [sourceError, setSourceError] = useState<string | null>(null);
   // Mirrors the inline script in index.html, which already set this on <html>
   // before React mounted (so there's no flash of the wrong palette) -- this
   // just brings React's own state in sync with what's already on screen.
@@ -204,24 +233,53 @@ export function App() {
     };
   }, [site, locked]);
 
-  // Fetches the full (uncapped) list for whichever panel's "View all" was
-  // clicked. Closing the modal (viewAllMetric -> null) needs no fetch.
+  // Fetches the full (uncapped) list for whichever card expanded -- "traffic"
+  // needs no fetch (the sheet just renders the same `data` bigger); closing a
+  // sheet (expanded -> null) needs no fetch either.
   useEffect(() => {
-    if (!viewAllMetric || !site) return;
+    if (!site || expanded === null || expanded === "traffic" || expanded === "trafficSources") return;
+    const metric = expanded;
     const ctrl = new AbortController();
-    setViewAllRows(null);
-    setViewAllError(null);
-    fetchBreakdown(site, range, viewAllMetric)
+    setBreakdownRows(null);
+    setBreakdownError(null);
+    fetchBreakdown(site, range, metric)
       .then((rows) => {
         if (ctrl.signal.aborted) return;
-        setViewAllRows(rows.map(VIEW_ALL_CONFIG[viewAllMetric].toRow));
+        setBreakdownRows(rows.map(VIEW_ALL_CONFIG[metric].toRow));
       })
       .catch((e: unknown) => {
         if (ctrl.signal.aborted) return;
-        setViewAllError(e instanceof Error ? e.message : "something went wrong");
+        setBreakdownError(e instanceof Error ? e.message : "something went wrong");
       });
     return () => ctrl.abort();
-  }, [viewAllMetric, site, range]);
+  }, [expanded, site, range]);
+
+  // The traffic-sources sheet's bonus "all referrers" list, uncapped --
+  // separate from the 4-way category split, which the compact card already has.
+  useEffect(() => {
+    if (expanded !== "trafficSources" || !site) return;
+    const ctrl = new AbortController();
+    setSourceRows(null);
+    setSourceError(null);
+    fetchBreakdown(site, range, "referrers")
+      .then((rows) => {
+        if (ctrl.signal.aborted) return;
+        setSourceRows(rows.map((r) => ({ label: r.key, value: r.value })));
+      })
+      .catch((e: unknown) => {
+        if (ctrl.signal.aborted) return;
+        setSourceError(e instanceof Error ? e.message : "something went wrong");
+      });
+    return () => ctrl.abort();
+  }, [expanded, site, range]);
+
+  function openCard(target: ExpandTarget) {
+    withViewTransition(() => setExpanded(target));
+  }
+
+  function closeCard() {
+    withViewTransition(() => setExpanded(null));
+  }
 
   function unlock(token: string) {
     setToken(token);
@@ -333,79 +391,95 @@ export function App() {
             />
           </section>
 
-          <section className="panel chart-panel">
-            <div className="panel-head">
-              <h2 className="panel-title">Traffic</h2>
-              <span className="eyebrow">{rangeEyebrow(range)}</span>
-            </div>
-            <div className="chart-wrap">
-              {data && <Chart series={data.series} range={range} hour12={hour12} />}
-              {/* spinner sits over the chart the moment a range is clicked, so the
-                  switch never feels like a dead pause while stats are refetched */}
-              {loading && (
-                <div className="chart-loading" role="status" aria-label="Loading">
-                  <span className="spinner" />
+          {/* every card below is compact and clickable -- one dense grid instead
+              of a full-width hero chart plus two differently-sized grids, so the
+              whole dashboard fits together as a single bento of tiles */}
+          <div className="card-grid">
+            <ClickableCard
+              cardKey="traffic"
+              expanded={expanded === "traffic"}
+              onExpand={() => openCard("traffic")}
+              ariaLabel="Traffic: view full chart"
+              className="chart-card"
+            >
+              <div className="panel-head">
+                <h2 className="panel-title">Traffic</h2>
+                <div className="panel-head-actions">
+                  <span className="eyebrow">{rangeEyebrow(range)}</span>
+                  <ExpandIcon />
                 </div>
-              )}
-            </div>
-            {/* on phones the range tabs live here, under the chart */}
-            <RangeTabs range={range} setRange={setRange} className="range-chart" />
-            {/* ...and on desktop the clock toggle sits under the chart instead */}
-            <ClockToggle hour12={hour12} setHour12={setHour12} className="clock-below" />
-          </section>
+              </div>
+              {data && <Sparkline series={data.series} />}
+            </ClickableCard>
 
-          {data && <TrafficSources sources={data.trafficSources} />}
+            {data && (
+              <TrafficSourcesCard
+                sources={data.trafficSources}
+                expanded={expanded === "trafficSources"}
+                onExpand={() => openCard("trafficSources")}
+              />
+            )}
 
-          <div className="grid-two">
             <StatList
+              cardKey="pages"
+              expanded={expanded === "pages"}
               title="Top pages"
               unit="views"
               info="Your most-visited pages in the selected time range, ranked by pageviews."
               empty="No pages recorded."
               rows={(data?.topPages ?? []).map((p) => ({ label: p.path, value: p.views }))}
-              onViewAll={() => setViewAllMetric("pages")}
+              onExpand={() => openCard("pages")}
             />
             <StatList
+              cardKey="entryPages"
+              expanded={expanded === "entryPages"}
               title="Entry pages"
               unit="visitors"
               info="The first page each visitor landed on -- where your traffic actually enters the site, as opposed to every page it later views."
               empty="No entry pages recorded."
               rows={(data?.entryPages ?? []).map((p) => ({ label: p.path, value: p.views }))}
-              onViewAll={() => setViewAllMetric("entryPages")}
+              onExpand={() => openCard("entryPages")}
             />
             <StatList
+              cardKey="referrers"
+              expanded={expanded === "referrers"}
               title="Referrers"
               unit="views"
               info="Where your visitors came from: the external site or search engine that linked them to you."
               empty="All traffic came in direct."
               rows={(data?.topReferrers ?? []).map((r) => ({ label: r.source, value: r.views }))}
-              onViewAll={() => setViewAllMetric("referrers")}
+              onExpand={() => openCard("referrers")}
             />
-          </div>
-
-          <div className="breakdowns">
             <StatList
+              cardKey="browsers"
+              expanded={expanded === "browsers"}
               title="Browsers"
               unit="views"
               empty="No browser data."
               rows={(data?.browsers ?? []).map((b) => ({ label: b.name, value: b.views }))}
-              onViewAll={() => setViewAllMetric("browsers")}
+              onExpand={() => openCard("browsers")}
             />
             <StatList
+              cardKey="systems"
+              expanded={expanded === "systems"}
               title="Operating systems"
               unit="views"
               empty="No OS data."
               rows={(data?.systems ?? []).map((s) => ({ label: s.name, value: s.views }))}
-              onViewAll={() => setViewAllMetric("systems")}
+              onExpand={() => openCard("systems")}
             />
             <StatList
+              cardKey="devices"
+              expanded={expanded === "devices"}
               title="Devices"
               unit="views"
               empty="No device data."
               rows={(data?.devices ?? []).map((d) => ({ label: d.name, value: d.views }))}
-              onViewAll={() => setViewAllMetric("devices")}
+              onExpand={() => openCard("devices")}
             />
             <StatList
+              cardKey="countries"
+              expanded={expanded === "countries"}
               title="Countries"
               unit="views"
               empty="No country data."
@@ -414,7 +488,7 @@ export function App() {
                 title: countryName(c.name),
                 value: c.views,
               }))}
-              onViewAll={() => setViewAllMetric("countries")}
+              onExpand={() => openCard("countries")}
             />
           </div>
         </main>
@@ -464,7 +538,7 @@ export function App() {
             className="setting setting-action"
             onClick={() => {
               setSettingsOpen(false);
-              setViewAllMetric("events");
+              openCard("events");
             }}
           >
             <span className="setting-text">
@@ -478,28 +552,81 @@ export function App() {
         </Modal>
       )}
 
-      {viewAllMetric && (
-        <Modal
-          title={VIEW_ALL_CONFIG[viewAllMetric].title}
-          onClose={() => setViewAllMetric(null)}
+      {expanded && (
+        <ExpandSheet
+          cardKey={expanded}
+          title={
+            expanded === "traffic" ? "Traffic" : expanded === "trafficSources" ? "Traffic sources" : VIEW_ALL_CONFIG[expanded].title
+          }
+          eyebrow={expanded === "traffic" || expanded === "trafficSources" ? rangeEyebrow(range) : undefined}
+          onClose={closeCard}
           actions={
-            viewAllRows && viewAllRows.length > 0 ? (
-              <ExportCsvButton title={VIEW_ALL_CONFIG[viewAllMetric].title} rows={viewAllRows} />
+            expanded === "traffic" ? undefined : expanded === "trafficSources" ? (
+              sourceRows && sourceRows.length > 0 ? <ExportCsvButton title="Traffic sources" rows={sourceRows} /> : undefined
+            ) : breakdownRows && breakdownRows.length > 0 ? (
+              <ExportCsvButton title={VIEW_ALL_CONFIG[expanded].title} rows={breakdownRows} />
             ) : undefined
           }
         >
-          {viewAllError ? (
-            <div className="notice notice-error">
-              <strong>Couldn't load the full list.</strong> {viewAllError}
+          {expanded === "traffic" ? (
+            <div className="sheet-traffic">
+              <section className="ledger">
+                <Metric
+                  label="Pageviews"
+                  value={totals?.pageviews ?? 0}
+                  delta={prev && deltaOf(totals?.pageviews ?? 0, prev.pageviews)}
+                />
+                <Metric
+                  label="Unique visitors"
+                  value={totals?.visitors ?? 0}
+                  delta={prev && deltaOf(totals?.visitors ?? 0, prev.visitors)}
+                />
+                <Metric
+                  label="Views / visitor"
+                  value={perVisitor}
+                  decimals={1}
+                  delta={prev && deltaOf(perVisitor, prevPerVisitor)}
+                />
+              </section>
+              <div className="chart-wrap">
+                {data && <Chart series={data.series} range={range} hour12={hour12} />}
+                {loading && (
+                  <div className="chart-loading" role="status" aria-label="Loading">
+                    <span className="spinner" />
+                  </div>
+                )}
+              </div>
+              <RangeTabs range={range} setRange={setRange} className="range-sheet" />
+              <ClockToggle hour12={hour12} setHour12={setHour12} className="clock-sheet" />
             </div>
-          ) : viewAllRows === null ? (
+          ) : expanded === "trafficSources" ? (
+            <div className="sheet-traffic-sources">
+              {data && <TrafficSourcesContent sources={data.trafficSources} donutSize={200} />}
+              <h3 className="sheet-subhead">All referrers</h3>
+              {sourceError ? (
+                <div className="notice notice-error">
+                  <strong>Couldn't load referrers.</strong> {sourceError}
+                </div>
+              ) : sourceRows === null ? (
+                <div className="modal-loading" role="status" aria-label="Loading">
+                  <span className="spinner" />
+                </div>
+              ) : (
+                <Rows rows={sourceRows} empty="All traffic came in direct." />
+              )}
+            </div>
+          ) : breakdownError ? (
+            <div className="notice notice-error">
+              <strong>Couldn't load the full list.</strong> {breakdownError}
+            </div>
+          ) : breakdownRows === null ? (
             <div className="modal-loading" role="status" aria-label="Loading">
               <span className="spinner" />
             </div>
           ) : (
-            <Rows rows={viewAllRows} empty={VIEW_ALL_CONFIG[viewAllMetric].empty} />
+            <Rows rows={breakdownRows} empty={VIEW_ALL_CONFIG[expanded].empty} />
           )}
-        </Modal>
+        </ExpandSheet>
       )}
     </div>
   );
@@ -882,6 +1009,74 @@ function Modal({
           </div>
         </div>
         <div className="modal-body">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+// A full-screen sheet, not a small centered dialog -- what a compact card
+// (see ClickableCard) expands into. Wears the same view-transition-name the
+// card just gave up (see cardKey/App's openCard), so where the browser
+// supports it, this visibly grows out of the card's exact on-screen rect
+// instead of just appearing. Closes on the backdrop, the X, or Escape.
+function ExpandSheet({
+  cardKey,
+  title,
+  eyebrow,
+  onClose,
+  actions,
+  children,
+}: {
+  cardKey: string;
+  title: string;
+  eyebrow?: string;
+  onClose: () => void;
+  actions?: ReactNode;
+  children: ReactNode;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [onClose]);
+
+  // Browsers without the View Transitions API (Firefox, at the time of writing)
+  // still get a proper opening animation -- just a plain fade/scale-in rather
+  // than one that visibly grows out of the card's exact position.
+  const fallbackAnim =
+    typeof (document as Document & { startViewTransition?: unknown }).startViewTransition !== "function";
+  const style: CSSProperties = { viewTransitionName: `card-${cardKey}` } as CSSProperties;
+
+  return (
+    <div className="sheet-backdrop" role="presentation" onClick={onClose}>
+      <div
+        className={`sheet${fallbackAnim ? " sheet-fallback-anim" : ""}`}
+        style={style}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="sheet-head">
+          <div>
+            <h2 className="sheet-title">{title}</h2>
+            {eyebrow && <span className="eyebrow">{eyebrow}</span>}
+          </div>
+          <div className="modal-head-actions">
+            {actions}
+            <button type="button" className="modal-close" onClick={onClose} aria-label="Close" title="Close">
+              <CloseIcon />
+            </button>
+          </div>
+        </div>
+        <div className="sheet-body">{children}</div>
       </div>
     </div>
   );

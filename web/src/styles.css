@@ -419,25 +419,15 @@ a {
   color: var(--ink);
 }
 
-/* the range tabs render twice; show the header copy on desktop, the under-chart
-   copy on phones */
-.range-chart {
-  display: none;
+/* range tabs also appear a second time inside the expanded traffic sheet,
+   next to the full chart -- plain and always visible there, no swap needed */
+.range-sheet {
+  margin-bottom: 4px;
 }
 
-@media (max-width: 640px) {
-  .range-header {
-    display: none;
-  }
-  .range-chart {
-    display: flex;
-    width: fit-content;
-    margin: 18px auto 0;
-  }
-}
-
-/* 12h/24h clock switch -- pill-shaped like the site controls. Placed under the
-   chart on desktop, moved into the header on phones (see .clock-below/-header) */
+/* 12h/24h clock switch -- pill-shaped like the site controls. Lives in the
+   header (always visible now that the chart itself is a compact card, not a
+   full-width panel with room of its own for a second copy underneath). */
 .clock-toggle {
   display: inline-flex;
   align-items: center;
@@ -469,25 +459,10 @@ a {
   font-size: 13px;
 }
 
-/* under the chart on desktop, centered; hidden on phones */
-.clock-below {
-  display: flex;
+/* the clock toggle's second copy, inside the expanded traffic sheet */
+.clock-sheet {
+  margin: 12px auto 0;
   width: fit-content;
-  margin: 16px auto 0;
-}
-
-/* in the header on phones only */
-.clock-header {
-  display: none;
-}
-
-@media (max-width: 640px) {
-  .clock-below {
-    display: none;
-  }
-  .clock-header {
-    display: inline-flex;
-  }
 }
 
 /* dark/light switch */
@@ -800,22 +775,26 @@ a {
   padding: 30px 0;
 }
 
-/* every card grid below shares one compact tile size, so pages/referrers and
-   the smaller browser/os/device/country cards read as one consistent bento
-   of tiles instead of two differently-sized grids stacked on top of each other */
-.grid-two,
-.breakdowns {
+/* one bento of same-sized compact tiles -- traffic, traffic sources, top
+   pages, referrers and every breakdown all live in this single grid now,
+   instead of a full-width hero chart plus two differently-sized grids below it */
+.card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: var(--gap);
+  margin-top: 24px;
 }
 
-.grid-two .panel {
-  margin-top: var(--gap);
+.card-grid .panel {
+  margin-top: 0;
 }
 
-.breakdowns {
-  margin-top: var(--gap);
+/* the traffic card carries a little chart, so it earns two tiles' width --
+   only once the grid actually has room for a second column */
+@media (min-width: 700px) {
+  .chart-card {
+    grid-column: span 2;
+  }
 }
 
 /* ---- traffic sources donut ---- */
@@ -968,6 +947,30 @@ a {
   object-fit: cover;
   flex-shrink: 0;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+/* ---- compact traffic card (sparkline preview; the full <Chart> only
+   renders in the expanded sheet) ---- */
+.chart-card .panel-head {
+  margin-bottom: 10px;
+}
+
+.sparkline {
+  display: block;
+  width: 100%;
+  height: 56px;
+}
+
+.sparkline-area {
+  fill: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.sparkline-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
 }
 
 /* ---- chart ---- */
@@ -1358,6 +1361,105 @@ a {
 
 .modal-body {
   padding: 20px 22px 22px;
+}
+
+/* ---- expand sheet: what a compact card (see ClickableCard) opens into.
+   Full-screen, not a small centered box -- see App.tsx's ExpandSheet. ---- */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  padding: clamp(10px, 2.5vw, 32px);
+  background: color-mix(in srgb, #000 50%, transparent);
+  backdrop-filter: blur(3px);
+}
+
+.sheet {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 30px 70px -20px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+/* the View Transitions API drives the open/close animation on browsers that
+   support it (the sheet visibly grows from the card's own rect -- see
+   view-transition-name below); everyone else gets this plain fade + scale */
+@media (prefers-reduced-motion: no-preference) {
+  .sheet-fallback-anim {
+    animation: sheet-in 0.22s cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(8px);
+  }
+}
+
+.sheet-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.sheet-title {
+  font-size: 20px;
+  margin: 0 0 4px;
+}
+
+.sheet-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 22px 24px 28px;
+}
+
+.sheet-subhead {
+  margin: 22px 0 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.sheet-traffic-sources .traffic-sources {
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+}
+
+@media (max-width: 640px) {
+  .sheet-backdrop {
+    padding: 0;
+  }
+  .sheet {
+    border-radius: 0;
+    border: 0;
+  }
+}
+
+/* the browser's default View Transition is already a clean resize + crossfade
+   -- this just brings its timing in line with the rest of the app's motion,
+   and turns it off outright under reduced-motion */
+::view-transition-group(*) {
+  animation-duration: 260ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
 }
 
 /* a setting sits in its own soft card: label on the left, control on the right */
