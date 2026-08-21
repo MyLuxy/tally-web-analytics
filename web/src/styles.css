@@ -487,6 +487,13 @@ a {
   padding: 22px 24px;
 }
 
+.metric-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .metric-value {
   font-size: 40px;
   font-weight: 600;
@@ -496,6 +503,37 @@ a {
 
 .metric-label {
   margin-top: 6px;
+}
+
+/* period-over-period change chip next to a headline metric */
+.metric-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--accent-wash);
+  color: var(--ink-soft);
+}
+
+.metric-delta-up {
+  background: color-mix(in srgb, var(--accent) 16%, var(--accent-wash));
+  color: var(--accent-ink);
+}
+
+.metric-delta-down {
+  background: color-mix(in srgb, #c1483a 16%, var(--accent-wash));
+  color: #b8402f;
+}
+
+[data-theme="dark"] .metric-delta-down {
+  color: #e08575;
+}
+
+.metric-delta-new {
+  color: var(--accent-2);
 }
 
 /* ---- panels ---- */

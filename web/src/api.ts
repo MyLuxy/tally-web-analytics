@@ -8,6 +8,7 @@ export type Stats = {
   range: Range;
   since: number;
   totals: { pageviews: number; visitors: number };
+  previousTotals: { pageviews: number; visitors: number } | null;
   topPages: { path: string; views: number }[];
   topReferrers: { source: string; views: number }[];
   browsers: { name: string; views: number }[];

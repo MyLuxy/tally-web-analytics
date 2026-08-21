@@ -198,6 +198,9 @@ export function App() {
   const hasData = !!totals && totals.pageviews > 0;
   const perVisitor = totals && totals.visitors > 0 ? totals.pageviews / totals.visitors : 0;
 
+  const prev = data?.previousTotals;
+  const prevPerVisitor = prev && prev.visitors > 0 ? prev.pageviews / prev.visitors : 0;
+
   return (
     <div className="shell">
       <header className="topbar">
@@ -274,9 +277,22 @@ export function App() {
       {!locked && !error && (hasData || loading) && (
         <main className={`content ${data ? "fade-in" : ""}`} aria-busy={loading}>
           <section className="ledger">
-            <Metric label="Pageviews" value={totals?.pageviews ?? 0} />
-            <Metric label="Unique visitors" value={totals?.visitors ?? 0} />
-            <Metric label="Views / visitor" value={perVisitor} decimals={1} />
+            <Metric
+              label="Pageviews"
+              value={totals?.pageviews ?? 0}
+              delta={prev && deltaOf(totals?.pageviews ?? 0, prev.pageviews)}
+            />
+            <Metric
+              label="Unique visitors"
+              value={totals?.visitors ?? 0}
+              delta={prev && deltaOf(totals?.visitors ?? 0, prev.visitors)}
+            />
+            <Metric
+              label="Views / visitor"
+              value={perVisitor}
+              decimals={1}
+              delta={prev && deltaOf(perVisitor, prevPerVisitor)}
+            />
           </section>
 
           <section className="panel chart-panel">
@@ -665,7 +681,66 @@ function SunIcon() {
   );
 }
 
-function Metric({ label, value, decimals = 0 }: { label: string; value: number; decimals?: number }) {
+// Percentage change vs. the previous equal-length period. `previous === 0` is
+// left as a special "new" case -- there's no sane percentage to show when the
+// baseline is nothing (division by zero), but appearing from zero is itself
+// worth flagging.
+type Delta = { pct: number; kind: "up" | "down" | "flat" | "new" };
+
+function deltaOf(current: number, previous: number): Delta | null {
+  if (current === 0 && previous === 0) return null; // nothing to compare
+  if (previous === 0) return { pct: 0, kind: "new" };
+  const pct = ((current - previous) / previous) * 100;
+  // a fraction of a percent either way reads as noise on a rounded chip
+  if (Math.abs(pct) < 0.5) return { pct: 0, kind: "flat" };
+  return { pct, kind: pct > 0 ? "up" : "down" };
+}
+
+function DeltaChip({ delta }: { delta: Delta }) {
+  const label =
+    delta.kind === "new"
+      ? "new"
+      : delta.kind === "flat"
+        ? "flat"
+        : `${delta.pct > 0 ? "+" : ""}${Math.round(delta.pct)}%`;
+  return (
+    <span className={`metric-delta metric-delta-${delta.kind} num`} title="vs. previous period">
+      {delta.kind === "up" && <DeltaUpIcon />}
+      {delta.kind === "down" && <DeltaDownIcon />}
+      {label}
+    </span>
+  );
+}
+
+function DeltaUpIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M6 18 18 6M9 6h9v9" />
+    </svg>
+  );
+}
+
+function DeltaDownIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M6 6l12 12M15 18H6V9" />
+    </svg>
+  );
+}
+
+function Metric({
+  label,
+  value,
+  decimals = 0,
+  delta,
+}: {
+  label: string;
+  value: number;
+  decimals?: number;
+  delta?: Delta | null;
+}) {
   const full = value.toLocaleString("en-US", {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
@@ -678,7 +753,10 @@ function Metric({ label, value, decimals = 0 }: { label: string; value: number; 
     : full;
   return (
     <div className="metric">
-      <div className="metric-value num" title={big ? full : undefined}>{shown}</div>
+      <div className="metric-value-row">
+        <div className="metric-value num" title={big ? full : undefined}>{shown}</div>
+        {delta && <DeltaChip delta={delta} />}
+      </div>
       <div className="metric-label eyebrow">{label}</div>
     </div>
   );
