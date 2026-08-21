@@ -747,7 +747,7 @@ a {
 }
 
 .traffic-sources-column .radar-svg {
-  max-width: 520px;
+  max-width: 560px;
 }
 
 .traffic-sources-column .traffic-sources-legend {
@@ -802,7 +802,7 @@ a {
 .radar-label {
   fill: var(--ink-soft);
   font-family: var(--font-body);
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 600;
 }
 
