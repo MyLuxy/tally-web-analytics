@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import type { CSSProperties, ReactNode } from "react";
 import type { BreakdownMetric, Range, Site, Stats } from "./api.js";
-import { fetchBreakdown, fetchLive, fetchSites, fetchStats, getToken, setToken, Unauthorized } from "./api.js";
+import { fetchBreakdown, fetchSites, fetchStats, getToken, setToken, Unauthorized } from "./api.js";
 import { TallyMarks } from "./components/TallyMarks.js";
 import { Chart } from "./components/Chart.js";
 import { Sparkline } from "./components/Sparkline.js";
@@ -16,7 +16,7 @@ import type { Row } from "./components/StatList.js";
 // A card that expands into a full-screen sheet -- the breakdown panels
 // (pages, referrers, ...) plus the two hand-built ones, traffic and traffic
 // sources, that don't come from a single fetchBreakdown call.
-type ExpandTarget = BreakdownMetric | "traffic" | "trafficSources" | "activity";
+type ExpandTarget = BreakdownMetric | "traffic" | "trafficSources" | "activity" | "site";
 
 // Runs `fn` inside the View Transitions API when the browser has it (every
 // Chromium browser, Safari 18+; not yet Firefox) so the clicked card visibly
@@ -124,7 +124,6 @@ export function App() {
   const [locked, setLocked] = useState(false); // server wants a token
   const [reload, setReload] = useState(0); // bumped to retry after unlocking
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [liveCount, setLiveCount] = useState<number | null>(null);
   // the Activity card is always the last 24h, independent of whatever range
   // is selected for the main chart -- its own small fetch, not derived from `data`
   const [activityData, setActivityData] = useState<Stats | null>(null);
@@ -212,32 +211,6 @@ export function App() {
     return () => ctrl.abort();
   }, [site, range, reload]);
 
-  // "Live now" pulse: polled independently of the stats fetch above so it can
-  // run on its own short cadence without re-triggering the chart/panels'
-  // loading state. Reset to null (hidden) on every site switch so a stale
-  // count from the previous site can't flash up before the first poll lands.
-  useEffect(() => {
-    if (!site || locked) return;
-    let cancelled = false;
-    setLiveCount(null);
-    const poll = () => {
-      fetchLive(site)
-        .then((n) => {
-          if (!cancelled) setLiveCount(n);
-        })
-        .catch(() => {
-          // token got revoked mid-session, server hiccup, etc -- the pulse just
-          // stays hidden rather than surfacing a second error UI
-        });
-    };
-    poll();
-    const id = window.setInterval(poll, 30_000);
-    return () => {
-      cancelled = true;
-      window.clearInterval(id);
-    };
-  }, [site, locked]);
-
   // Activity card: always the last 24h, on its own schedule -- unaffected by
   // the range picker on the main Statistics chart.
   useEffect(() => {
@@ -258,7 +231,15 @@ export function App() {
   // sheet (expanded -> null) needs no fetch, and neither does trafficSources
   // (see the next effect, which fetches its own bonus "all referrers" list).
   useEffect(() => {
-    if (!site || expanded === null || expanded === "traffic" || expanded === "trafficSources" || expanded === "activity") return;
+    if (
+      !site ||
+      expanded === null ||
+      expanded === "traffic" ||
+      expanded === "trafficSources" ||
+      expanded === "activity" ||
+      expanded === "site"
+    )
+      return;
     const metric = expanded;
     const ctrl = new AbortController();
     setBreakdownRows(null);
@@ -316,35 +297,41 @@ export function App() {
   const prev = data?.previousTotals;
   const prevPerVisitor = prev && prev.visitors > 0 ? prev.pageviews / prev.visitors : 0;
 
+  const currentSiteInfo = sites.find((s) => s.site === site);
+
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <img src={`${import.meta.env.BASE_URL}brand.png`} className="sidebar-logo" alt="Tally" />
+    <div className="shell">
+      <header className="topbar">
+        <div className="brand">
+          <img src={`${import.meta.env.BASE_URL}brand.png`} className="brand-logo" alt="Tally" />
+          <div>
+            <div className="brand-name" translate="no">Tally</div>
+            <div className="brand-sub">self-hosted analytics</div>
+          </div>
+        </div>
 
-        <nav className="sidebar-nav" aria-label="Primary">
-          <span className="sidebar-item" aria-current="page" title="Dashboard">
-            <HomeIcon />
-          </span>
-          <button
-            type="button"
-            className="sidebar-item"
-            onClick={() => setSettingsOpen(true)}
-            aria-label="Settings"
-            aria-haspopup="dialog"
-            title="Settings"
-          >
-            <GearIcon />
-          </button>
-        </nav>
-
-        <div className="sidebar-footer">
+        <div className="controls">
           {BACK_LINK_URL && (
-            <a className="sidebar-item" href={BACK_LINK_URL} title={BACK_LINK_LABEL} aria-label={BACK_LINK_LABEL}>
+            <a className="back-link" href={BACK_LINK_URL}>
               <BackIcon />
+              {BACK_LINK_LABEL}
             </a>
           )}
+
+          <ClockToggle hour12={hour12} setHour12={setHour12} className="clock-header" />
+
+          <button
+            type="button"
+            className="icon-btn"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+            title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+          >
+            {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+          </button>
+
           <a
-            className="sidebar-item"
+            className="icon-btn"
             href="https://github.com/MyLuxy/tally-web-analytics"
             target="_blank"
             rel="noreferrer"
@@ -353,44 +340,17 @@ export function App() {
           >
             <GithubIcon />
           </a>
+
           <button
             type="button"
-            className="sidebar-item"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-            title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+            className="icon-btn"
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Settings"
+            aria-haspopup="dialog"
+            title="Settings"
           >
-            {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+            <GearIcon />
           </button>
-        </div>
-      </aside>
-
-      <div className="shell">
-      <header className="topbar">
-        <div className="brand">
-          <div className="brand-name" translate="no">Dashboard</div>
-          <div className="brand-sub">self-hosted analytics</div>
-        </div>
-
-        <div className="controls">
-          {sites.length > 1 ? (
-            <SitePicker sites={sites} site={site ?? ""} onChange={setSite} />
-          ) : (
-            <span className="site-pill">
-              <span className="eyebrow">site</span>
-              {site ? (
-                <a className="site-name" href={siteUrl(site)} target="_blank" rel="noreferrer">
-                  {site}
-                </a>
-              ) : (
-                <span className="site-name">—</span>
-              )}
-            </span>
-          )}
-
-          {liveCount != null && <LivePill count={liveCount} />}
-
-          <ClockToggle hour12={hour12} setHour12={setHour12} className="clock-header" />
         </div>
       </header>
 
@@ -649,6 +609,23 @@ export function App() {
             className="setting setting-action"
             onClick={() => {
               setSettingsOpen(false);
+              openCard("site");
+            }}
+          >
+            <span className="setting-text">
+              <span className="setting-name">Site</span>
+              <span className="setting-hint">{site ?? "—"}</span>
+            </span>
+            <span className="setting-chevron">
+              <ChevronRightIcon />
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className="setting setting-action"
+            onClick={() => {
+              setSettingsOpen(false);
               openCard("events");
             }}
           >
@@ -673,21 +650,63 @@ export function App() {
                 ? "Traffic sources"
                 : expanded === "activity"
                   ? "Activity"
-                  : VIEW_ALL_CONFIG[expanded].title
+                  : expanded === "site"
+                    ? "Site"
+                    : VIEW_ALL_CONFIG[expanded].title
           }
           eyebrow={
-            expanded === "traffic" ? rangeEyebrow(range) : expanded === "trafficSources" ? rangeEyebrow(range) : expanded === "activity" ? "last 24h" : undefined
+            expanded === "traffic" || expanded === "trafficSources"
+              ? rangeEyebrow(range)
+              : expanded === "activity"
+                ? "last 24h"
+                : undefined
           }
           onClose={closeCard}
           actions={
-            expanded === "traffic" || expanded === "activity" ? undefined : expanded === "trafficSources" ? (
+            expanded === "traffic" || expanded === "activity" || expanded === "site" ? undefined : expanded === "trafficSources" ? (
               sourceRows && sourceRows.length > 0 ? <ExportCsvButton title="Traffic sources" rows={sourceRows} /> : undefined
             ) : breakdownRows && breakdownRows.length > 0 ? (
               <ExportCsvButton title={VIEW_ALL_CONFIG[expanded].title} rows={breakdownRows} />
             ) : undefined
           }
         >
-          {expanded === "traffic" ? (
+          {expanded === "site" ? (
+            <div className="sheet-site">
+              {sites.length > 1 && (
+                <ul className="site-picker-list">
+                  {sites.map((s) => (
+                    <li key={s.site}>
+                      <button
+                        type="button"
+                        className={`site-picker-option${s.site === site ? " is-active" : ""}`}
+                        onClick={() => setSite(s.site)}
+                      >
+                        {s.site}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {site && (
+                <a className="site-visit-link" href={siteUrl(site)} target="_blank" rel="noreferrer">
+                  <span className="site-visit-domain">{site}</span>
+                  <span className="site-visit-cta">Visit site <ExternalLinkIcon /></span>
+                </a>
+              )}
+              {currentSiteInfo && (
+                <dl className="site-stats">
+                  <div>
+                    <dt className="eyebrow">Events tracked</dt>
+                    <dd className="num">{currentSiteInfo.events.toLocaleString("en-US")}</dd>
+                  </div>
+                  <div>
+                    <dt className="eyebrow">Last seen</dt>
+                    <dd className="num">{new Date(currentSiteInfo.lastSeen).toLocaleString("en-US")}</dd>
+                  </div>
+                </dl>
+              )}
+            </div>
+          ) : expanded === "traffic" ? (
             <div className="sheet-traffic">
               <div className="chart-wrap">
                 {data && <Chart series={data.series} range={range} hour12={hour12} />}
@@ -750,18 +769,7 @@ export function App() {
           )}
         </ExpandSheet>
       )}
-      </div>
     </div>
-  );
-}
-
-function HomeIcon() {
-  return (
-    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M3 11.5 12 4l9 7.5" />
-      <path d="M5.5 10v9a1 1 0 0 0 1 1H9a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h2.5a1 1 0 0 0 1-1v-9" />
-    </svg>
   );
 }
 
@@ -814,17 +822,6 @@ function TokenGate({ onSubmit }: { onSubmit: (token: string) => void }) {
         </button>
       </form>
     </div>
-  );
-}
-
-// Visitors active in the last five minutes. The dot only pulses when someone
-// is actually there -- a still dot at zero reads as "quiet" rather than
-// "broken".
-function LivePill({ count }: { count: number }) {
-  return (
-    <span className="live-pill" title="Visitors active in the last 5 minutes">
-      <span className="num">{count}</span> live
-    </span>
   );
 }
 
@@ -898,100 +895,18 @@ function ClockIcon() {
   );
 }
 
-// Custom site dropdown -- a native <select> can't be styled to match the dark
-// theme, so we roll our own. Closes on outside-click or Escape.
-function SitePicker({
-  sites,
-  site,
-  onChange,
-}: {
-  sites: Site[];
-  site: string;
-  onChange: (s: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDoc = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", onDoc);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDoc);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  return (
-    <div className="site-picker" ref={ref}>
-      <span className="site-pill">
-        <span className="eyebrow">site</span>
-        <a className="site-name" href={siteUrl(site)} target="_blank" rel="noreferrer">
-          {site}
-        </a>
-        <button
-          type="button"
-          className="site-chevron"
-          aria-haspopup="listbox"
-          aria-expanded={open}
-          aria-label="Switch site"
-          onClick={() => setOpen((o) => !o)}
-        >
-          <ChevronIcon />
-        </button>
-      </span>
-
-      {open && (
-        <ul className="site-picker-menu" role="listbox">
-          {sites.map((s) => (
-            <li key={s.site}>
-              <button
-                type="button"
-                role="option"
-                aria-selected={s.site === site}
-                className={`site-picker-option${s.site === site ? " is-active" : ""}`}
-                onClick={() => {
-                  onChange(s.site);
-                  setOpen(false);
-                }}
-              >
-                {s.site}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
 // Build a URL to open the tracked site in a new tab. data-site is usually a
 // domain (e.g. "example.com"); add https:// if there's no scheme already.
 function siteUrl(site: string): string {
   return /^https?:\/\//i.test(site) ? site : `https://${site}`;
 }
 
-function ChevronIcon() {
+function ExternalLinkIcon() {
   return (
-    <svg
-      className="chevron"
-      width="13"
-      height="13"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M6 9l6 6 6-6" />
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+      <path d="M15 3h6v6M10 14 21 3" />
     </svg>
   );
 }
