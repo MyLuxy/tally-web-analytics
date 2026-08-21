@@ -9,9 +9,9 @@ import { ExpandIcon } from "./StatList.js";
 // range changes. Each category gets its own accent from the palette; Direct
 // (no signal at all) stays plain grey in the legend below.
 const CATEGORIES: { key: keyof Stats["trafficSources"]; label: string; color: string }[] = [
-  { key: "direct", label: "Direct", color: "var(--ink-faint)" },
+  { key: "direct", label: "Direct", color: "var(--neutral-cat)" },
   { key: "search", label: "Search", color: "var(--accent)" },
-  { key: "social", label: "Social", color: "var(--accent-2)" },
+  { key: "social", label: "Social", color: "var(--accent-4)" },
   { key: "referral", label: "Referral", color: "var(--accent-3)" },
 ];
 

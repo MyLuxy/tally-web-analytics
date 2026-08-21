@@ -3,8 +3,12 @@
    -black type. Dark mode: deep navy/slate ground, cards a step up in two
    tones (--panel for most cards, --panel-elevated for ones that want to
    stand out) with a barely-there border instead of a shadow (shadows don't
-   read on near-black). Three accents run through both -- blue, cyan and
-   violet -- plus a green/red pair reserved strictly for trend direction. */
+   read on near-black). Five accents (blue/cyan/violet/amber/rose) spread far
+   enough apart in hue that no two read as "the same colour" next to each
+   other, plus a dedicated neutral for "no signal" (Direct) and a green/red
+   pair reserved strictly for trend direction. Light mode's accents are
+   pulled noticeably darker/more saturated than dark mode's -- a colour that
+   pops on near-black often just looks pale and washed out on white. */
 :root {
   --paper: #f3f4f6;
   --panel: #ffffff;
@@ -18,10 +22,17 @@
   --accent: #2563eb;
   --accent-ink: #1d4ed8;
   --accent-wash: #e8f0fe;
-  --accent-2: #06b6d4;
-  --accent-2-wash: #e3f8fb;
-  --accent-3: #8b5cf6;
+  --accent-2: #0e7490;
+  --accent-2-wash: #e0f3f6;
+  --accent-3: #7c3aed;
   --accent-3-wash: #f1ecfe;
+  --accent-4: #b45309;
+  --accent-4-wash: #fbf0e1;
+  --accent-5: #be185d;
+  --accent-5-wash: #fbe8f0;
+  /* "no signal" (Direct) -- a plain neutral, deliberately not tinted toward
+     any of the accents above so it can't be mistaken for one */
+  --neutral-cat: #52525b;
 
   /* trend direction only -- never used decoratively */
   --positive: #16a34a;
@@ -57,6 +68,11 @@
   --accent-2-wash: rgba(34, 211, 238, 0.14);
   --accent-3: #a78bfa;
   --accent-3-wash: rgba(167, 139, 250, 0.14);
+  --accent-4: #f59e0b;
+  --accent-4-wash: rgba(245, 158, 11, 0.14);
+  --accent-5: #f472b6;
+  --accent-5-wash: rgba(244, 114, 182, 0.14);
+  --neutral-cat: #a1a1aa;
 
   --positive: #34d399;
   --positive-wash: rgba(52, 211, 153, 0.14);
@@ -815,13 +831,13 @@ a {
   height: auto;
 }
 
+/* fill is set per-bar inline (see BarChart.tsx's PALETTE) */
 .bar-rect {
-  fill: var(--accent);
-  transition: fill 0.15s ease;
+  transition: opacity 0.15s ease;
 }
 
 .bar-rect:hover {
-  fill: var(--accent-ink);
+  opacity: 0.8;
 }
 
 .bar-label {
@@ -840,13 +856,15 @@ a {
   margin-top: 14px;
 }
 
+/* a different colour than the Statistics chart above it (--accent), on
+   purpose -- two charts on the same screen shouldn't share an identity */
 .sparkline-area {
-  fill: color-mix(in srgb, var(--accent) 18%, transparent);
+  fill: color-mix(in srgb, var(--accent-5) 18%, transparent);
 }
 
 .sparkline-line {
   fill: none;
-  stroke: var(--accent);
+  stroke: var(--accent-5);
   stroke-width: 2;
   stroke-linejoin: round;
   stroke-linecap: round;

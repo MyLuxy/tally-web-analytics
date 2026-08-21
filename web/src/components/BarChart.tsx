@@ -1,11 +1,16 @@
 // A small hand-drawn bar chart -- same approach as the rest (Chart.tsx,
-// Donut.tsx, RadarChart.tsx): plain SVG, no library, one accent colour.
+// Donut.tsx, RadarChart.tsx): plain SVG, no library.
 
 export type Bar = { label: string; value: number };
 
 const W = 400;
 const H = 180;
 const PAD = { top: 12, bottom: 24, x: 10 };
+
+// Each bar gets its own colour, cycling through the palette -- with several
+// different event names on screen at once, one flat colour made them
+// impossible to tell apart at a glance.
+const PALETTE = ["var(--accent)", "var(--accent-3)", "var(--accent-4)", "var(--accent-5)", "var(--accent-2)"];
 
 export function BarChart({ bars }: { bars: Bar[] }) {
   const max = Math.max(1, ...bars.map((b) => b.value));
@@ -23,7 +28,15 @@ export function BarChart({ bars }: { bars: Bar[] }) {
         const y = PAD.top + (plotH - h);
         return (
           <g key={b.label}>
-            <rect x={cx - barW / 2} y={y} width={barW} height={Math.max(h, 2)} rx={5} className="bar-rect" />
+            <rect
+              x={cx - barW / 2}
+              y={y}
+              width={barW}
+              height={Math.max(h, 2)}
+              rx={5}
+              className="bar-rect"
+              fill={PALETTE[i % PALETTE.length]}
+            />
             <text x={cx} y={H - 8} textAnchor="middle" className="bar-label">
               {b.label}
             </text>
