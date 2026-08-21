@@ -318,18 +318,6 @@ export function App() {
             </a>
           )}
 
-          <ClockToggle hour12={hour12} setHour12={setHour12} className="clock-header" />
-
-          <button
-            type="button"
-            className="icon-btn"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-            title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-          >
-            {theme === "dark" ? <SunIcon /> : <MoonIcon />}
-          </button>
-
           <a
             className="icon-btn"
             href="https://github.com/MyLuxy/tally-web-analytics"
@@ -604,6 +592,31 @@ export function App() {
             </div>
           </div>
 
+          <div className="setting">
+            <div className="setting-text">
+              <span className="setting-name">Clock</span>
+              <span className="setting-hint">12-hour or 24-hour time in charts</span>
+            </div>
+            <div className="theme-seg" data-active={hour12 ? "12h" : "24h"} role="group" aria-label="Clock format">
+              <button
+                type="button"
+                className="theme-opt"
+                aria-pressed={hour12}
+                onClick={() => setHour12(true)}
+              >
+                12h
+              </button>
+              <button
+                type="button"
+                className="theme-opt"
+                aria-pressed={!hour12}
+                onClick={() => setHour12(false)}
+              >
+                24h
+              </button>
+            </div>
+          </div>
+
           <button
             type="button"
             className="setting setting-action"
@@ -859,41 +872,6 @@ function RangeTabs({
   );
 }
 
-// 12h/24h clock switch for the chart labels. Rendered twice, like the range
-// tabs but mirrored: under the chart on desktop, up in the header on phones.
-function ClockToggle({
-  hour12,
-  setHour12,
-  className,
-}: {
-  hour12: boolean;
-  setHour12: (v: boolean) => void;
-  className: string;
-}) {
-  const other = hour12 ? "24" : "12";
-  return (
-    <button
-      type="button"
-      className={`clock-toggle ${className}`}
-      onClick={() => setHour12(!hour12)}
-      title={`Switch to ${other}-hour time`}
-      aria-label={`Switch to ${other}-hour time`}
-    >
-      <ClockIcon />
-      <span className="num">{hour12 ? "12h" : "24h"}</span>
-    </button>
-  );
-}
-
-function ClockIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v5l3 2" />
-    </svg>
-  );
-}
 
 // Build a URL to open the tracked site in a new tab. data-site is usually a
 // domain (e.g. "example.com"); add https:// if there's no scheme already.

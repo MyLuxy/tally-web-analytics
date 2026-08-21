@@ -221,24 +221,29 @@ a {
 }
 
 /* theme / GitHub / settings -- plain icon buttons, right end of the bar */
+/* plain icons, not pill/circle buttons -- just the glyph, larger, with a
+   quiet colour shift on hover instead of a badge-like background */
 .icon-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: 1px solid var(--line-strong);
-  background: var(--panel);
+  width: 26px;
+  height: 26px;
+  border: 0;
+  background: transparent;
   color: var(--ink-soft);
-  border-radius: 999px;
   cursor: pointer;
   text-decoration: none;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  transition: color 0.15s ease;
+}
+
+.icon-btn svg {
+  width: 22px;
+  height: 22px;
 }
 
 .icon-btn:hover {
   color: var(--ink);
-  border-color: var(--ink-faint);
 }
 
 .icon-btn:focus-visible {
@@ -386,36 +391,6 @@ a {
   color: var(--ink);
 }
 
-/* 12h/24h clock switch -- pill-shaped like the site controls, lives in the
-   header next to the range tabs. */
-.clock-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 6px 13px;
-  border: 1px solid var(--line-strong);
-  background: var(--panel);
-  color: var(--ink-soft);
-  border-radius: 999px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease;
-}
-
-.clock-toggle:hover {
-  color: var(--ink);
-  border-color: var(--ink-faint);
-}
-
-.clock-toggle:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-.clock-toggle .num {
-  font-size: 13px;
-}
-
 .segment[aria-pressed="true"],
 .segment[aria-selected="true"] {
   background: var(--ink);
@@ -462,13 +437,6 @@ a {
   .segment {
     font-size: 14px;
     padding: 7px 16px;
-  }
-  .clock-toggle,
-  .clock-toggle .num {
-    font-size: 14px;
-  }
-  .clock-toggle {
-    padding: 8px 15px;
   }
 }
 
@@ -1608,7 +1576,8 @@ a {
   transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.theme-seg[data-active="dark"]::before {
+.theme-seg[data-active="dark"]::before,
+.theme-seg[data-active="24h"]::before {
   transform: translateX(100%);
 }
 
