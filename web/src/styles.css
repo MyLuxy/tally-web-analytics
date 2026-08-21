@@ -747,7 +747,7 @@ a {
 }
 
 .traffic-sources-column .radar-svg {
-  max-width: 460px;
+  max-width: 520px;
 }
 
 .traffic-sources-column .traffic-sources-legend {
@@ -780,18 +780,18 @@ a {
 .radar-ring {
   fill: none;
   stroke: var(--line);
-  stroke-width: 1;
+  stroke-width: 1.5;
 }
 
 .radar-axis-line {
   stroke: var(--line);
-  stroke-width: 1;
+  stroke-width: 1.5;
 }
 
 .radar-area {
   fill: color-mix(in srgb, var(--accent-3) 30%, transparent);
   stroke: var(--accent-3);
-  stroke-width: 2;
+  stroke-width: 3;
   stroke-linejoin: round;
 }
 
@@ -802,7 +802,7 @@ a {
 .radar-label {
   fill: var(--ink-soft);
   font-family: var(--font-body);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
 }
 
@@ -921,19 +921,19 @@ a {
 
 .traffic-source-label {
   flex: 1;
-  font-size: 16px;
+  font-size: 18px;
   color: var(--ink);
 }
 
 .traffic-source-pct {
-  font-size: 15px;
+  font-size: 16px;
   color: var(--ink-soft);
   min-width: 2.5em;
   text-align: right;
 }
 
 .traffic-source-value {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 500;
   color: var(--ink);
   min-width: 3.5em;
