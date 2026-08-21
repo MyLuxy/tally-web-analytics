@@ -195,6 +195,43 @@ describe("GET /api/stats", () => {
   });
 });
 
+describe("entryPages in GET /api/stats", () => {
+  it("counts each visitor's first pageview, not every page they viewed", async () => {
+    const now = Date.now();
+    // visitor 1: lands on /a, then browses to /b a second later (2 views, 1 entry at /a).
+    // Explicit, strictly increasing ts (insertEvent lets us set it directly) so the
+    // "first pageview" ordering can't come down to same-millisecond luck.
+    insertEvent({
+      site_id: "s1", name: "pageview", path: "/a", referrer: null,
+      visitor_hash: "visitor-1", browser: "Chrome", os: "Windows", device: "desktop",
+      country: null, ts: now,
+    });
+    insertEvent({
+      site_id: "s1", name: "pageview", path: "/b", referrer: null,
+      visitor_hash: "visitor-1", browser: "Chrome", os: "Windows", device: "desktop",
+      country: null, ts: now + 1000,
+    });
+    // visitor 2: lands directly on /b (1 view, 1 entry at /b)
+    insertEvent({
+      site_id: "s1", name: "pageview", path: "/b", referrer: null,
+      visitor_hash: "visitor-2", browser: "Chrome", os: "Windows", device: "desktop",
+      country: null, ts: now,
+    });
+
+    const stats = (await app.inject({ url: "/api/stats?site=s1&range=7d" })).json();
+
+    // top pages: /b was viewed twice (visitor 1's second page + visitor 2's only page)
+    const pageB = stats.topPages.find((p: { path: string }) => p.path === "/b");
+    expect(pageB.views).toBe(2);
+
+    // entry pages: /a and /b each brought in exactly one visitor
+    const entryA = stats.entryPages.find((p: { path: string }) => p.path === "/a");
+    const entryB = stats.entryPages.find((p: { path: string }) => p.path === "/b");
+    expect(entryA.views).toBe(1);
+    expect(entryB.views).toBe(1);
+  });
+});
+
 describe("GET /api/live", () => {
   it("needs a site", async () => {
     expect((await app.inject({ url: "/api/live" })).statusCode).toBe(400);

@@ -75,6 +75,16 @@ const BREAKDOWN_METRICS = {
   events: `SELECT name AS key, COUNT(*) AS value FROM events
            WHERE site_id = ? AND ts >= ? AND name <> 'pageview'
            GROUP BY name ORDER BY value DESC LIMIT 500`,
+  // The first pageview of each visitor's window, i.e. what page brought them
+  // in -- distinct from "top pages" (every view, including internal
+  // navigation). ROW_NUMBER over each visitor's events ordered by time gives
+  // the earliest row per visitor; keeping only rn=1 before grouping by path
+  // is what turns "most-viewed page" into "most common entry page".
+  entryPages: `SELECT path AS key, COUNT(*) AS value FROM (
+                 SELECT path, ROW_NUMBER() OVER (PARTITION BY visitor_hash ORDER BY ts ASC) AS rn
+                 FROM events WHERE site_id = ? AND ts >= ? AND name = 'pageview'
+               ) WHERE rn = 1
+               GROUP BY path ORDER BY value DESC LIMIT 500`,
 } as const;
 
 type BreakdownMetric = keyof typeof BREAKDOWN_METRICS;
@@ -147,6 +157,16 @@ export async function statsRoutes(app: FastifyInstance) {
       .prepare(
         `SELECT path, COUNT(*) AS views
          FROM events WHERE site_id = ? AND ts >= ? AND name = 'pageview'
+         GROUP BY path ORDER BY views DESC LIMIT 10`,
+      )
+      .all(site, since);
+
+    const entryPages = db
+      .prepare(
+        `SELECT path, COUNT(*) AS views FROM (
+           SELECT path, ROW_NUMBER() OVER (PARTITION BY visitor_hash ORDER BY ts ASC) AS rn
+           FROM events WHERE site_id = ? AND ts >= ? AND name = 'pageview'
+         ) WHERE rn = 1
          GROUP BY path ORDER BY views DESC LIMIT 10`,
       )
       .all(site, since);
@@ -231,6 +251,7 @@ export async function statsRoutes(app: FastifyInstance) {
       totals,
       previousTotals,
       topPages,
+      entryPages,
       topReferrers,
       browsers,
       systems,
