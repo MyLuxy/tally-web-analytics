@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { openDb } from "../db.js";
 import { bearerGuard } from "../auth.js";
+import { categorizeReferrer } from "../referrerCategory.js";
 
 // Read side. One endpoint that returns everything the dashboard needs for a
 // given site + time range in a single round trip. If this grows we can split
@@ -161,6 +162,26 @@ export async function statsRoutes(app: FastifyInstance) {
       )
       .all(site, since);
 
+    // Every distinct referrer host in the window (uncapped, unlike topReferrers'
+    // top-10), so the direct/search/social/referral split below is accurate --
+    // a site with a long tail of small referrers would otherwise undercount
+    // "referral" and overcount "direct" if only the top 10 were considered.
+    const allReferrers = db
+      .prepare(
+        `SELECT referrer, COUNT(*) AS views
+         FROM events WHERE site_id = ? AND ts >= ? AND name = 'pageview' AND referrer IS NOT NULL
+         GROUP BY referrer`,
+      )
+      .all(site, since) as { referrer: string; views: number }[];
+
+    const trafficSources = { direct: 0, search: 0, social: 0, referral: 0 };
+    let referredViews = 0;
+    for (const r of allReferrers) {
+      trafficSources[categorizeReferrer(r.referrer)] += r.views;
+      referredViews += r.views;
+    }
+    trafficSources.direct = Math.max(0, totals.pageviews - referredViews);
+
     const entryPages = db
       .prepare(
         `SELECT path, COUNT(*) AS views FROM (
@@ -252,6 +273,7 @@ export async function statsRoutes(app: FastifyInstance) {
       previousTotals,
       topPages,
       entryPages,
+      trafficSources,
       topReferrers,
       browsers,
       systems,

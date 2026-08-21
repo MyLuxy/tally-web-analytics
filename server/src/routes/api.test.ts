@@ -232,6 +232,18 @@ describe("entryPages in GET /api/stats", () => {
   });
 });
 
+describe("trafficSources in GET /api/stats", () => {
+  it("splits pageviews into direct/search/social/referral", async () => {
+    await collect({ site: "s1", path: "/", referrer: "https://www.google.com/search?q=x" });
+    await collect({ site: "s1", path: "/", referrer: "https://t.co/abc" });
+    await collect({ site: "s1", path: "/", referrer: "https://some-blog.example/post" });
+    await collect({ site: "s1", path: "/" }); // no referrer -> direct
+
+    const stats = (await app.inject({ url: "/api/stats?site=s1&range=7d" })).json();
+    expect(stats.trafficSources).toEqual({ direct: 1, search: 1, social: 1, referral: 1 });
+  });
+});
+
 describe("GET /api/live", () => {
   it("needs a site", async () => {
     expect((await app.inject({ url: "/api/live" })).statusCode).toBe(400);
