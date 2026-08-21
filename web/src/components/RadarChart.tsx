@@ -4,6 +4,15 @@
 
 export type RadarAxis = { label: string; value: number };
 
+// Label margins are their own dimension, not a slice of the plot radius --
+// axis labels are wide (text) but only need a little vertical room, so the
+// viewBox gets extra width/height on top of the circle itself. Sizing this
+// off the plot radius (rather than a flat px value) is what previously let
+// the left/right labels ("Search", "Referral") run past the edge and get
+// clipped at small card sizes.
+const PAD_X = 70;
+const PAD_Y = 28;
+
 export function RadarChart({
   axes,
   size = 220,
@@ -12,10 +21,11 @@ export function RadarChart({
   size?: number;
 }) {
   const n = axes.length;
-  const cx = size / 2;
-  const cy = size / 2;
-  const labelPad = 30;
-  const r = size / 2 - labelPad;
+  const W = size + PAD_X * 2;
+  const H = size + PAD_Y * 2;
+  const cx = W / 2;
+  const cy = H / 2;
+  const r = size / 2;
   const max = Math.max(1, ...axes.map((a) => a.value));
 
   // 12 o'clock, clockwise
@@ -37,7 +47,7 @@ export function RadarChart({
   const hasData = axes.some((a) => a.value > 0);
 
   return (
-    <svg viewBox={`0 0 ${size} ${size}`} className="radar-svg" role="img" aria-label="Radar chart">
+    <svg viewBox={`0 0 ${W} ${H}`} className="radar-svg" role="img" aria-label="Radar chart">
       {rings.map((frac) => (
         <path key={frac} d={ringPath(frac)} className="radar-ring" />
       ))}
@@ -51,10 +61,16 @@ export function RadarChart({
         dataPoints.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r={3} className="radar-dot" />)}
 
       {axes.map((a, i) => {
-        const p = pointAt(i, 1.18);
-        const anchor = Math.abs(p.x - cx) < 4 ? "middle" : p.x > cx ? "start" : "end";
+        // labels sit just past the ring, in whichever margin (PAD_X or
+        // PAD_Y) is relevant for their position -- an axis pointing mostly
+        // sideways gets an x-only nudge, one pointing up/down a y-only nudge
+        const p = pointAt(i, 1);
+        const angle = angleFor(i);
+        const lx = p.x + Math.cos(angle) * (PAD_X * 0.2);
+        const ly = p.y + Math.sin(angle) * (PAD_Y * 0.55) + 4;
+        const anchor = Math.abs(Math.cos(angle)) < 0.2 ? "middle" : Math.cos(angle) > 0 ? "start" : "end";
         return (
-          <text key={a.label} x={p.x} y={p.y + 4} textAnchor={anchor} className="radar-label">
+          <text key={a.label} x={lx} y={ly} textAnchor={anchor} className="radar-label">
             {a.label}
           </text>
         );

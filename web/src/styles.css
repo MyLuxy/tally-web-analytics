@@ -730,12 +730,29 @@ a {
   }
 }
 
-/* ---- traffic sources donut ---- */
+/* ---- traffic sources radar ---- */
 .traffic-sources {
   display: flex;
   align-items: center;
   gap: 28px;
   flex-wrap: wrap;
+}
+
+/* the compact card: chart centred on top, legend spanning the full width
+   underneath, instead of squeezed side-by-side into a narrow card */
+.traffic-sources-column {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 18px;
+}
+
+.traffic-sources-column .radar-svg {
+  max-width: 300px;
+}
+
+.traffic-sources-column .traffic-sources-legend {
+  width: 100%;
+  min-width: 0;
 }
 
 .donut {

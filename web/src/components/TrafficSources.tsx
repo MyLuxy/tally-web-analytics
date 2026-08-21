@@ -21,9 +21,11 @@ const CATEGORIES: { key: keyof Stats["trafficSources"]; label: string; color: st
 export function TrafficSourcesContent({
   sources,
   radarSize = 200,
+  layout = "row",
 }: {
   sources: Stats["trafficSources"];
   radarSize?: number;
+  layout?: "row" | "column"; // "column" centres the chart above a full-width legend
 }) {
   const total = CATEGORIES.reduce((sum, c) => sum + sources[c.key], 0);
 
@@ -37,7 +39,7 @@ export function TrafficSourcesContent({
   }
 
   return (
-    <div className="traffic-sources">
+    <div className={`traffic-sources${layout === "column" ? " traffic-sources-column" : ""}`}>
       <RadarChart size={radarSize} axes={CATEGORIES.map((c) => ({ label: c.label, value: sources[c.key] }))} />
       <ul className="traffic-sources-legend">
         {CATEGORIES.map((c) => {
@@ -80,7 +82,7 @@ export function TrafficSourcesCard({
           <ExpandIcon />
         </div>
       </div>
-      <TrafficSourcesContent sources={sources} radarSize={160} />
+      <TrafficSourcesContent sources={sources} radarSize={220} layout="column" />
     </ClickableCard>
   );
 }
