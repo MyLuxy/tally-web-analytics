@@ -79,6 +79,14 @@ export function fetchStats(site: string, range: Range): Promise<Stats> {
   return readApi<Stats>(`/api/stats?site=${encodeURIComponent(site)}&range=${range}`);
 }
 
+// Polled on a short interval for the "live now" pulse in the header -- kept
+// separate from fetchStats so refreshing it doesn't re-run (or re-flash) the
+// whole dashboard.
+export async function fetchLive(site: string): Promise<number> {
+  const body = await readApi<{ visitors: number }>(`/api/live?site=${encodeURIComponent(site)}`);
+  return body.visitors;
+}
+
 export function fetchBreakdown(
   site: string,
   range: Range,

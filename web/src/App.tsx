@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { BreakdownMetric, Range, Site, Stats } from "./api.js";
-import { fetchBreakdown, fetchSites, fetchStats, getToken, setToken, Unauthorized } from "./api.js";
+import { fetchBreakdown, fetchLive, fetchSites, fetchStats, getToken, setToken, Unauthorized } from "./api.js";
 import { TallyMarks } from "./components/TallyMarks.js";
 import { Chart } from "./components/Chart.js";
 import { Rows, StatList } from "./components/StatList.js";
@@ -91,6 +91,7 @@ export function App() {
   const [locked, setLocked] = useState(false); // server wants a token
   const [reload, setReload] = useState(0); // bumped to retry after unlocking
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [liveCount, setLiveCount] = useState<number | null>(null);
   const [viewAllMetric, setViewAllMetric] = useState<BreakdownMetric | null>(null);
   const [viewAllRows, setViewAllRows] = useState<Row[] | null>(null);
   const [viewAllError, setViewAllError] = useState<string | null>(null);
@@ -168,6 +169,32 @@ export function App() {
     return () => ctrl.abort();
   }, [site, range, reload]);
 
+  // "Live now" pulse: polled independently of the stats fetch above so it can
+  // run on its own short cadence without re-triggering the chart/panels'
+  // loading state. Reset to null (hidden) on every site switch so a stale
+  // count from the previous site can't flash up before the first poll lands.
+  useEffect(() => {
+    if (!site || locked) return;
+    let cancelled = false;
+    setLiveCount(null);
+    const poll = () => {
+      fetchLive(site)
+        .then((n) => {
+          if (!cancelled) setLiveCount(n);
+        })
+        .catch(() => {
+          // token got revoked mid-session, server hiccup, etc -- the pulse just
+          // stays hidden rather than surfacing a second error UI
+        });
+    };
+    poll();
+    const id = window.setInterval(poll, 30_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [site, locked]);
+
   // Fetches the full (uncapped) list for whichever panel's "View all" was
   // clicked. Closing the modal (viewAllMetric -> null) needs no fetch.
   useEffect(() => {
@@ -234,6 +261,8 @@ export function App() {
               )}
             </span>
           )}
+
+          {liveCount != null && <LivePill count={liveCount} />}
 
           <RangeTabs range={range} setRange={setRange} className="range-header" />
 
@@ -498,6 +527,18 @@ function TokenGate({ onSubmit }: { onSubmit: (token: string) => void }) {
         </button>
       </form>
     </div>
+  );
+}
+
+// Visitors active in the last five minutes. The dot only pulses when someone
+// is actually there -- a still dot at zero reads as "quiet" rather than
+// "broken".
+function LivePill({ count }: { count: number }) {
+  return (
+    <span className="live-pill" title="Visitors active in the last 5 minutes">
+      <span className={`live-dot${count > 0 ? " live-dot-active" : ""}`} />
+      <span className="num">{count}</span> live
+    </span>
   );
 }
 

@@ -300,6 +300,55 @@ a {
   font-weight: 600;
 }
 
+/* "N live" pulse in the header -- visitors active in the last 5 minutes */
+.live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--ink-faint);
+}
+
+.live-dot-active {
+  background: var(--accent);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent);
+  animation: live-pulse 2s ease-out infinite;
+}
+
+@keyframes live-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 7px color-mix(in srgb, var(--accent) 0%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot-active {
+    animation: none;
+  }
+}
+
+@media (min-width: 641px) {
+  .live-pill {
+    padding: 8px 15px;
+    font-size: 14px;
+  }
+}
+
 /* segmented range control */
 .segmented {
   display: inline-flex;
