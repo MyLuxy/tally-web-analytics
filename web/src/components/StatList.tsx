@@ -52,17 +52,7 @@ export function StatList({
     </div>
   );
 
-  const body = (
-    <>
-      <Rows rows={rows.slice(0, PREVIEW_ROWS)} empty={empty} />
-      {/* rows is only ever a top-10 slice from the server, so it can't say
-          exactly how many more there are -- the full count only comes back
-          once the sheet actually fetches the uncapped breakdown */}
-      {clickable && rows.length > PREVIEW_ROWS && (
-        <div className="panel-more">View full list</div>
-      )}
-    </>
-  );
+  const body = <Rows rows={rows.slice(0, PREVIEW_ROWS)} empty={empty} />;
 
   if (!clickable) {
     return (
@@ -197,8 +187,8 @@ function InfoDot({ text }: { text: string }) {
         onClick={() => setOpen((o) => !o)}
       >
         <svg
-          width="15"
-          height="15"
+          width="20"
+          height="20"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
