@@ -689,17 +689,6 @@ a {
   color: var(--line-strong);
 }
 
-/* hints there's more behind a compact card, under the truncated row preview */
-.panel-more {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--line);
-  color: var(--ink-faint);
-  font-size: 12px;
-  font-weight: 500;
-  text-align: center;
-}
-
 /* small, static hint icon next to a clickable card's unit label -- see
    .panel-clickable below for the actual interaction */
 .expand-icon {

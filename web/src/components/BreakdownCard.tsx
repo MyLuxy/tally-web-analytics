@@ -67,8 +67,6 @@ export function BreakdownCard({
       </div>
 
       <Rows rows={active.rows.slice(0, PREVIEW_ROWS)} empty={active.empty} />
-
-      {active.rows.length > PREVIEW_ROWS && <div className="panel-more">View full list</div>}
     </ClickableCard>
   );
 }
