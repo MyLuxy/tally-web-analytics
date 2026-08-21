@@ -82,7 +82,7 @@ export function TrafficSourcesCard({
           <ExpandIcon />
         </div>
       </div>
-      <TrafficSourcesContent sources={sources} radarSize={220} layout="column" />
+      <TrafficSourcesContent sources={sources} radarSize={300} layout="column" />
     </ClickableCard>
   );
 }
