@@ -5,6 +5,7 @@ import { fetchBreakdown, fetchLive, fetchSites, fetchStats, getToken, setToken, 
 import { TallyMarks } from "./components/TallyMarks.js";
 import { Chart } from "./components/Chart.js";
 import { Rows, StatList } from "./components/StatList.js";
+import { TrafficSources } from "./components/TrafficSources.js";
 import type { Row } from "./components/StatList.js";
 
 // Set at build time (e.g. `VITE_BACK_LINK_URL=/admin npm run build`) when
@@ -349,6 +350,8 @@ export function App() {
             {/* ...and on desktop the clock toggle sits under the chart instead */}
             <ClockToggle hour12={hour12} setHour12={setHour12} className="clock-below" />
           </section>
+
+          {data && <TrafficSources sources={data.trafficSources} />}
 
           <div className="grid-two">
             <StatList

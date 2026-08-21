@@ -15,6 +15,9 @@
   /* second series (visitors): a brand amber that stays legible on the paper,
      on the dark tooltip, and in dark mode -- so the dot matches the line everywhere */
   --accent-2: #cb7a2c;
+  /* third series, used only by the traffic-sources donut (referral slice) --
+     a cool stamp-ink blue that reads distinctly from the emerald/amber pair */
+  --accent-3: #3f6fb0;
 
   --font-display: "Space Grotesk Variable", system-ui, sans-serif;
   --font-body: "IBM Plex Sans", system-ui, sans-serif;
@@ -41,6 +44,7 @@
      read as murky, so the fills stay grey while the lines keep the accent */
   --accent-wash: #283035;
   --accent-2: #e0954c;
+  --accent-3: #6ea1e0;
   color-scheme: dark;
 }
 
@@ -723,6 +727,93 @@ a {
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   gap: var(--gap);
   margin-top: var(--gap);
+}
+
+/* ---- traffic sources donut ---- */
+.traffic-sources {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+
+.donut {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.donut-svg {
+  display: block;
+}
+
+.donut-empty {
+  stroke: var(--line);
+}
+
+.donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  pointer-events: none;
+}
+
+.donut-center-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.1;
+}
+
+.traffic-sources-legend {
+  flex: 1;
+  min-width: 180px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.traffic-source-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.traffic-source-row .dot {
+  flex-shrink: 0;
+}
+
+.traffic-source-label {
+  flex: 1;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.traffic-source-pct {
+  font-size: 13px;
+  color: var(--ink-soft);
+  min-width: 2.5em;
+  text-align: right;
+}
+
+.traffic-source-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  min-width: 3.5em;
+  text-align: right;
+}
+
+@media (max-width: 480px) {
+  .traffic-sources {
+    justify-content: center;
+  }
 }
 
 /* ---- stat list rows ---- */

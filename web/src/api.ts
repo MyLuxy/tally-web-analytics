@@ -11,6 +11,7 @@ export type Stats = {
   previousTotals: { pageviews: number; visitors: number } | null;
   topPages: { path: string; views: number }[];
   entryPages: { path: string; views: number }[];
+  trafficSources: { direct: number; search: number; social: number; referral: number };
   topReferrers: { source: string; views: number }[];
   browsers: { name: string; views: number }[];
   systems: { name: string; views: number }[];
