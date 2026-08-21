@@ -10,8 +10,8 @@ export type RadarAxis = { label: string; value: number };
 // off the plot radius (rather than a flat px value) is what previously let
 // the left/right labels ("Search", "Referral") run past the edge and get
 // clipped at small card sizes.
-const PAD_X = 70;
-const PAD_Y = 28;
+const PAD_X = 88;
+const PAD_Y = 34;
 
 export function RadarChart({
   axes,
