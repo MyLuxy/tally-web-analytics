@@ -195,6 +195,25 @@ describe("GET /api/stats", () => {
   });
 });
 
+describe("GET /api/live", () => {
+  it("needs a site", async () => {
+    expect((await app.inject({ url: "/api/live" })).statusCode).toBe(400);
+  });
+
+  it("counts distinct visitors from the last five minutes only", async () => {
+    const stale = Date.now() - 10 * 60 * 1000;
+    insertEvent({
+      site_id: "s1", name: "pageview", path: "/old", referrer: null,
+      visitor_hash: "stale-visitor", browser: "Chrome", os: "Windows", device: "desktop",
+      country: null, ts: stale,
+    });
+    await collect({ site: "s1", path: "/now" });
+
+    const { visitors } = (await app.inject({ url: "/api/live?site=s1" })).json();
+    expect(visitors).toBe(1);
+  });
+});
+
 describe("GET /api/sites", () => {
   it("lists the sites that have events, with their counts", async () => {
     await collect({ site: "alpha", path: "/" });

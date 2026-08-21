@@ -241,6 +241,26 @@ export async function statsRoutes(app: FastifyInstance) {
     };
   });
 
+  // Powers the "live now" pulse in the header: visitors seen in the last five
+  // minutes. Deliberately its own cheap endpoint (not folded into /api/stats)
+  // so the dashboard can poll it on a short interval without re-running the
+  // full stats query every time.
+  app.get("/api/live", async (req, reply) => {
+    const { site } = req.query as Query;
+    if (!site) {
+      return reply.code(400).send({ error: "missing site" });
+    }
+    const db = openDb();
+    const since = Date.now() - 5 * 60 * 1000;
+    const row = db
+      .prepare(
+        `SELECT COUNT(DISTINCT visitor_hash) AS visitors
+         FROM events WHERE site_id = ? AND ts >= ?`,
+      )
+      .get(site, since) as { visitors: number };
+    return { visitors: row.visitors };
+  });
+
   // Backs the "View all" button on each panel: same grouping as above, same
   // site/range window, but without the top-10 cap.
   app.get("/api/stats/breakdown", async (req, reply) => {
