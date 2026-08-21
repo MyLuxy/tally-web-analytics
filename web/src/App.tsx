@@ -331,7 +331,7 @@ export function App() {
 
           <button
             type="button"
-            className="icon-btn"
+            className="icon-btn icon-btn-lg"
             onClick={() => setSettingsOpen(true)}
             aria-label="Settings"
             aria-haspopup="dialog"
