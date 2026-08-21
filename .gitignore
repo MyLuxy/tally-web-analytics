@@ -10,6 +10,9 @@ web-dist/
 .env
 .env.local
 
+# local-only tooling, never meant to ship in the public repo
+server/scripts/
+
 # editor / os junk
 .DS_Store
 .vscode/*
