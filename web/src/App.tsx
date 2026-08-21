@@ -101,8 +101,11 @@ export function App() {
   const [viewAllMetric, setViewAllMetric] = useState<BreakdownMetric | null>(null);
   const [viewAllRows, setViewAllRows] = useState<Row[] | null>(null);
   const [viewAllError, setViewAllError] = useState<string | null>(null);
+  // Mirrors the inline script in index.html, which already set this on <html>
+  // before React mounted (so there's no flash of the wrong palette) -- this
+  // just brings React's own state in sync with what's already on screen.
   const [theme, setTheme] = useState<"light" | "dark">(
-    () => (localStorage.getItem("tally_theme") === "dark" ? "dark" : "light"),
+    () => (localStorage.getItem("tally_theme") === "light" ? "light" : "dark"),
   );
   // 12-hour (American, the default) vs 24-hour clock in the chart labels
   const [hour12, setHour12] = useState(

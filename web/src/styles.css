@@ -1,50 +1,53 @@
-/* Tally design tokens -- a "ledger ink" palette. Warm paper, slate-green ink,
-   one emerald accent. Numbers are always set in the mono face with tabular
-   figures so the whole dashboard reads like a counting sheet. */
+/* Tally design tokens -- a quiet, data-dense "terminal" palette: near-black
+   (or near-white) ground, hairline borders, one signal green and everything
+   else kept deliberately neutral so the numbers are always the loudest thing
+   on screen. Dark is the primary look (see index.html's inline theme script);
+   light is a full, equally-finished second coat, not an afterthought. */
 :root {
-  --paper: #fbfaf6;
+  --paper: #f4f5f7;
   --panel: #ffffff;
-  --ink: #16211c;
-  --ink-soft: #5d6b63;
-  --ink-faint: #93a098;
-  --line: #e7e6dd;
-  --line-strong: #d8d7cc;
-  --accent: #0e7a59;
-  --accent-ink: #0a5a41;
-  --accent-wash: #e8f2ec;
-  /* second series (visitors): a brand amber that stays legible on the paper,
-     on the dark tooltip, and in dark mode -- so the dot matches the line everywhere */
-  --accent-2: #cb7a2c;
-  /* third series, used only by the traffic-sources donut (referral slice) --
-     a cool stamp-ink blue that reads distinctly from the emerald/amber pair */
-  --accent-3: #3f6fb0;
+  --ink: #11151b;
+  --ink-soft: #5b6472;
+  --ink-faint: #99a1ad;
+  --line: #e5e7ec;
+  --line-strong: #d3d7de;
+  --accent: #0f9f74;
+  --accent-ink: #0b7d5b;
+  --accent-wash: #e5f4ee;
+  /* second series (visitors) */
+  --accent-2: #b8791e;
+  /* third series, used only by the traffic-sources donut (referral slice) */
+  --accent-3: #3b6fc4;
+  /* negative deltas -- the one warm, alarm-toned colour in an otherwise cool
+     palette, so a drop actually reads as a drop */
+  --negative: #d1392e;
+  --negative-wash: #fbeae8;
 
-  --font-display: "Space Grotesk Variable", system-ui, sans-serif;
   --font-body: "IBM Plex Sans", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
-  --radius: 10px;
-  --gap: 20px;
-  --maxw: 1080px;
+  --radius: 8px;
+  --gap: 16px;
 }
 
-/* Dark take on the same ledger palette: the paper goes to ink, the ink to a
-   soft off-white, and the emerald brightens just enough to hold up. */
+/* The dark take isn't a dimmed light theme -- panels sit a shade above the
+   near-black ground so the layout still reads as stacked surfaces, and the
+   accent brightens (a flat #0f9f74 goes muddy on dark) without tipping neon. */
 [data-theme="dark"] {
-  --paper: #14181a;
-  --panel: #1b2123;
-  --ink: #e8e9e4;
-  --ink-soft: #a3aca7;
-  --ink-faint: #6c7772;
-  --line: #272d30;
-  --line-strong: #343b3e;
-  --accent: #1ba87c;
-  --accent-ink: #36bd91;
-  /* a neutral elevated tone for the row bars and chart fill -- the dark green
-     read as murky, so the fills stay grey while the lines keep the accent */
-  --accent-wash: #283035;
-  --accent-2: #e0954c;
-  --accent-3: #6ea1e0;
+  --paper: #0a0d12;
+  --panel: #11151c;
+  --ink: #e7eaf0;
+  --ink-soft: #8a92a1;
+  --ink-faint: #4d5462;
+  --line: #1c212b;
+  --line-strong: #272d3a;
+  --accent: #22c58e;
+  --accent-ink: #3fdba3;
+  --accent-wash: #172420;
+  --accent-2: #e0a53f;
+  --accent-3: #5b93e0;
+  --negative: #f0574a;
+  --negative-wash: #2a1917;
   color-scheme: dark;
 }
 
@@ -77,7 +80,7 @@ body {
 h1,
 h2,
 h3 {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-weight: 600;
   letter-spacing: -0.01em;
   margin: 0;
@@ -109,10 +112,12 @@ a {
 }
 
 /* ---- layout shell ---- */
+/* full-bleed on purpose -- no centered column. Padding scales with the
+   viewport instead of a fixed max-width, so the dashboard actually uses a
+   wide monitor instead of floating a narrow card in the middle of it. */
 .shell {
-  max-width: var(--maxw);
-  margin: 0 auto;
-  padding: 28px 24px 40px;
+  width: 100%;
+  padding: 28px clamp(20px, 3.5vw, 56px) 48px;
 }
 
 .footer {
@@ -165,7 +170,7 @@ a {
 }
 
 .brand-name {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 22px;
   font-weight: 600;
   line-height: 1;
@@ -325,18 +330,19 @@ a {
   background: var(--ink-faint);
 }
 
+/* a calm breathing fade, like a terminal cursor -- not an expanding glow ring */
 .live-dot-active {
   background: var(--accent);
-  box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent);
-  animation: live-pulse 2s ease-out infinite;
+  animation: live-pulse 2.4s ease-in-out infinite;
 }
 
 @keyframes live-pulse {
-  0% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent);
-  }
+  0%,
   100% {
-    box-shadow: 0 0 0 7px color-mix(in srgb, var(--accent) 0%, transparent);
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
   }
 }
 
@@ -572,17 +578,13 @@ a {
 }
 
 .metric-delta-up {
-  background: color-mix(in srgb, var(--accent) 16%, var(--accent-wash));
+  background: var(--accent-wash);
   color: var(--accent-ink);
 }
 
 .metric-delta-down {
-  background: color-mix(in srgb, #c1483a 16%, var(--accent-wash));
-  color: #b8402f;
-}
-
-[data-theme="dark"] .metric-delta-down {
-  color: #e08575;
+  background: var(--negative-wash);
+  color: var(--negative);
 }
 
 .metric-delta-new {
@@ -994,9 +996,8 @@ a {
   font-size: 11px;
 }
 
-.chart-area {
-  fill: var(--accent-wash);
-}
+/* fill is set inline per-instance (a <linearGradient> fading to the baseline)
+   -- nothing to set here, this class just exists as a hook if that changes */
 
 .chart-line-views {
   fill: none;
@@ -1196,8 +1197,8 @@ a {
 }
 
 .notice-error {
-  border-color: #e4c4bd;
-  background: #fbf1ee;
+  border-color: color-mix(in srgb, var(--negative) 35%, var(--line-strong));
+  background: var(--negative-wash);
 }
 
 @media (max-width: 680px) {
@@ -1389,7 +1390,7 @@ a {
   width: calc(50% - 4px);
   background: var(--ink);
   border-radius: 999px;
-  transition: transform 0.34s cubic-bezier(0.34, 1.5, 0.55, 1);
+  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .theme-seg[data-active="dark"]::before {
@@ -1481,7 +1482,7 @@ a {
       color 0.42s ease,
       fill 0.42s ease,
       stroke 0.42s ease,
-      transform 0.34s cubic-bezier(0.34, 1.5, 0.55, 1) !important;
+      transform 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
 }
 

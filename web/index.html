@@ -4,8 +4,14 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="light" />
+    <meta name="color-scheme" content="dark light" />
     <title>Tally</title>
+    <script>
+      // Applied synchronously, before the first paint, so a returning dark-mode
+      // visitor never sees a flash of the light palette while React mounts.
+      // Dark is the default look (no stored preference yet); light is opt-in.
+      document.documentElement.dataset.theme = localStorage.getItem("tally_theme") === "light" ? "light" : "dark";
+    </script>
   </head>
   <body>
     <div id="root"></div>
