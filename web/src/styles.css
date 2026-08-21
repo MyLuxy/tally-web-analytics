@@ -135,10 +135,14 @@ a {
 /* ---- layout shell ---- */
 /* full-bleed on purpose -- no centered column. Padding scales with the
    viewport instead of a fixed max-width, so the dashboard actually uses a
-   wide monitor instead of floating a narrow card in the middle of it. */
+   wide monitor instead of floating a narrow card in the middle of it.
+   --shell-pad-x/-top are shared with .topbar below, which cancels them out
+   with a negative margin so the bar itself reaches the true page edges. */
 .shell {
+  --shell-pad-x: clamp(20px, 3.5vw, 56px);
+  --shell-pad-top: 28px;
   width: 100%;
-  padding: 28px clamp(20px, 3.5vw, 56px) 48px;
+  padding: var(--shell-pad-top) var(--shell-pad-x) 48px;
 }
 
 .footer {
@@ -168,23 +172,22 @@ a {
   color: var(--accent);
 }
 
-/* a raised bar rather than a bare bottom rule -- stays put while the panels
-   below scroll, so the range/site controls are never more than a glance away */
+/* a plain, classic app bar -- flat colour, a single hairline underneath, no
+   card chrome (no radius, no shadow, no floating gap). Edge-to-edge and
+   pinned to the very top of the viewport while the panels scroll under it. */
 .topbar {
   position: sticky;
-  top: 12px;
+  top: 0;
   z-index: 20;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  margin-bottom: 22px;
-  padding: 14px 20px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--panel) 100%, white 3%), var(--panel));
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-card);
+  margin: calc(-1 * var(--shell-pad-top)) calc(-1 * var(--shell-pad-x)) 22px;
+  padding: 16px var(--shell-pad-x);
+  background: color-mix(in srgb, var(--paper) 95%, transparent);
+  border-bottom: 1px solid var(--line);
 }
 
 .brand {
@@ -556,7 +559,7 @@ a {
 }
 
 .metric {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--panel) 100%, white 3%), var(--panel));
+  background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 18px 20px;
@@ -611,22 +614,30 @@ a {
 /* ---- panels ---- */
 .panel {
   margin-top: var(--gap);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--panel) 100%, white 3%), var(--panel));
+  background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 14px 16px 15px;
   box-shadow: var(--shadow-card);
 }
 
-/* the whole card is the click target for cards with a fuller list behind
-   them (see StatList) -- lift on hover/focus like a pressable surface */
+/* the whole card is the click target for cards with a fuller list behind them
+   (see StatList) -- tilts in 3D toward the cursor on hover, like a physical
+   card being picked up, instead of just lifting straight up. --tilt-x/-y/-z
+   are set from JS (ClickableCard's pointermove handler); they default to
+   flat/resting here so nothing moves for keyboard focus or touch, which
+   never fire pointermove. */
 .panel-clickable {
+  --tilt-x: 0deg;
+  --tilt-y: 0deg;
+  --tilt-z: 0px;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  transform: perspective(900px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) translateZ(var(--tilt-z));
+  transition: transform 0.12s ease-out, box-shadow 0.15s ease, border-color 0.15s ease;
+  will-change: transform;
 }
 
 .panel-clickable:hover {
-  transform: translateY(-2px);
   box-shadow: var(--shadow-card-hover);
   border-color: var(--line-strong);
 }
@@ -641,7 +652,15 @@ a {
 }
 
 .panel-clickable:active {
-  transform: translateY(-1px);
+  --tilt-z: 2px !important;
+}
+
+/* keep the tilt itself out of reduced-motion (the shadow/border hover above
+   still applies -- only the pointer-tracked 3D rotation is motion) */
+@media (prefers-reduced-motion: reduce) {
+  .panel-clickable {
+    transform: none;
+  }
 }
 
 .panel-head {
