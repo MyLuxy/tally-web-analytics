@@ -400,7 +400,7 @@ export function App() {
               expanded={expanded === "traffic"}
               onExpand={() => openCard("traffic")}
               ariaLabel="Traffic: view full chart"
-              className="chart-card"
+              className="chart-card card-span-2"
             >
               <div className="panel-head">
                 <h2 className="panel-title">Traffic</h2>
@@ -429,6 +429,7 @@ export function App() {
               empty="No pages recorded."
               rows={(data?.topPages ?? []).map((p) => ({ label: p.path, value: p.views }))}
               onExpand={() => openCard("pages")}
+              className="card-span-2"
             />
             <StatList
               cardKey="entryPages"
@@ -449,6 +450,7 @@ export function App() {
               empty="All traffic came in direct."
               rows={(data?.topReferrers ?? []).map((r) => ({ label: r.source, value: r.views }))}
               onExpand={() => openCard("referrers")}
+              className="card-span-2"
             />
             <StatList
               cardKey="browsers"

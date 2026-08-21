@@ -23,6 +23,7 @@ export function StatList({
   empty,
   info,
   onExpand,
+  className,
 }: {
   cardKey: string;
   expanded: boolean;
@@ -32,6 +33,7 @@ export function StatList({
   empty: string;
   info?: string; // optional one-liner explaining the section
   onExpand?: () => void; // cards show a short preview; clicking opens the full list full-screen
+  className?: string; // e.g. "card-span-2" -- lets the dashboard's bento grid vary this card's width
 }) {
   const clickable = Boolean(onExpand && rows.length > 0);
 
@@ -64,7 +66,7 @@ export function StatList({
 
   if (!clickable) {
     return (
-      <section className="panel">
+      <section className={`panel${className ? ` ${className}` : ""}`}>
         {head}
         {body}
       </section>
@@ -72,7 +74,13 @@ export function StatList({
   }
 
   return (
-    <ClickableCard cardKey={cardKey} expanded={expanded} onExpand={onExpand!} ariaLabel={`${title}: view all`}>
+    <ClickableCard
+      cardKey={cardKey}
+      expanded={expanded}
+      onExpand={onExpand!}
+      ariaLabel={`${title}: view all`}
+      className={className}
+    >
       {head}
       {body}
     </ClickableCard>

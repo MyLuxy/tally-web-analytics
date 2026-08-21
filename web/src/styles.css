@@ -558,9 +558,14 @@ a {
   margin-top: 24px;
 }
 
+/* a fixed dark tile -- not a token that flips with the theme, deliberately:
+   these three stay dark in light mode too, so they read as a permanent
+   "headline" block instead of just another card. Text/chip colours below are
+   likewise fixed light-on-dark rather than the usual theme tokens, since this
+   card's own internal contrast never changes. */
 .metric {
-  background: var(--panel);
-  border: 1px solid var(--line);
+  background: #080a10;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius);
   padding: 18px 20px;
   box-shadow: var(--shadow-card);
@@ -577,11 +582,12 @@ a {
   font-size: 40px;
   font-weight: 600;
   line-height: 1.05;
-  color: var(--ink);
+  color: #f3f5f9;
 }
 
 .metric-label {
   margin-top: 6px;
+  color: rgba(243, 245, 249, 0.55);
 }
 
 /* period-over-period change chip next to a headline metric */
@@ -593,22 +599,22 @@ a {
   border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
-  background: var(--accent-wash);
-  color: var(--ink-soft);
+  background: rgba(255, 255, 255, 0.09);
+  color: rgba(243, 245, 249, 0.7);
 }
 
 .metric-delta-up {
-  background: var(--accent-wash);
-  color: var(--accent-ink);
+  background: rgba(56, 189, 248, 0.16);
+  color: #7dd3fc;
 }
 
 .metric-delta-down {
-  background: var(--negative-wash);
-  color: var(--negative);
+  background: rgba(240, 87, 74, 0.18);
+  color: #ff9086;
 }
 
 .metric-delta-new {
-  color: var(--accent-2);
+  color: #e0a53f;
 }
 
 /* ---- panels ---- */
@@ -622,22 +628,17 @@ a {
 }
 
 /* the whole card is the click target for cards with a fuller list behind them
-   (see StatList) -- tilts in 3D toward the cursor on hover, like a physical
-   card being picked up, instead of just lifting straight up. --tilt-x/-y/-z
-   are set from JS (ClickableCard's pointermove handler); they default to
-   flat/resting here so nothing moves for keyboard focus or touch, which
-   never fire pointermove. */
+   (see StatList) -- a fixed 3D tilt + lift on hover, like a physical card
+   being picked up off the table. Always the same angle regardless of where
+   the cursor is over the card -- deliberately not cursor-tracked. */
 .panel-clickable {
-  --tilt-x: 0deg;
-  --tilt-y: 0deg;
-  --tilt-z: 0px;
   cursor: pointer;
-  transform: perspective(900px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) translateZ(var(--tilt-z));
-  transition: transform 0.12s ease-out, box-shadow 0.15s ease, border-color 0.15s ease;
-  will-change: transform;
+  transform: perspective(800px) rotateX(0deg) rotateY(0deg) translateZ(0px);
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease, border-color 0.15s ease;
 }
 
 .panel-clickable:hover {
+  transform: perspective(800px) rotateX(4deg) rotateY(-4deg) translateZ(12px);
   box-shadow: var(--shadow-card-hover);
   border-color: var(--line-strong);
 }
@@ -652,13 +653,13 @@ a {
 }
 
 .panel-clickable:active {
-  --tilt-z: 2px !important;
+  transform: perspective(800px) rotateX(1.5deg) rotateY(-1.5deg) translateZ(4px);
 }
 
-/* keep the tilt itself out of reduced-motion (the shadow/border hover above
-   still applies -- only the pointer-tracked 3D rotation is motion) */
 @media (prefers-reduced-motion: reduce) {
-  .panel-clickable {
+  .panel-clickable,
+  .panel-clickable:hover,
+  .panel-clickable:active {
     transform: none;
   }
 }
@@ -794,12 +795,16 @@ a {
   padding: 30px 0;
 }
 
-/* one bento of same-sized compact tiles -- traffic, traffic sources, top
-   pages, referrers and every breakdown all live in this single grid now,
-   instead of a full-width hero chart plus two differently-sized grids below it */
+/* a bento, not a uniform grid of same-sized tiles -- traffic, traffic
+   sources, top pages, referrers and every breakdown live here, several of
+   them spanning two tracks (see .card-span-2 below) so the page reads as a
+   deliberate mix of shapes instead of a spreadsheet. `dense` lets the
+   narrower one-track cards (browsers, systems, ...) backfill whatever gaps
+   the wide ones leave, instead of leaving holes. */
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-auto-flow: dense;
   gap: var(--gap);
   margin-top: 24px;
 }
@@ -808,10 +813,11 @@ a {
   margin-top: 0;
 }
 
-/* the traffic card carries a little chart, so it earns two tiles' width --
-   only once the grid actually has room for a second column */
+/* wide cards -- more room for long labels (page paths, referrer domains) or
+   for the chart/donut's own internal layout. Only once the grid actually has
+   room for a second track; below that every card is one column wide anyway. */
 @media (min-width: 700px) {
-  .chart-card {
+  .card-span-2 {
     grid-column: span 2;
   }
 }

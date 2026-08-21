@@ -71,7 +71,13 @@ export function TrafficSourcesCard({
   onExpand: () => void;
 }) {
   return (
-    <ClickableCard cardKey="trafficSources" expanded={expanded} onExpand={onExpand} ariaLabel="Traffic sources: view full breakdown">
+    <ClickableCard
+      cardKey="trafficSources"
+      expanded={expanded}
+      onExpand={onExpand}
+      ariaLabel="Traffic sources: view full breakdown"
+      className="card-span-2"
+    >
       <div className="panel-head">
         <h2 className="panel-title">Traffic sources</h2>
         <div className="panel-head-actions">
