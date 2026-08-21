@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { TallyMarks } from "./TallyMarks.js";
 import { downloadCsv, rowsToCsv } from "../lib/csv.js";
@@ -8,6 +8,10 @@ import { downloadCsv, rowsToCsv } from "../lib/csv.js";
 
 // label can be a node (e.g. a flag + name); title is the plain-text tooltip.
 export type Row = { label: ReactNode; value: number; title?: string };
+
+// Cards stay compact on the base dashboard -- a handful of rows is enough to
+// read the shape of the data; clicking the card is what gets you the rest.
+const PREVIEW_ROWS = 5;
 
 export function StatList({
   title,
@@ -22,10 +26,28 @@ export function StatList({
   rows: Row[];
   empty: string;
   info?: string; // optional one-liner explaining the section
-  onViewAll?: () => void; // panels only show a top-10 slice; opens the full list in a modal
+  onViewAll?: () => void; // cards show a short preview; clicking opens the full list in a modal
 }) {
+  const clickable = Boolean(onViewAll && rows.length > 0);
+
   return (
-    <section className="panel">
+    <section
+      className={`panel${clickable ? " panel-clickable" : ""}`}
+      {...(clickable
+        ? {
+            role: "button",
+            tabIndex: 0,
+            "aria-label": `${title}: view all`,
+            onClick: onViewAll,
+            onKeyDown: (e: ReactKeyboardEvent) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onViewAll?.();
+              }
+            },
+          }
+        : {})}
+    >
       <div className="panel-head">
         <h2 className="panel-title">
           {title}
@@ -35,17 +57,28 @@ export function StatList({
           {rows.length > 0 && <ExportCsvButton title={title} rows={rows} />}
           {/* the unit ("views") is a fixed label -- keep browser auto-translate off it */}
           <span className="eyebrow" translate="no">{unit}</span>
+          {clickable && <ExpandIcon />}
         </div>
       </div>
 
-      <Rows rows={rows} empty={empty} />
+      <Rows rows={rows.slice(0, PREVIEW_ROWS)} empty={empty} />
 
-      {onViewAll && rows.length > 0 && (
-        <button type="button" className="view-all-btn" onClick={onViewAll}>
-          View all
-        </button>
+      {clickable && rows.length > PREVIEW_ROWS && (
+        <div className="panel-more">+{rows.length - PREVIEW_ROWS} more</div>
       )}
     </section>
+  );
+}
+
+// Purely decorative -- the whole card is the click target (see role="button"
+// above); this just hints that it's one.
+function ExpandIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
+      className="expand-icon">
+      <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3m11-5v3a2 2 0 0 1-2 2h-3" />
+    </svg>
   );
 }
 
@@ -88,7 +121,8 @@ export function ExportCsvButton({ title, rows }: { title: string; rows: Row[] })
       className="export-btn"
       title={`Export "${title}" as CSV`}
       aria-label={`Export ${title} as CSV`}
-      onClick={() => {
+      onClick={(e) => {
+        e.stopPropagation(); // sits inside a whole-card click target (see StatList)
         const csvRows = rows.map((r) => ({
           label: r.title ?? (typeof r.label === "string" ? r.label : String(r.value)),
           value: r.value,
@@ -135,7 +169,9 @@ function InfoDot({ text }: { text: string }) {
   }, [open]);
 
   return (
-    <span className="info" ref={ref}>
+    // stopPropagation: this can sit inside a whole-card click target (see
+    // StatList) and shouldn't also trigger it
+    <span className="info" ref={ref} onClick={(e) => e.stopPropagation()}>
       <button
         type="button"
         className="info-btn"

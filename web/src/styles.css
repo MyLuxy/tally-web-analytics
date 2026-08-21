@@ -18,6 +18,10 @@
   --accent-2: #b8791e;
   /* third series, used only by the traffic-sources donut (referral slice) */
   --accent-3: #3b6fc4;
+  /* the traffic-sources "search" slice always stays this green, in both
+     themes -- in light it's just --accent restated, since --accent already
+     is that green there */
+  --accent-search: var(--accent);
   /* negative deltas -- the one warm, alarm-toned colour in an otherwise cool
      palette, so a drop actually reads as a drop */
   --negative: #d1392e;
@@ -26,13 +30,22 @@
   --font-body: "IBM Plex Sans", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
-  --radius: 8px;
+  --radius: 10px;
   --gap: 16px;
+
+  /* the slight depth every card/pill/button shares -- a soft ambient shadow,
+     not a hard drop shadow, so surfaces read as gently raised rather than
+     cut out and pasted on */
+  --shadow-card: 0 1px 2px rgba(17, 21, 27, 0.05), 0 10px 24px -16px rgba(17, 21, 27, 0.22);
+  --shadow-card-hover: 0 2px 4px rgba(17, 21, 27, 0.06), 0 18px 34px -16px rgba(17, 21, 27, 0.28);
+  --shadow-pill: 0 1px 2px rgba(17, 21, 27, 0.05);
 }
 
 /* The dark take isn't a dimmed light theme -- panels sit a shade above the
-   near-black ground so the layout still reads as stacked surfaces, and the
-   accent brightens (a flat #0f9f74 goes muddy on dark) without tipping neon. */
+   near-black ground so the layout still reads as stacked surfaces. The
+   primary accent is a cool sky blue here rather than green -- green stayed
+   reserved for the traffic-sources "search" slice (--accent-search) so it
+   doesn't also double as "click here" on every button and hover state. */
 [data-theme="dark"] {
   --paper: #0a0d12;
   --panel: #11151c;
@@ -41,13 +54,19 @@
   --ink-faint: #4d5462;
   --line: #1c212b;
   --line-strong: #272d3a;
-  --accent: #22c58e;
-  --accent-ink: #3fdba3;
-  --accent-wash: #172420;
+  --accent: #38bdf8;
+  --accent-ink: #7dd3fc;
+  --accent-wash: #142230;
   --accent-2: #e0a53f;
   --accent-3: #5b93e0;
+  --accent-search: #22c58e;
   --negative: #f0574a;
   --negative-wash: #2a1917;
+  /* on dark, the readable cue is a faint top highlight (a beveled sheen) plus
+     a real drop shadow -- a shadow alone barely shows up against near-black */
+  --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.045), 0 10px 24px -12px rgba(0, 0, 0, 0.6);
+  --shadow-card-hover: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 18px 36px -12px rgba(0, 0, 0, 0.7);
+  --shadow-pill: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 1px 2px rgba(0, 0, 0, 0.3);
   color-scheme: dark;
 }
 
@@ -97,14 +116,16 @@ a {
   letter-spacing: -0.02em;
 }
 
-/* small uppercase label used as section eyebrows and column heads */
+/* small uppercase label used as section eyebrows and column heads -- plain
+   body text, not mono: at this size and tracking, mono read cramped and the
+   old --ink-faint was too dim to read comfortably on either theme */
 .eyebrow {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.14em;
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .ink-soft {
@@ -147,14 +168,23 @@ a {
   color: var(--accent);
 }
 
+/* a raised bar rather than a bare bottom rule -- stays put while the panels
+   below scroll, so the range/site controls are never more than a glance away */
 .topbar {
+  position: sticky;
+  top: 12px;
+  z-index: 20;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  padding-bottom: 22px;
-  border-bottom: 1px solid var(--line);
+  margin-bottom: 22px;
+  padding: 14px 20px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--panel) 100%, white 3%), var(--panel));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
 }
 
 .brand {
@@ -198,6 +228,7 @@ a {
   border: 1px solid var(--line-strong);
   border-radius: 999px;
   background: var(--panel);
+  box-shadow: var(--shadow-pill);
 }
 
 .back-link {
@@ -212,12 +243,15 @@ a {
   font-size: 14px;
   font-weight: 500;
   text-decoration: none;
-  transition: color 0.15s, border-color 0.15s;
+  box-shadow: var(--shadow-pill);
+  transition: color 0.15s, border-color 0.15s, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .back-link:hover {
   color: var(--ink);
   border-color: var(--ink-faint);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-card);
 }
 
 .back-link:focus-visible {
@@ -320,6 +354,7 @@ a {
   background: var(--panel);
   color: var(--ink-soft);
   font-size: 13px;
+  box-shadow: var(--shadow-pill);
 }
 
 .live-dot {
@@ -366,6 +401,7 @@ a {
   background: var(--panel);
   border: 1px solid var(--line-strong);
   border-radius: 999px;
+  box-shadow: var(--shadow-pill);
 }
 
 .segment {
@@ -376,7 +412,7 @@ a {
   padding: 5px 14px;
   border-radius: 999px;
   cursor: pointer;
-  transition: color 0.15s ease, background 0.15s ease;
+  transition: color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
 }
 
 .segment:hover {
@@ -413,12 +449,15 @@ a {
   border-radius: 999px;
   font-size: 13px;
   cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  box-shadow: var(--shadow-pill);
+  transition: color 0.15s ease, border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .clock-toggle:hover {
   color: var(--ink);
   border-color: var(--ink-faint);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-card);
 }
 
 .clock-toggle:focus-visible {
@@ -463,12 +502,15 @@ a {
   color: var(--ink-soft);
   border-radius: 999px;
   cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  box-shadow: var(--shadow-pill);
+  transition: color 0.15s ease, border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .theme-toggle:hover {
   color: var(--ink);
   border-color: var(--ink-faint);
+  transform: translateY(-1px) rotate(-8deg);
+  box-shadow: var(--shadow-card);
 }
 
 .theme-toggle:focus-visible {
@@ -479,6 +521,7 @@ a {
 .segment[aria-pressed="true"] {
   background: var(--ink);
   color: var(--paper);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22);
 }
 
 .segment:focus-visible {
@@ -532,18 +575,17 @@ a {
 /* ---- ledger header (the headline metrics) ---- */
 .ledger {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1px;
-  margin-top: 28px;
-  background: var(--line);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  overflow: hidden;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--gap);
+  margin-top: 24px;
 }
 
 .metric {
-  background: var(--panel);
-  padding: 22px 24px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--panel) 100%, white 3%), var(--panel));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-card);
 }
 
 .metric-value-row {
@@ -594,17 +636,44 @@ a {
 /* ---- panels ---- */
 .panel {
   margin-top: var(--gap);
-  background: var(--panel);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--panel) 100%, white 3%), var(--panel));
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 18px 20px 20px;
+  padding: 14px 16px 15px;
+  box-shadow: var(--shadow-card);
+}
+
+/* the whole card is the click target for cards with a fuller list behind
+   them (see StatList) -- lift on hover/focus like a pressable surface */
+.panel-clickable {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.panel-clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+  border-color: var(--line-strong);
+}
+
+.panel-clickable:hover .expand-icon {
+  color: var(--accent-ink);
+}
+
+.panel-clickable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.panel-clickable:active {
+  transform: translateY(-1px);
 }
 
 .panel-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .panel-title {
@@ -706,33 +775,22 @@ a {
   color: var(--line-strong);
 }
 
-/* sits under a panel's rows; opens the same breakdown uncapped in a modal */
-.view-all-btn {
-  display: block;
-  width: 100%;
-  margin-top: 10px;
-  padding: 8px;
-  border: 0;
+/* hints there's more behind a compact card, under the truncated row preview */
+.panel-more {
+  margin-top: 8px;
+  padding-top: 8px;
   border-top: 1px solid var(--line);
-  background: transparent;
-  color: var(--ink-soft);
-  font: inherit;
-  font-size: 13px;
+  color: var(--ink-faint);
+  font-size: 12px;
   font-weight: 500;
   text-align: center;
-  cursor: pointer;
-  transition: color 0.15s ease;
 }
 
-.view-all-btn:hover,
-.view-all-btn:focus-visible {
-  color: var(--accent-ink);
-}
-
-.view-all-btn:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
-  border-radius: 6px;
+/* small, static hint icon next to a clickable card's unit label -- see
+   .panel-clickable below for the actual interaction */
+.expand-icon {
+  color: var(--ink-faint);
+  flex-shrink: 0;
 }
 
 /* the modal opened by "View all" fetches its rows on open */
@@ -742,9 +800,13 @@ a {
   padding: 30px 0;
 }
 
-.grid-two {
+/* every card grid below shares one compact tile size, so pages/referrers and
+   the smaller browser/os/device/country cards read as one consistent bento
+   of tiles instead of two differently-sized grids stacked on top of each other */
+.grid-two,
+.breakdowns {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: var(--gap);
 }
 
@@ -752,12 +814,7 @@ a {
   margin-top: var(--gap);
 }
 
-/* breakdown panels (browsers, os, devices, countries) -- flow as many across
-   as fit, dropping to fewer columns on narrow screens without a media query */
 .breakdowns {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: var(--gap);
   margin-top: var(--gap);
 }
 
@@ -862,8 +919,8 @@ a {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 7px 10px;
+  gap: 10px;
+  padding: 6px 9px;
   border-radius: 6px;
   overflow: hidden;
 }
@@ -1181,11 +1238,14 @@ a {
   border: 0;
   border-radius: 999px;
   cursor: pointer;
-  transition: background 0.15s ease;
+  box-shadow: 0 2px 8px -2px color-mix(in srgb, var(--accent) 45%, transparent);
+  transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .token-submit:hover {
   background: var(--accent-ink);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px -3px color-mix(in srgb, var(--accent) 55%, transparent);
 }
 
 .notice {

@@ -7,7 +7,7 @@ import { TallyMarks } from "./TallyMarks.js";
 // range changes.
 const CATEGORIES: { key: keyof Stats["trafficSources"]; label: string; colorVar: string }[] = [
   { key: "direct", label: "Direct", colorVar: "--ink-faint" },
-  { key: "search", label: "Search", colorVar: "--accent" },
+  { key: "search", label: "Search", colorVar: "--accent-search" },
   { key: "social", label: "Social", colorVar: "--accent-2" },
   { key: "referral", label: "Referral", colorVar: "--accent-3" },
 ];
