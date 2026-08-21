@@ -41,7 +41,11 @@ export function RadarChart({
       .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`)
       .join(" ") + " Z";
 
-  const dataPoints = axes.map((a, i) => pointAt(i, n === 0 ? 0 : a.value / max));
+  // a lopsided dataset (one axis far bigger than the rest) squashes every
+  // other point in toward the centre until they're indistinguishable from
+  // zero -- a floor keeps any genuinely nonzero value visibly off-centre
+  const fracFor = (v: number) => (v <= 0 || n === 0 ? 0 : Math.max(0.08, v / max));
+  const dataPoints = axes.map((a, i) => pointAt(i, fracFor(a.value)));
   const dataPath = dataPoints.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ") + " Z";
 
   const hasData = axes.some((a) => a.value > 0);

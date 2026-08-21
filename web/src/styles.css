@@ -752,7 +752,9 @@ a {
 
 .traffic-sources-column .traffic-sources-legend {
   width: 100%;
+  max-width: 360px;
   min-width: 0;
+  margin: 0 auto;
 }
 
 .donut {
