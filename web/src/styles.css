@@ -1013,6 +1013,7 @@ a {
    not spread to the two edges */
 .card-content .breakdown-chart {
   justify-content: center;
+  margin-top: 20px;
 }
 
 /* the expanded sheet stacks chart above legend, both centred, instead of the
