@@ -2,7 +2,6 @@ import type { Stats } from "../api.js";
 import { RadarChart } from "./RadarChart.js";
 import { TallyMarks } from "./TallyMarks.js";
 import { ClickableCard } from "./ClickableCard.js";
-import { ExpandIcon } from "./StatList.js";
 import type { Row } from "./StatList.js";
 
 // direct/search/social/referral, in the fixed order they should always list
@@ -138,7 +137,6 @@ export function TrafficSourcesCard({
         <h2 className="panel-title">Traffic sources</h2>
         <div className="panel-head-actions">
           <span className="eyebrow" translate="no">views</span>
-          <ExpandIcon />
         </div>
       </div>
       <div className="card-content">

@@ -49,7 +49,6 @@ export function StatList({
         {rows.length > 0 && <ExportCsvButton title={title} rows={rows} />}
         {/* the unit ("views") is a fixed label -- keep browser auto-translate off it */}
         <span className="eyebrow" translate="no">{unit}</span>
-        {clickable && <ExpandIcon />}
       </div>
     </div>
   );
@@ -84,17 +83,6 @@ export function StatList({
   );
 }
 
-// Purely decorative -- the whole card is the click target (see ClickableCard);
-// this just hints that it's one.
-export function ExpandIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
-      className="expand-icon">
-      <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3m11-5v3a2 2 0 0 1-2 2h-3" />
-    </svg>
-  );
-}
 
 // The bar-chart-style row list, shared between a panel's top-10 slice and the
 // "View all" modal's full list -- same look, just a different row count.

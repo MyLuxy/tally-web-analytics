@@ -583,10 +583,6 @@ a {
   box-shadow: var(--shadow-float);
 }
 
-.panel-clickable:hover .expand-icon {
-  color: var(--ink);
-}
-
 .panel-clickable:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -709,13 +705,6 @@ a {
 
 .panel-empty-mark {
   color: var(--line-strong);
-}
-
-/* small, static hint icon next to a clickable card's unit label -- see
-   .panel-clickable below for the actual interaction */
-.expand-icon {
-  color: var(--ink-faint);
-  flex-shrink: 0;
 }
 
 /* the modal opened by "View all" fetches its rows on open */

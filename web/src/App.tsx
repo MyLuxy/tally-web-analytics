@@ -7,7 +7,7 @@ import { TallyMarks } from "./components/TallyMarks.js";
 import { Chart } from "./components/Chart.js";
 import { Sparkline } from "./components/Sparkline.js";
 import { BarChart } from "./components/BarChart.js";
-import { ExportCsvButton, ExpandIcon, Rows, StatList } from "./components/StatList.js";
+import { ExportCsvButton, Rows, StatList } from "./components/StatList.js";
 import { BreakdownCard } from "./components/BreakdownCard.js";
 import { ReferrerBoard, TrafficSourcesCard, TrafficSourcesContent } from "./components/TrafficSources.js";
 import { ClickableCard } from "./components/ClickableCard.js";
@@ -428,7 +428,6 @@ export function App() {
                 <h2 className="panel-title">Statistics</h2>
                 <div className="panel-head-actions">
                   <RangeTabs range={range} setRange={setRange} className="range-header" />
-                  <ExpandIcon />
                 </div>
               </div>
               <div className="chart-wrap card-content">

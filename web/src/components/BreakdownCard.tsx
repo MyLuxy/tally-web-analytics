@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ClickableCard } from "./ClickableCard.js";
-import { ExpandIcon, ExportCsvButton, Rows } from "./StatList.js";
+import { ExportCsvButton, Rows } from "./StatList.js";
 import type { Row } from "./StatList.js";
 
 // Cards stay compact -- a handful of rows is enough to read the shape of the
@@ -66,7 +66,6 @@ export function BreakdownCard({
         <div className="panel-head-actions">
           {active.rows.length > 0 && <ExportCsvButton title={active.label} rows={active.rows} />}
           <span className="eyebrow" translate="no">{active.unit}</span>
-          <ExpandIcon />
         </div>
       </div>
 
