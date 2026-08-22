@@ -161,7 +161,7 @@ export function BreakdownCard({
           // capped so the card can't grow past a handful of rows -- Countries
           // especially could otherwise list a dozen+ of them here. The full
           // set is one click away, in the expanded sheet.
-          <BreakdownChart data={active.chart.slice(0, PREVIEW_CHART_ITEMS)} icon={active.icon} empty={active.empty} />
+          <BreakdownChart data={active.chart.slice(0, PREVIEW_CHART_ITEMS)} icon={active.icon} empty={active.empty} lift3d />
         ) : (
           <Rows rows={active.rows.slice(0, PREVIEW_ROWS)} empty={active.empty} />
         )}
