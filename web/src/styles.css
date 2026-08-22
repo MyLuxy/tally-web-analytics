@@ -716,6 +716,12 @@ a {
   background: var(--accent-wash);
 }
 
+@media (max-width: 640px) {
+  .export-btn {
+    padding: 10px;
+  }
+}
+
 .export-btn:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
