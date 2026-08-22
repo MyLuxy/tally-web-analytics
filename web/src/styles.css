@@ -1050,6 +1050,12 @@ a {
   gap: 14px;
 }
 
+/* extra room specifically on the icon side of the name -- the row's own
+   gap alone still read as too tight there */
+.card-content .breakdown-chart-name {
+  margin-left: 8px;
+}
+
 .breakdown-chart-row {
   display: flex;
   align-items: center;
