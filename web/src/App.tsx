@@ -615,7 +615,7 @@ export function App() {
               transitioning={transitioningKey === "entryPages"}
               title="Entry pages"
               unit="visitors"
-              info="The first page each visitor landed on -- where your traffic actually enters the site, as opposed to every page it later views."
+              info="The first page each visitor landed on, where your traffic actually enters the site, as opposed to every page it later views."
               empty="No entry pages recorded."
               rows={(data?.entryPages ?? []).map((p) => ({ label: p.path, value: p.views }))}
               onExpand={() => openCard("entryPages")}
