@@ -1605,6 +1605,15 @@ a {
     height: 26px;
     border-width: 2.5px;
   }
+  /* Statistics' compact card: the panel's usual side padding is the biggest
+     single thing standing between the chart and the card's edge -- trimmed
+     down (not to 0 -- there's still a card border to read as a card) so the
+     chart itself gets as much of a narrow screen as possible. Only the card
+     with a chart directly in it, not every panel. */
+  .panel:has(> .chart-wrap) {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
