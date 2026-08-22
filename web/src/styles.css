@@ -449,6 +449,8 @@ a {
   border-radius: 999px;
   cursor: pointer;
   transition: color 0.15s ease, background 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 .segment:hover {
@@ -645,6 +647,12 @@ a {
 .panel-clickable {
   cursor: pointer;
   transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  /* the whole card is one big tap target -- without this, a tap (especially
+     a quick one on something inside it, like a tab pill) reads to the
+     browser as the start of a text selection or a long-press, and paints
+     the default grey/blue highlight across everything inside the card */
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 /* hover: hover -- a touchscreen simulates :hover on tap with no real
