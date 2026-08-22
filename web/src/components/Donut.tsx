@@ -1,7 +1,7 @@
 // A ring chart built from plain stacked <circle> strokes -- same "no charting
 // library" approach as Chart.tsx. Each segment is a dashed stroke covering its
 // share of the circumference, offset to start where the previous one ended.
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export type DonutSegment = {
   label: string;
@@ -25,6 +25,29 @@ export function Donut({
   centerSub?: string;
 }) {
   const [hover, setHover] = useState<{ i: number; x: number; y: number } | null>(null);
+  // raw mousemove can fire far faster than React (and the browser) can
+  // usefully repaint -- setting state on every single event was flooding
+  // re-renders and showed up as a freeze/stutter moving quickly across
+  // segments. Coalesce to at most one update per animation frame instead.
+  const pendingRef = useRef<{ i: number; x: number; y: number } | null>(null);
+  const rafRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+    },
+    [],
+  );
+
+  function queueHover(next: { i: number; x: number; y: number } | null) {
+    pendingRef.current = next;
+    if (rafRef.current != null) return;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null;
+      setHover(pendingRef.current);
+    });
+  }
+
   const total = segments.reduce((sum, s) => sum + s.value, 0);
   const r = (size - thickness) / 2;
   const circumference = 2 * Math.PI * r;
@@ -33,7 +56,7 @@ export function Donut({
   let offset = 0;
 
   return (
-    <div className="donut" style={{ width: size, height: size }} onMouseLeave={() => setHover(null)}>
+    <div className="donut" style={{ width: size, height: size }} onMouseLeave={() => queueHover(null)}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="donut-svg">
         {/* start at 12 o'clock instead of 3 o'clock, and draw clockwise */}
         <g transform={`translate(${size / 2} ${size / 2}) rotate(-90)`}>
@@ -59,7 +82,7 @@ export function Donut({
                   className="donut-segment"
                   onMouseMove={(e) => {
                     const rect = e.currentTarget.ownerSVGElement!.getBoundingClientRect();
-                    setHover({ i, x: e.clientX - rect.left, y: e.clientY - rect.top });
+                    queueHover({ i, x: e.clientX - rect.left, y: e.clientY - rect.top });
                   }}
                 />
               );

@@ -837,6 +837,14 @@ a {
   color: color-mix(in srgb, var(--paper) 75%, transparent);
 }
 
+/* bigger tooltip box for the sheet's much bigger donut -- the compact
+   card's size read as too small next to everything else in there */
+.sheet-breakdown-chart .donut-tip {
+  padding: 11px 16px;
+  border-radius: 12px;
+  font-size: 16px;
+}
+
 /* ---- radar chart (traffic sources) ---- */
 .radar-svg {
   display: block;
