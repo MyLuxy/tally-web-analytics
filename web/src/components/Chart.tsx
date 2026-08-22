@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import type { Range, Stats } from "../api.js";
+import { useMeasuredWidth } from "../hooks/useMeasuredWidth.js";
 
 // A small hand-drawn area+line chart. No charting library on purpose -- the
 // shapes we need are simple, and a few lines of SVG keep the bundle honest and
@@ -130,22 +131,17 @@ export function Chart({
   hour12: boolean;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
+  // the plot's actual measured width -- see useMeasuredWidth for why that's
+  // what keeps axis labels/tooltip text legible on any screen, rather than a
+  // fixed "design" width that shrinks (text included) along with a narrow
+  // container
+  const [wrapRef, W] = useMeasuredWidth(720);
   // gradient id needs to be unique per instance, not just per component --
   // two Chart mounts sharing one id would have the second silently reuse (or
   // clobber) the first's <linearGradient>
   const gradientId = `chart-area-fill-${useId()}`;
   // continuous chart-x of the cursor (not snapped to a data point), or null
   const [cursorX, setCursorX] = useState<number | null>(null);
-  const [narrow, setNarrow] = useState(
-    () => typeof window !== "undefined" && window.matchMedia("(max-width: 640px)").matches,
-  );
-
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 640px)");
-    const onChange = () => setNarrow(mq.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
 
   // drop the (touch) tooltip when the view changes -- a new range or fresh data
   useEffect(() => {
@@ -162,9 +158,9 @@ export function Chart({
     return () => document.removeEventListener("pointerdown", onDown);
   }, [cursorX]);
 
-  // a narrower, taller viewBox on phones: the chart fills more of the screen and,
-  // being scaled less to fit the width, the labels stay readable
-  const W = narrow ? 360 : 720;
+  // a taller viewBox once the plot is actually narrow (a phone, or a narrow
+  // sidebar) -- the chart fills more of the screen instead of squashing flat
+  const narrow = W < 500;
   const H = narrow ? 300 : 260;
 
   const n = series.length;
@@ -248,7 +244,7 @@ export function Chart({
 
   return (
     <div className="chart">
-      <div className="chart-plot">
+      <div className="chart-plot" ref={wrapRef}>
         <svg
           ref={svgRef}
           viewBox={`0 0 ${W} ${H}`}

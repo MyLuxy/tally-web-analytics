@@ -889,6 +889,10 @@ a {
 }
 
 /* ---- bar chart (events) ---- */
+.bar-chart-wrap {
+  width: 100%;
+}
+
 .bar-svg {
   display: block;
   width: 100%;
@@ -940,11 +944,15 @@ a {
 
 /* fills the card width, real (gentle) aspect ratio -- not stretched flat,
    not shrunk down small either */
+.sparkline-wrap {
+  width: 100%;
+  margin-top: 4px;
+}
+
 .sparkline {
   display: block;
   width: 100%;
   height: auto;
-  margin-top: 4px;
 }
 
 .sparkline-area {

@@ -1,17 +1,21 @@
 import type { Stats } from "../api.js";
+import { useMeasuredWidth } from "../hooks/useMeasuredWidth.js";
 
 // A light preview of a traffic trend -- axis labels so the numbers mean
 // something at a glance, but none of the full <Chart>'s interactivity
 // (tooltip, cursor, legend, per-point markers). That stays reserved for the
 // expanded view; this just needs to read well small.
 
-const W = 600;
 const H = 130;
 const PAD = { top: 6, right: 8, bottom: 18, left: 34 };
 
 const fmt = (n: number) => n.toLocaleString("en-US");
 
 export function Sparkline({ series, hour12 }: { series: Stats["series"]; hour12: boolean }) {
+  // W is the card's actual measured width, not a fixed "design" width -- see
+  // useMeasuredWidth for why that's what keeps the axis text legible on any
+  // screen instead of shrinking along with a narrow card.
+  const [wrapRef, W] = useMeasuredWidth(600);
   const n = series.length;
   const innerW = W - PAD.left - PAD.right;
   const innerH = H - PAD.top - PAD.bottom;
@@ -42,28 +46,30 @@ export function Sparkline({ series, hour12 }: { series: Stats["series"]; hour12:
     : { hour: "2-digit", hourCycle: "h23" };
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="sparkline" role="img" aria-label="Traffic in the last 24 hours">
-      {guides.map((g) => (
-        <g key={g}>
-          <line className="sparkline-grid" x1={PAD.left} x2={W - PAD.right} y1={yFor(g)} y2={yFor(g)} />
-          <text className="sparkline-axis" x={PAD.left - 6} y={yFor(g) + 3} textAnchor="end">
-            {fmt(g)}
-          </text>
-        </g>
-      ))}
+    <div ref={wrapRef} className="sparkline-wrap">
+      <svg viewBox={`0 0 ${W} ${H}`} className="sparkline" role="img" aria-label="Traffic in the last 24 hours">
+        {guides.map((g) => (
+          <g key={g}>
+            <line className="sparkline-grid" x1={PAD.left} x2={W - PAD.right} y1={yFor(g)} y2={yFor(g)} />
+            <text className="sparkline-axis" x={PAD.left - 6} y={yFor(g) + 3} textAnchor="end">
+              {fmt(g)}
+            </text>
+          </g>
+        ))}
 
-      <path d={areaPath} className="sparkline-area" />
-      {n > 1 && <path d={linePath} className="sparkline-line" />}
+        <path d={areaPath} className="sparkline-area" />
+        {n > 1 && <path d={linePath} className="sparkline-line" />}
 
-      {ticks.map(({ p, i }) => {
-        const x = xFor(i);
-        const anchor = x < PAD.left + 14 ? "start" : x > W - PAD.right - 14 ? "end" : "middle";
-        return (
-          <text key={i} className="sparkline-axis" x={x} y={H - 4} textAnchor={anchor}>
-            {new Date(p.bucket).toLocaleTimeString("en-US", timeOpts)}
-          </text>
-        );
-      })}
-    </svg>
+        {ticks.map(({ p, i }) => {
+          const x = xFor(i);
+          const anchor = x < PAD.left + 14 ? "start" : x > W - PAD.right - 14 ? "end" : "middle";
+          return (
+            <text key={i} className="sparkline-axis" x={x} y={H - 4} textAnchor={anchor}>
+              {new Date(p.bucket).toLocaleTimeString("en-US", timeOpts)}
+            </text>
+          );
+        })}
+      </svg>
+    </div>
   );
 }
