@@ -1009,12 +1009,11 @@ a {
   flex-wrap: wrap;
 }
 
-/* donut and legend sit close together as one cluster, centred in the card --
-   not spread to the two edges */
+/* donut on the left, legend on the right -- spread to the two sides of the
+   card instead of clustered together */
 .card-content .breakdown-chart {
-  justify-content: center;
+  justify-content: space-between;
   margin-top: 20px;
-  transform: translateX(-40px);
 }
 
 /* the expanded sheet stacks chart above legend, both centred, instead of the
