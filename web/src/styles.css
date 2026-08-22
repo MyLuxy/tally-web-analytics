@@ -607,6 +607,17 @@ a {
   transform: translateY(0);
 }
 
+/* the breakdown card's tab switcher sits inside a card that's otherwise one
+   big click target -- hovering/clicking a tab shouldn't also lift the whole
+   card, that read as a stray animation for something you're not actually
+   clicking into */
+.panel-clickable:has(.breakdown-tabs:hover),
+.panel-clickable:has(.breakdown-tabs:focus-within) {
+  transform: none;
+  border-color: var(--line);
+  box-shadow: var(--shadow-card);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .panel-clickable {
     transition: border-color 0.15s ease;
