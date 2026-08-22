@@ -1031,7 +1031,7 @@ a {
    of spread to the two edges */
 .sheet-breakdown-chart .breakdown-chart {
   justify-content: center;
-  margin-top: 20px;
+  margin-top: 60px;
 }
 
 /* same two-column table as the compact card (see .card-content's version),
