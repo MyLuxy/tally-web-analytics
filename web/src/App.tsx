@@ -1029,11 +1029,13 @@ function KpiCard({
   return (
     <div className="kpi-card">
       <div className="kpi-card-head">
+        <div className="kpi-label eyebrow">{label}</div>
         <span className="kpi-icon" style={iconStyle}>{icon}</span>
+      </div>
+      <div className="kpi-value-row">
+        <div className="kpi-value num" title={big ? full : undefined}>{shown}</div>
         {delta && <DeltaChip delta={delta} />}
       </div>
-      <div className="kpi-value num" title={big ? full : undefined}>{shown}</div>
-      <div className="kpi-label eyebrow">{label}</div>
     </div>
   );
 }
