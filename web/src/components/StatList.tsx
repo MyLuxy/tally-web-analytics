@@ -21,7 +21,6 @@ export function StatList({
   expanded,
   transitioning,
   title,
-  unit,
   rows,
   empty,
   info,
@@ -32,7 +31,6 @@ export function StatList({
   expanded: boolean;
   transitioning: boolean;
   title: string;
-  unit: string;
   rows: Row[];
   empty: string;
   info?: string; // optional one-liner explaining the section
@@ -49,8 +47,6 @@ export function StatList({
       </h2>
       <div className="panel-head-actions">
         {rows.length > 0 && <ExportCsvButton title={title} rows={rows} />}
-        {/* the unit ("views") is a fixed label -- keep browser auto-translate off it */}
-        <span className="eyebrow" translate="no">{unit}</span>
       </div>
     </div>
   );

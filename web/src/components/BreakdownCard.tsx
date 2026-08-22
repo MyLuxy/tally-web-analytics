@@ -14,7 +14,6 @@ const PREVIEW_CHART_ITEMS = 5;
 export type BreakdownTab = {
   key: string; // must match one of App.tsx's ExpandTarget values
   label: string;
-  unit: string;
   rows: Row[];
   empty: string;
   // browsers/OS/devices/countries show a donut + icon legend instead of the
@@ -147,7 +146,6 @@ export function BreakdownCard({
         </div>
         <div className="panel-head-actions">
           {active.rows.length > 0 && <ExportCsvButton title={active.label} rows={active.rows} />}
-          <span className="eyebrow" translate="no">{active.unit}</span>
         </div>
       </div>
 

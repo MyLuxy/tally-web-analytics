@@ -128,9 +128,6 @@ export function TrafficSourcesCard({
     >
       <div className="panel-head">
         <h2 className="panel-title">Traffic sources</h2>
-        <div className="panel-head-actions">
-          <span className="eyebrow" translate="no">views</span>
-        </div>
       </div>
       <div className="card-content">
         <TrafficSourcesContent sources={sources} radarSize={380} layout="column" />

@@ -368,7 +368,6 @@ export function App() {
     {
       key: "browsers",
       label: "Browsers",
-      unit: "views",
       empty: "No browser data.",
       rows: (data?.browsers ?? []).map((b) => ({ label: b.name, value: b.views })),
       chart: (data?.browsers ?? []).map((b) => ({ name: b.name, value: b.views })),
@@ -377,7 +376,6 @@ export function App() {
     {
       key: "systems",
       label: "OS",
-      unit: "views",
       empty: "No OS data.",
       rows: (data?.systems ?? []).map((s) => ({ label: s.name, value: s.views })),
       chart: (data?.systems ?? []).map((s) => ({ name: s.name, value: s.views })),
@@ -386,7 +384,6 @@ export function App() {
     {
       key: "devices",
       label: "Devices",
-      unit: "views",
       empty: "No device data.",
       rows: (data?.devices ?? []).map((d) => ({ label: d.name, value: d.views })),
       chart: (data?.devices ?? []).map((d) => ({ name: d.name, value: d.views })),
@@ -395,7 +392,6 @@ export function App() {
     {
       key: "countries",
       label: "Countries",
-      unit: "views",
       empty: "No country data.",
       rows: (data?.countries ?? []).map((c) => ({
         label: <CountryLabel code={c.name} />,
@@ -602,7 +598,6 @@ export function App() {
               expanded={expanded === "pages"}
               transitioning={transitioningKey === "pages"}
               title="Top pages"
-              unit="views"
               info="Your most-visited pages in the selected time range, ranked by pageviews."
               empty="No pages recorded."
               rows={(data?.topPages ?? []).map((p) => ({ label: p.path, value: p.views }))}
@@ -614,7 +609,6 @@ export function App() {
               expanded={expanded === "entryPages"}
               transitioning={transitioningKey === "entryPages"}
               title="Entry pages"
-              unit="visitors"
               info="The first page each visitor landed on, where your traffic actually enters the site, as opposed to every page it later views."
               empty="No entry pages recorded."
               rows={(data?.entryPages ?? []).map((p) => ({ label: p.path, value: p.views }))}
@@ -625,7 +619,6 @@ export function App() {
               expanded={expanded === "referrers"}
               transitioning={transitioningKey === "referrers"}
               title="Referrers"
-              unit="views"
               info="Where your visitors came from: the external site or search engine that linked them to you."
               empty="All traffic came in direct."
               rows={(data?.topReferrers ?? []).map((r) => ({ label: r.source, value: r.views }))}
