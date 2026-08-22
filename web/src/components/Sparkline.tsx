@@ -6,8 +6,8 @@ import type { Stats } from "../api.js";
 // expanded view; this just needs to read well small.
 
 const W = 600;
-const H = 190;
-const PAD = { top: 8, right: 8, bottom: 20, left: 36 };
+const H = 130;
+const PAD = { top: 6, right: 8, bottom: 18, left: 34 };
 
 const fmt = (n: number) => n.toLocaleString("en-US");
 

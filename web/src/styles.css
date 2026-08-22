@@ -864,8 +864,9 @@ a {
 .sparkline {
   display: block;
   width: 100%;
+  max-width: 460px;
   height: auto;
-  margin-top: 4px;
+  margin: 4px auto 0;
 }
 
 .sparkline-area {
