@@ -964,7 +964,16 @@ a {
 .traffic-source-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.traffic-source-main {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
 }
 
 .traffic-source-row .dot {
@@ -972,7 +981,6 @@ a {
 }
 
 .traffic-source-label {
-  flex: 1;
   font-size: 18px;
   color: var(--ink);
 }

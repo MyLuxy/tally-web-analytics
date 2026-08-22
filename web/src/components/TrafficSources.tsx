@@ -48,8 +48,10 @@ export function TrafficSourcesContent({
           const pct = total > 0 ? Math.round((value / total) * 100) : 0;
           return (
             <li key={c.key} className="traffic-source-row">
-              <span className="dot" style={{ background: c.color }} />
-              <span className="traffic-source-label">{c.label}</span>
+              <span className="traffic-source-main">
+                <span className="dot" style={{ background: c.color }} />
+                <span className="traffic-source-label">{c.label}</span>
+              </span>
               <span className="traffic-source-stats">
                 <span className="traffic-source-pct num">{pct}%</span>
                 <span className="traffic-source-value num">{value.toLocaleString("en-US")}</span>
