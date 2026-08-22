@@ -801,7 +801,7 @@ export function App() {
               <RangeTabs range={range} setRange={setRange} className="range-sheet" />
             </div>
           ) : expanded === "activity" ? (
-            <div className="sheet-traffic">
+            <div className="sheet-traffic sheet-activity">
               <div className="sheet-content">
                 <section className="kpi-grid">
                   <KpiCard

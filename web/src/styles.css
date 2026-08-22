@@ -1905,6 +1905,12 @@ a {
   justify-content: center;
 }
 
+/* Activity's centred position (via the rule above) sat a bit too low --
+   nudge it up from centre without touching Traffic, which was fine there */
+.sheet-activity {
+  margin-top: -50px;
+}
+
 .sheet-subhead {
   margin: 22px 0 10px;
   font-size: 14px;
