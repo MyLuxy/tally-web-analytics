@@ -42,6 +42,10 @@
 
   --font-body: "Inter Variable", "Inter", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  /* numbers only -- a classic serif instead of the mono's dotted zero.
+     A system stack, not another self-hosted face: one less font to ship,
+     and Georgia's lining figures are already close to tabular. */
+  --font-num: Georgia, "Times New Roman", Times, serif;
 
   --radius: 20px;
   --radius-sm: 12px;
@@ -134,7 +138,7 @@ a {
 
 /* every number on the dashboard wears this -- the ledger texture */
 .num {
-  font-family: var(--font-mono);
+  font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
 }
@@ -897,7 +901,7 @@ a {
 
 .sparkline-axis {
   fill: var(--ink-faint);
-  font-family: var(--font-mono);
+  font-family: var(--font-num);
   font-size: 10.5px;
 }
 
@@ -1136,7 +1140,7 @@ a {
 .referrer-rank {
   flex-shrink: 0;
   color: var(--accent-5);
-  font-family: var(--font-mono);
+  font-family: var(--font-num);
   font-size: 15px;
   font-weight: 600;
   letter-spacing: -0.02em;
@@ -1262,7 +1266,7 @@ a {
 
 .chart-axis {
   fill: var(--ink-faint);
-  font-family: var(--font-mono);
+  font-family: var(--font-num);
   font-size: 11px;
 }
 
