@@ -106,17 +106,53 @@ function countryFlagRowIcon(row: Row) {
 
 function referrerFaviconIcon(row: Row) {
   const domain = typeof row.label === "string" ? row.label : (row.title ?? "");
+  return <LazyFavicon domain={domain} />;
+}
+
+// A list of referrers can run into the hundreds (the "View all" breakdowns
+// cap at 500) -- `loading="lazy"` on a plain <img> only defers the network
+// fetch, not the DOM node itself, so mounting one eagerly per row still
+// meant hundreds of image elements existing at once: slow to lay out on
+// open, slow for the view transition to snapshot on close, slow to
+// composite while scrolling past them. This only ever mounts the real <img>
+// once its slot is actually about to be on screen, so at any moment there
+// are only ever a handful of real images in the DOM regardless of how long
+// the list is -- a fixed-size placeholder holds the row's layout steady
+// either way, so nothing shifts once the image does appear.
+function LazyFavicon({ domain }: { domain: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setVisible(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   return (
-    <img
-      className="referrer-favicon"
-      src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32`}
-      alt=""
-      loading="lazy"
-      draggable={false}
-      onError={(e) => {
-        e.currentTarget.style.visibility = "hidden";
-      }}
-    />
+    <span ref={ref} className="referrer-favicon-slot">
+      {visible && (
+        <img
+          className="referrer-favicon"
+          src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32`}
+          alt=""
+          draggable={false}
+          onError={(e) => {
+            e.currentTarget.style.visibility = "hidden";
+          }}
+        />
+      )}
+    </span>
   );
 }
 

@@ -1530,6 +1530,13 @@ a {
   letter-spacing: -0.02em;
 }
 
+.referrer-favicon-slot {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
 .referrer-favicon {
   width: 16px;
   height: 16px;
