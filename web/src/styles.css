@@ -927,6 +927,16 @@ a {
 }
 
 /* ---- activity card ---- */
+/* the Activity card uses the same full <Chart> as Statistics -- grid, axis
+   labels, tooltip -- just re-themed to its own colour pair (rose/violet
+   instead of blue/cyan) so the two charts on screen don't look identical.
+   CSS custom properties inherit, so overriding --accent/--accent-2 on this
+   wrapper is all Chart.tsx needs to pick up the different colours. */
+.activity-chart-accent {
+  --accent: var(--accent-5);
+  --accent-2: var(--accent-3);
+}
+
 /* fills the card width, real (gentle) aspect ratio -- not stretched flat,
    not shrunk down small either */
 .sparkline {
