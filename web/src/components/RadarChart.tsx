@@ -1,15 +1,16 @@
 // A small hand-drawn radar/spider chart -- same "no charting library"
 // approach as Chart.tsx and Donut.tsx. One filled polygon over a few
 // concentric rings; axes start at 12 o'clock and go clockwise.
+import { useMeasuredWidth } from "../hooks/useMeasuredWidth.js";
 
 export type RadarAxis = { label: string; value: number };
 
 // Label margins are their own dimension, not a slice of the plot radius --
 // axis labels are wide (text) but only need a little vertical room, so the
-// viewBox gets extra width/height on top of the circle itself. Sizing this
-// off the plot radius (rather than a flat px value) is what previously let
-// the left/right labels ("Search", "Referral") run past the edge and get
-// clipped at small card sizes.
+// viewBox gets extra width/height on top of the circle itself. Fixed, real
+// pixel values (not proportional to the plot) on purpose: the label text
+// sits in this margin, and letting it scale down with a narrow container is
+// exactly the bug useMeasuredWidth exists to avoid elsewhere (see Chart.tsx).
 const PAD_X = 120;
 const PAD_Y = 46;
 
@@ -18,14 +19,21 @@ export function RadarChart({
   size = 220,
 }: {
   axes: RadarAxis[];
-  size?: number;
+  size?: number; // caps how big the plot gets on a roomy container; see useMeasuredWidth below
 }) {
   const n = axes.length;
-  const W = size + PAD_X * 2;
-  const H = size + PAD_Y * 2;
+  // the wrapper's real measured width -- CSS (.radar-svg's max-width, set
+  // differently for the compact card vs. the bigger sheet) already caps how
+  // big that's allowed to be per context, so this naturally respects `size`
+  // on a roomy screen and shrinks on a narrow one instead of overflowing it.
+  // The circle gets smaller on a phone; the fixed-px label margins (and
+  // their text) don't.
+  const [wrapRef, W] = useMeasuredWidth(size + PAD_X * 2);
+  const plotSize = Math.max(60, W - PAD_X * 2);
+  const H = plotSize + PAD_Y * 2;
   const cx = W / 2;
   const cy = H / 2;
-  const r = size / 2;
+  const r = plotSize / 2;
   const max = Math.max(1, ...axes.map((a) => a.value));
 
   // 12 o'clock, clockwise
@@ -51,34 +59,36 @@ export function RadarChart({
   const hasData = axes.some((a) => a.value > 0);
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="radar-svg" role="img" aria-label="Radar chart">
-      {rings.map((frac) => (
-        <path key={frac} d={ringPath(frac)} className="radar-ring" />
-      ))}
-      {axes.map((_, i) => {
-        const p = pointAt(i, 1);
-        return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} className="radar-axis-line" />;
-      })}
+    <div ref={wrapRef} className="radar-wrap">
+      <svg viewBox={`0 0 ${W} ${H}`} className="radar-svg" role="img" aria-label="Radar chart">
+        {rings.map((frac) => (
+          <path key={frac} d={ringPath(frac)} className="radar-ring" />
+        ))}
+        {axes.map((_, i) => {
+          const p = pointAt(i, 1);
+          return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} className="radar-axis-line" />;
+        })}
 
-      {hasData && <path d={dataPath} className="radar-area" />}
-      {hasData &&
-        dataPoints.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r={3} className="radar-dot" />)}
+        {hasData && <path d={dataPath} className="radar-area" />}
+        {hasData &&
+          dataPoints.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r={3} className="radar-dot" />)}
 
-      {axes.map((a, i) => {
-        // labels sit just past the ring, in whichever margin (PAD_X or
-        // PAD_Y) is relevant for their position -- an axis pointing mostly
-        // sideways gets an x-only nudge, one pointing up/down a y-only nudge
-        const p = pointAt(i, 1);
-        const angle = angleFor(i);
-        const lx = p.x + Math.cos(angle) * (PAD_X * 0.2);
-        const ly = p.y + Math.sin(angle) * (PAD_Y * 0.55) + 4;
-        const anchor = Math.abs(Math.cos(angle)) < 0.2 ? "middle" : Math.cos(angle) > 0 ? "start" : "end";
-        return (
-          <text key={a.label} x={lx} y={ly} textAnchor={anchor} className="radar-label">
-            {a.label}
-          </text>
-        );
-      })}
-    </svg>
+        {axes.map((a, i) => {
+          // labels sit just past the ring, in whichever margin (PAD_X or
+          // PAD_Y) is relevant for their position -- an axis pointing mostly
+          // sideways gets an x-only nudge, one pointing up/down a y-only nudge
+          const p = pointAt(i, 1);
+          const angle = angleFor(i);
+          const lx = p.x + Math.cos(angle) * (PAD_X * 0.2);
+          const ly = p.y + Math.sin(angle) * (PAD_Y * 0.55) + 4;
+          const anchor = Math.abs(Math.cos(angle)) < 0.2 ? "middle" : Math.cos(angle) > 0 ? "start" : "end";
+          return (
+            <text key={a.label} x={lx} y={ly} textAnchor={anchor} className="radar-label">
+              {a.label}
+            </text>
+          );
+        })}
+      </svg>
+    </div>
   );
 }

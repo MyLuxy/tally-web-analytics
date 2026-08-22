@@ -795,7 +795,7 @@ a {
   gap: 18px;
 }
 
-.traffic-sources-column .radar-svg {
+.traffic-sources-column .radar-wrap {
   max-width: 560px;
 }
 
@@ -865,12 +865,16 @@ a {
 }
 
 /* ---- radar chart (traffic sources) ---- */
+.radar-wrap {
+  width: 100%;
+  max-width: 260px;
+  margin: 0 auto;
+}
+
 .radar-svg {
   display: block;
   width: 100%;
   height: auto;
-  max-width: 260px;
-  margin: 0 auto;
 }
 
 .radar-ring {
