@@ -451,6 +451,12 @@ a {
   padding: 6px 14px;
 }
 
+/* same tab switcher, standalone at the top of the expanded sheet instead of
+   sharing the card's header row */
+.sheet-breakdown-tabs {
+  margin-bottom: 22px;
+}
+
 .segment:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;

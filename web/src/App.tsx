@@ -8,7 +8,8 @@ import { Chart } from "./components/Chart.js";
 import { Sparkline } from "./components/Sparkline.js";
 import { BarChart } from "./components/BarChart.js";
 import { ExportCsvButton, Rows, StatList } from "./components/StatList.js";
-import { BreakdownCard } from "./components/BreakdownCard.js";
+import { BreakdownCard, BreakdownChart } from "./components/BreakdownCard.js";
+import type { BreakdownTab } from "./components/BreakdownCard.js";
 import { ReferrerBoard, TrafficSourcesCard, TrafficSourcesContent } from "./components/TrafficSources.js";
 import { ClickableCard } from "./components/ClickableCard.js";
 import { browserIcon, deviceIcon, osIcon } from "./components/DeviceIcons.js";
@@ -18,6 +19,10 @@ import type { Row } from "./components/StatList.js";
 // (pages, referrers, ...) plus the two hand-built ones, traffic and traffic
 // sources, that don't come from a single fetchBreakdown call.
 type ExpandTarget = BreakdownMetric | "traffic" | "trafficSources" | "activity" | "site";
+
+// The BreakdownCard's four tabs -- its own donut+icon chart, shared between
+// the compact card and (bigger, with its own tab switcher) the expanded sheet.
+type PlatformKey = "browsers" | "systems" | "devices" | "countries";
 
 // Runs `fn` inside the View Transitions API when the browser has it (every
 // Chromium browser, Safari 18+; not yet Firefox) so the clicked card visibly
@@ -85,6 +90,13 @@ function CountryLabel({ code }: { code: string }) {
   );
 }
 
+// Same flag icon, standalone -- for the breakdown donut's legend, which
+// already shows the country name as text next to it.
+function countryIcon(_name: string, code?: string) {
+  if (!code) return null;
+  return <img className="flag" src={`${import.meta.env.BASE_URL}flags/${code.toLowerCase()}.svg`} width={16} height={16} alt="" />;
+}
+
 // One entry per panel that has a "View all" button. Maps the flat
 // {key, value} rows from /api/stats/breakdown back to each panel's own
 // title/empty copy and row rendering (e.g. countries get a flag).
@@ -141,6 +153,10 @@ export function App() {
   const [transitioningKey, setTransitioningKey] = useState<ExpandTarget | null>(null);
   const [breakdownRows, setBreakdownRows] = useState<Row[] | null>(null);
   const [breakdownError, setBreakdownError] = useState<string | null>(null);
+  // which of the BreakdownCard's 4 tabs is showing -- shared between the
+  // compact card and the sheet's own tab switcher, so closing the sheet on
+  // whichever tab you last looked at morphs back into the matching card.
+  const [breakdownTab, setBreakdownTab] = useState<PlatformKey>("browsers");
   // the expanded traffic-sources sheet shows the full, uncapped referrer
   // list underneath the same donut -- data the compact card never fetches
   const [sourceRows, setSourceRows] = useState<Row[] | null>(null);
@@ -322,6 +338,53 @@ export function App() {
   const prevPerVisitor = prev && prev.visitors > 0 ? prev.pageviews / prev.visitors : 0;
 
   const currentSiteInfo = sites.find((s) => s.site === site);
+
+  // Shared between the compact BreakdownCard and the expanded sheet's own
+  // tab switcher (see PlatformKey/breakdownTab above) -- one definition, so
+  // the two never drift apart.
+  const platformTabs: BreakdownTab[] = [
+    {
+      key: "browsers",
+      label: "Browsers",
+      unit: "views",
+      empty: "No browser data.",
+      rows: (data?.browsers ?? []).map((b) => ({ label: b.name, value: b.views })),
+      chart: (data?.browsers ?? []).map((b) => ({ name: b.name, value: b.views })),
+      icon: browserIcon,
+    },
+    {
+      key: "systems",
+      label: "OS",
+      unit: "views",
+      empty: "No OS data.",
+      rows: (data?.systems ?? []).map((s) => ({ label: s.name, value: s.views })),
+      chart: (data?.systems ?? []).map((s) => ({ name: s.name, value: s.views })),
+      icon: osIcon,
+    },
+    {
+      key: "devices",
+      label: "Devices",
+      unit: "views",
+      empty: "No device data.",
+      rows: (data?.devices ?? []).map((d) => ({ label: d.name, value: d.views })),
+      chart: (data?.devices ?? []).map((d) => ({ name: d.name, value: d.views })),
+      icon: deviceIcon,
+    },
+    {
+      key: "countries",
+      label: "Countries",
+      unit: "views",
+      empty: "No country data.",
+      rows: (data?.countries ?? []).map((c) => ({
+        label: <CountryLabel code={c.name} />,
+        title: countryName(c.name),
+        value: c.views,
+      })),
+      chart: (data?.countries ?? []).map((c) => ({ name: countryName(c.name), value: c.views, code: c.name })),
+      icon: countryIcon,
+    },
+  ];
+  const activePlatformTab = platformTabs.find((t) => t.key === breakdownTab)!;
 
   return (
     <div className="shell">
@@ -548,46 +611,9 @@ export function App() {
               className="card-span-2"
             />
             <BreakdownCard
-              tabs={[
-                {
-                  key: "browsers",
-                  label: "Browsers",
-                  unit: "views",
-                  empty: "No browser data.",
-                  rows: (data?.browsers ?? []).map((b) => ({ label: b.name, value: b.views })),
-                  chart: (data?.browsers ?? []).map((b) => ({ name: b.name, value: b.views })),
-                  icon: browserIcon,
-                },
-                {
-                  key: "systems",
-                  label: "OS",
-                  unit: "views",
-                  empty: "No OS data.",
-                  rows: (data?.systems ?? []).map((s) => ({ label: s.name, value: s.views })),
-                  chart: (data?.systems ?? []).map((s) => ({ name: s.name, value: s.views })),
-                  icon: osIcon,
-                },
-                {
-                  key: "devices",
-                  label: "Devices",
-                  unit: "views",
-                  empty: "No device data.",
-                  rows: (data?.devices ?? []).map((d) => ({ label: d.name, value: d.views })),
-                  chart: (data?.devices ?? []).map((d) => ({ name: d.name, value: d.views })),
-                  icon: deviceIcon,
-                },
-                {
-                  key: "countries",
-                  label: "Countries",
-                  unit: "views",
-                  empty: "No country data.",
-                  rows: (data?.countries ?? []).map((c) => ({
-                    label: <CountryLabel code={c.name} />,
-                    title: countryName(c.name),
-                    value: c.views,
-                  })),
-                },
-              ]}
+              tabs={platformTabs}
+              activeKey={breakdownTab}
+              onTabChange={(key) => setBreakdownTab(key as PlatformKey)}
               expandedKey={expanded}
               transitioningKey={transitioningKey}
               onExpand={(key) => openCard(key as ExpandTarget)}
@@ -836,6 +862,47 @@ export function App() {
                 <>
                   <h3 className="sheet-subhead">More events</h3>
                   <Rows rows={breakdownRows.slice(10)} empty="" />
+                </>
+              )}
+            </div>
+          ) : expanded === "browsers" || expanded === "systems" || expanded === "devices" || expanded === "countries" ? (
+            <div className="sheet-breakdown">
+              <div className="breakdown-tabs sheet-breakdown-tabs" role="tablist" aria-label="Breakdown by">
+                {platformTabs.map((t) => (
+                  <button
+                    key={t.key}
+                    type="button"
+                    role="tab"
+                    aria-selected={t.key === breakdownTab}
+                    className="segment"
+                    onClick={() => {
+                      // just swaps what this already-open sheet shows -- no
+                      // view transition, that's only for opening/closing
+                      setBreakdownTab(t.key as PlatformKey);
+                      setExpanded(t.key as ExpandTarget);
+                    }}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+              <div className="sheet-content">
+                <BreakdownChart
+                  data={activePlatformTab.chart ?? []}
+                  icon={activePlatformTab.icon}
+                  empty={activePlatformTab.empty}
+                  size={240}
+                  thickness={34}
+                />
+              </div>
+              {/* the chart above is only the top 10 (same as the compact card) --
+                  rarely more than that for browsers/OS/devices, but countries
+                  routinely has far more, so whatever's left of the full,
+                  higher-capped breakdown list shows underneath */}
+              {breakdownRows && breakdownRows.length > (activePlatformTab.chart?.length ?? 0) && (
+                <>
+                  <h3 className="sheet-subhead">More {activePlatformTab.label.toLowerCase()}</h3>
+                  <Rows rows={breakdownRows.slice(activePlatformTab.chart?.length ?? 0)} empty="" />
                 </>
               )}
             </div>

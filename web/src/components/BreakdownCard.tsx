@@ -1,4 +1,3 @@
-import { useState } from "react";
 import type { ReactNode } from "react";
 import { ClickableCard } from "./ClickableCard.js";
 import { Donut } from "./Donut.js";
@@ -17,12 +16,13 @@ export type BreakdownTab = {
   unit: string;
   rows: Row[];
   empty: string;
-  // browsers/OS/devices show a donut + icon legend instead of the plain bar
-  // list every other breakdown uses -- a handful of named buckets reads
-  // better as "what share is Chrome" than as another top-10 list. Countries
-  // has no natural icon set (and can run long), so it stays on `rows`.
-  chart?: { name: string; value: number }[];
-  icon?: (name: string) => ReactNode;
+  // browsers/OS/devices/countries show a donut + icon legend instead of the
+  // plain bar list every other breakdown uses -- a handful of named buckets
+  // reads better as "what share is Chrome" than as another top-10 list.
+  // `code` is the lookup key for `icon` when it differs from the display
+  // name (a country's flag is keyed by its ISO code, not "France").
+  chart?: { name: string; value: number; code?: string }[];
+  icon?: (name: string, code?: string) => ReactNode;
 };
 
 // Assigned by position, not by brand -- Chrome, Safari and Windows are all
@@ -38,14 +38,20 @@ const CHART_PALETTE = [
   "var(--neutral-cat)", // grey
 ];
 
-function BreakdownChart({
+// Exported so the expanded sheet (see App.tsx) can render the same donut,
+// bigger, instead of duplicating this.
+export function BreakdownChart({
   data,
   icon,
   empty,
+  size = 140,
+  thickness = 20,
 }: {
-  data: { name: string; value: number }[];
-  icon?: (name: string) => ReactNode;
+  data: { name: string; value: number; code?: string }[];
+  icon?: (name: string, code?: string) => ReactNode;
   empty: string;
+  size?: number;
+  thickness?: number;
 }) {
   const total = data.reduce((sum, d) => sum + d.value, 0);
 
@@ -62,14 +68,14 @@ function BreakdownChart({
 
   return (
     <div className="breakdown-chart">
-      <Donut segments={items.map((it) => ({ label: it.name, value: it.value, color: it.color }))} size={140} thickness={20} />
+      <Donut segments={items.map((it) => ({ label: it.name, value: it.value, color: it.color }))} size={size} thickness={thickness} />
       <ul className="breakdown-chart-legend">
         {items.map((it) => {
           const pct = Math.round((it.value / total) * 100);
           return (
             <li key={it.name} className="breakdown-chart-row">
               <span className="breakdown-chart-icon" style={{ color: it.color }}>
-                {icon?.(it.name)}
+                {icon?.(it.name, it.code)}
               </span>
               <span className="breakdown-chart-name">{it.name}</span>
               <span className="breakdown-chart-stats">
@@ -88,19 +94,24 @@ function BreakdownChart({
 // all looked the same. They're really one question -- "who's visiting,
 // broken down how?" -- so they share a single card with a tab switcher
 // instead, which is one less repeated shape on the page for each of them.
+// The active tab is controlled by App.tsx (not local state) so it stays in
+// sync with the same tab switcher inside the expanded sheet.
 export function BreakdownCard({
   tabs,
+  activeKey,
+  onTabChange,
   expandedKey,
   transitioningKey,
   onExpand,
 }: {
   tabs: BreakdownTab[];
+  activeKey: string;
+  onTabChange: (key: string) => void;
   expandedKey: string | null; // the tab key whose sheet is fully open, if it's one of these
   transitioningKey: string | null; // the tab key currently allowed to wear the transition name, if it's one of these
   onExpand: (key: string) => void;
 }) {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const active = tabs[activeIndex]!;
+  const active = tabs.find((t) => t.key === activeKey) ?? tabs[0]!;
   const isExpanded = expandedKey === active.key;
   const isTransitioning = transitioningKey === active.key;
 
@@ -115,16 +126,16 @@ export function BreakdownCard({
     >
       <div className="panel-head">
         <div className="breakdown-tabs" role="tablist" aria-label="Breakdown by">
-          {tabs.map((t, i) => (
+          {tabs.map((t) => (
             <button
               key={t.key}
               type="button"
               role="tab"
-              aria-selected={i === activeIndex}
+              aria-selected={t.key === active.key}
               className="segment"
               onClick={(e) => {
                 e.stopPropagation(); // switch tabs, don't also expand the card
-                setActiveIndex(i);
+                onTabChange(t.key);
               }}
             >
               {t.label}
