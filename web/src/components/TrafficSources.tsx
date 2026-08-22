@@ -93,6 +93,7 @@ export function ReferrerBoard({ rows, empty }: { rows: Row[]; empty: string }) {
                 src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32`}
                 alt=""
                 loading="lazy"
+                draggable={false}
                 onError={(e) => {
                   e.currentTarget.style.visibility = "hidden";
                 }}

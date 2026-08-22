@@ -1096,6 +1096,7 @@ a {
   height: 16px;
   border-radius: 3px;
   flex-shrink: 0;
+  -webkit-user-drag: none;
 }
 
 .referrer-domain {
