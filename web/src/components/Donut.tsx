@@ -66,25 +66,42 @@ export function Donut({
             visible.map((s, i) => {
               const dash = (s.value / total) * circumference;
               const dashOffset = offset;
+              const linecap = visible.length === 1 ? "round" : "butt";
               const el = (
-                <circle
-                  key={i}
-                  r={r}
-                  fill="none"
-                  stroke={s.color}
-                  strokeWidth={thickness}
-                  strokeDasharray={`${dash} ${circumference - dash}`}
-                  strokeDashoffset={-dashOffset}
-                  // a single full-circle segment gets round caps so it doesn't
-                  // show a seam; multiple segments use butt caps so they sit
-                  // flush against their neighbours instead of overlapping
-                  strokeLinecap={visible.length === 1 ? "round" : "butt"}
-                  className="donut-segment"
-                  onMouseMove={(e) => {
-                    const rect = e.currentTarget.ownerSVGElement!.getBoundingClientRect();
-                    queueHover({ i, x: e.clientX - rect.left, y: e.clientY - rect.top });
-                  }}
-                />
+                <g key={i}>
+                  <circle
+                    r={r}
+                    fill="none"
+                    stroke={s.color}
+                    strokeWidth={thickness}
+                    strokeDasharray={`${dash} ${circumference - dash}`}
+                    strokeDashoffset={-dashOffset}
+                    // a single full-circle segment gets round caps so it doesn't
+                    // show a seam; multiple segments use butt caps so they sit
+                    // flush against their neighbours instead of overlapping
+                    strokeLinecap={linecap}
+                    className="donut-segment"
+                  />
+                  {/* invisible, much wider twin -- the thin visible stroke was
+                      an easy target to slip off of at normal cursor speed,
+                      which is what actually looked like the hover "freezing"
+                      (it hadn't frozen, it had just lost the segment). This
+                      one owns the hover, sized for a forgiving hit area. */}
+                  <circle
+                    r={r}
+                    fill="none"
+                    stroke="transparent"
+                    strokeWidth={thickness + 24}
+                    strokeDasharray={`${dash} ${circumference - dash}`}
+                    strokeDashoffset={-dashOffset}
+                    strokeLinecap={linecap}
+                    style={{ pointerEvents: "stroke" }}
+                    onMouseMove={(e) => {
+                      const rect = e.currentTarget.ownerSVGElement!.getBoundingClientRect();
+                      queueHover({ i, x: e.clientX - rect.left, y: e.clientY - rect.top });
+                    }}
+                  />
+                </g>
               );
               offset += dash;
               return el;
