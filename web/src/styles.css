@@ -42,10 +42,9 @@
 
   --font-body: "Inter Variable", "Inter", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
-  /* numbers only -- a classic serif instead of the mono's dotted zero.
-     A system stack, not another self-hosted face: one less font to ship,
-     and Georgia's lining figures are already close to tabular. */
-  --font-num: Georgia, "Times New Roman", Times, serif;
+  /* numbers only -- Georgia read as too old-fashioned; the same face the
+     titles already use, dropping just the mono's dotted zero. */
+  --font-num: var(--font-body);
 
   --radius: 20px;
   --radius-sm: 12px;
