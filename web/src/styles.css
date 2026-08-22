@@ -854,6 +854,15 @@ a {
   text-transform: capitalize;
 }
 
+/* the exact count above each bar -- expanded sheet only (see BarChart's
+   `grid` prop). The guide lines only give a rough scale; this is what
+   actually answers "how many, precisely". */
+.bar-value {
+  fill: var(--ink);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
 /* ---- activity card ---- */
 /* the Activity card uses the same full <Chart> as Statistics -- grid, axis
    labels, tooltip -- just re-themed to its own colour pair (rose/violet
