@@ -7,7 +7,7 @@ import { TallyMarks } from "./components/TallyMarks.js";
 import { Chart } from "./components/Chart.js";
 import { Sparkline } from "./components/Sparkline.js";
 import { BarChart } from "./components/BarChart.js";
-import { BarRows, ExportCsvButton, Rows, StatList } from "./components/StatList.js";
+import { ExportCsvButton, Rows, StatList } from "./components/StatList.js";
 import { BreakdownCard, BreakdownChart } from "./components/BreakdownCard.js";
 import type { BreakdownTab } from "./components/BreakdownCard.js";
 import { RankedBoard, TrafficSourcesCard, TrafficSourcesContent } from "./components/TrafficSources.js";
@@ -614,7 +614,6 @@ export function App() {
               empty="No entry pages recorded."
               rows={(data?.entryPages ?? []).map((p) => ({ label: p.path, value: p.views }))}
               onExpand={() => openCard("entryPages")}
-              variant="bars"
             />
             <StatList
               cardKey="referrers"
@@ -938,15 +937,11 @@ export function App() {
             </div>
           ) : (
             <div className="sheet-content">
-              {expanded === "entryPages" ? (
-                <BarRows rows={breakdownRows} empty={VIEW_ALL_CONFIG[expanded].empty} />
-              ) : (
-                <Rows
-                  rows={breakdownRows}
-                  empty={VIEW_ALL_CONFIG[expanded].empty}
-                  icon={expanded === "referrers" ? referrerFaviconIcon : undefined}
-                />
-              )}
+              <Rows
+                rows={breakdownRows}
+                empty={VIEW_ALL_CONFIG[expanded].empty}
+                icon={expanded === "referrers" ? referrerFaviconIcon : undefined}
+              />
             </div>
           )}
         </ExpandSheet>
