@@ -1458,6 +1458,9 @@ a {
   padding: clamp(24px, 6vw, 90px);
   background: color-mix(in srgb, #000 50%, transparent);
   backdrop-filter: blur(3px);
+  /* its own named group, so the scrim fades in/out on its own -- see the
+     ::view-transition-old/new(root) rule below for why that matters */
+  view-transition-name: sheet-backdrop;
 }
 
 /* a large dialog, not literally edge-to-edge -- capped so it reads as a
@@ -1541,6 +1544,18 @@ a {
 ::view-transition-group(*) {
   animation-duration: 260ms;
   animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* nothing behind the sheet/backdrop actually changes -- the dashboard grid is
+   identical before and after. Without this, the browser still crossfades its
+   own before/after screenshot of that whole unchanged background, which reads
+   as a stray flash of fading laid over the card's resize. The backdrop has its
+   own named group above (so its scrim still fades normally); this only turns
+   off the pointless whole-page one underneath it. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
 }
 
 @media (prefers-reduced-motion: reduce) {
