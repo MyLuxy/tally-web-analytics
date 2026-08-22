@@ -819,9 +819,7 @@ export function App() {
                     delta={activityData?.previousTotals && deltaOf(activityData.totals.visitors, activityData.previousTotals.visitors)}
                   />
                 </section>
-                <div className="chart-wrap activity-chart-accent">
-                  {activityData && <Chart series={activityData.series} range="24h" hour12={hour12} />}
-                </div>
+                {activityData && <Sparkline series={activityData.series} hour12={hour12} />}
               </div>
             </div>
           ) : expanded === "trafficSources" ? (
