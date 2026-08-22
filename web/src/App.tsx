@@ -719,22 +719,6 @@ export function App() {
             </span>
           </button>
 
-          <button
-            type="button"
-            className="setting setting-action"
-            onClick={() => {
-              setSettingsOpen(false);
-              openCard("events");
-            }}
-          >
-            <span className="setting-text">
-              <span className="setting-name">Custom events</span>
-              <span className="setting-hint">Conversions tracked with tally('name')</span>
-            </span>
-            <span className="setting-chevron">
-              <ChevronRightIcon />
-            </span>
-          </button>
         </Modal>
       )}
 
