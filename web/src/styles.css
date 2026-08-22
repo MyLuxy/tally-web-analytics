@@ -1458,9 +1458,10 @@ a {
   padding: clamp(24px, 6vw, 90px);
   background: color-mix(in srgb, #000 50%, transparent);
   backdrop-filter: blur(3px);
-  /* its own named group, so the scrim fades in/out on its own -- see the
-     ::view-transition-old/new(root) rule below for why that matters */
-  view-transition-name: sheet-backdrop;
+  /* deliberately NOT given its own view-transition-name: Chromium renders a
+     backdrop-filter element solid black when it's captured as a transition
+     snapshot. It just pops with the rest of the (now unanimated) root --
+     see the ::view-transition-old/new(root) rule below. */
 }
 
 /* a large dialog, not literally edge-to-edge -- capped so it reads as a
@@ -1546,12 +1547,12 @@ a {
   animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* nothing behind the sheet/backdrop actually changes -- the dashboard grid is
-   identical before and after. Without this, the browser still crossfades its
-   own before/after screenshot of that whole unchanged background, which reads
-   as a stray flash of fading laid over the card's resize. The backdrop has its
-   own named group above (so its scrim still fades normally); this only turns
-   off the pointless whole-page one underneath it. */
+/* nothing behind the sheet actually changes -- the dashboard grid is
+   identical before and after, and the backdrop scrim just pops with it
+   (see .sheet-backdrop for why it isn't animated on its own). Without this,
+   the browser still crossfades its own before/after screenshot of that whole
+   background, which reads as a stray flash of fading laid over the card's
+   resize. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation: none;
