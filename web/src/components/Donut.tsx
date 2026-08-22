@@ -55,7 +55,17 @@ export function Donut({
   const circumference = 2 * Math.PI * r;
   const visible = segments.filter((s) => s.value > 0);
 
+  // precomputed once so both the normal pass and the "always on top" lifted
+  // duplicate below can reuse the exact same stroke geometry
   let offset = 0;
+  const items = visible.map((s, i) => {
+    const dash = (s.value / total) * circumference;
+    const dashOffset = offset;
+    const linecap: "round" | "butt" = visible.length === 1 ? "round" : "butt";
+    offset += dash;
+    return { s, i, dash, dashOffset, linecap };
+  });
+  const liftedHover = lift3d && hover ? items[hover.i] : undefined;
 
   return (
     <div className="donut" style={{ width: size, height: size }} onMouseLeave={() => queueHover(null)}>
@@ -77,60 +87,64 @@ export function Donut({
           {total === 0 ? (
             <circle r={r} className="donut-empty" strokeWidth={thickness} fill="none" />
           ) : (
-            visible.map((s, i) => {
-              const dash = (s.value / total) * circumference;
-              const dashOffset = offset;
-              const linecap = visible.length === 1 ? "round" : "butt";
-              const el = (
-                <g key={i}>
-                  <circle
-                    r={r}
-                    fill="none"
-                    stroke={s.color}
-                    strokeWidth={thickness}
-                    strokeDasharray={`${dash} ${circumference - dash}`}
-                    strokeDashoffset={-dashOffset}
-                    // a single full-circle segment gets round caps so it doesn't
-                    // show a seam; multiple segments use butt caps so they sit
-                    // flush against their neighbours instead of overlapping
-                    strokeLinecap={linecap}
-                    className="donut-segment"
-                    style={
-                      lift3d && hover?.i === i
-                        ? {
-                            // no actual movement -- the "lift" is just a cast
-                            // shadow plus a touch of extra brightness, like
-                            // light catching a raised surface
-                            filter: "drop-shadow(0 6px 9px rgba(0, 0, 0, 0.35)) brightness(1.1)",
-                          }
-                        : undefined
-                    }
-                  />
-                  {/* invisible, much wider twin -- the thin visible stroke was
-                      an easy target to slip off of at normal cursor speed,
-                      which is what actually looked like the hover "freezing"
-                      (it hadn't frozen, it had just lost the segment). This
-                      one owns the hover, sized for a forgiving hit area. */}
-                  <circle
-                    r={r}
-                    fill="none"
-                    stroke="transparent"
-                    strokeWidth={thickness + 44}
-                    strokeDasharray={`${dash} ${circumference - dash}`}
-                    strokeDashoffset={-dashOffset}
-                    strokeLinecap={linecap}
-                    style={{ pointerEvents: "stroke" }}
-                    onMouseMove={(e) => {
-                      e.stopPropagation(); // don't also trigger the svg's clear-on-move
-                      const rect = e.currentTarget.ownerSVGElement!.getBoundingClientRect();
-                      queueHover({ i, x: e.clientX - rect.left, y: e.clientY - rect.top });
-                    }}
-                  />
-                </g>
-              );
-              offset += dash;
-              return el;
-            })
+            items.map(({ s, i, dash, dashOffset, linecap }) => (
+              <g key={i}>
+                <circle
+                  r={r}
+                  fill="none"
+                  stroke={s.color}
+                  strokeWidth={thickness}
+                  strokeDasharray={`${dash} ${circumference - dash}`}
+                  strokeDashoffset={-dashOffset}
+                  // a single full-circle segment gets round caps so it doesn't
+                  // show a seam; multiple segments use butt caps so they sit
+                  // flush against their neighbours instead of overlapping
+                  strokeLinecap={linecap}
+                  className="donut-segment"
+                />
+                {/* invisible, much wider twin -- the thin visible stroke was
+                    an easy target to slip off of at normal cursor speed,
+                    which is what actually looked like the hover "freezing"
+                    (it hadn't frozen, it had just lost the segment). This
+                    one owns the hover, sized for a forgiving hit area. */}
+                <circle
+                  r={r}
+                  fill="none"
+                  stroke="transparent"
+                  strokeWidth={thickness + 44}
+                  strokeDasharray={`${dash} ${circumference - dash}`}
+                  strokeDashoffset={-dashOffset}
+                  strokeLinecap={linecap}
+                  style={{ pointerEvents: "stroke" }}
+                  onMouseMove={(e) => {
+                    e.stopPropagation(); // don't also trigger the svg's clear-on-move
+                    const rect = e.currentTarget.ownerSVGElement!.getBoundingClientRect();
+                    queueHover({ i, x: e.clientX - rect.left, y: e.clientY - rect.top });
+                  }}
+                />
+              </g>
+            ))
+          )}
+          {/* the lifted slice, redrawn on top of every other segment -- drawn
+              in place among its siblings above, its cast shadow would get
+              sliced off wherever a later segment happens to paint over it */}
+          {liftedHover && (
+            <circle
+              r={r}
+              fill="none"
+              stroke={liftedHover.s.color}
+              strokeWidth={thickness}
+              strokeDasharray={`${liftedHover.dash} ${circumference - liftedHover.dash}`}
+              strokeDashoffset={-liftedHover.dashOffset}
+              strokeLinecap={liftedHover.linecap}
+              style={{
+                pointerEvents: "none",
+                // no actual movement -- the "lift" is just a cast shadow plus
+                // extra brightness, like light catching a raised surface
+                filter:
+                  "drop-shadow(0 3px 5px rgba(0, 0, 0, 0.45)) drop-shadow(0 12px 20px rgba(0, 0, 0, 0.4)) brightness(1.22)",
+              }}
+            />
           )}
         </g>
       </svg>
