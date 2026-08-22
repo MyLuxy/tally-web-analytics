@@ -1465,8 +1465,8 @@ a {
 .sheet {
   width: 100%;
   height: 100%;
-  max-width: 980px;
-  max-height: 780px;
+  max-width: 1180px;
+  max-height: 900px;
   display: flex;
   flex-direction: column;
   background: var(--panel);
