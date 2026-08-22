@@ -239,7 +239,7 @@ export function Chart({
               many and we glide instead of snapping) */}
           {snap &&
             series.map((p, i) => (
-              <circle key={`m${i}`} className="chart-marker" cx={xFor(i)} cy={yFor(p.pageviews)} r={2.6} />
+              <circle key={`m${i}`} className="chart-marker" cx={xFor(i)} cy={yFor(p.pageviews)} r={2} />
             ))}
 
           {ticks.map(({ p, i }) => {
@@ -256,8 +256,8 @@ export function Chart({
           {show && (
             <g>
               <line className="chart-cursor" x1={dotX} x2={dotX} y1={PAD.top} y2={baseline} />
-              <circle className="chart-dot-visitors" cx={dotX} cy={visitorsY} r={4.5} />
-              <circle className="chart-dot-views" cx={dotX} cy={viewsY} r={5} />
+              <circle className="chart-dot-visitors" cx={dotX} cy={visitorsY} r={3.5} />
+              <circle className="chart-dot-views" cx={dotX} cy={viewsY} r={4} />
             </g>
           )}
         </svg>
