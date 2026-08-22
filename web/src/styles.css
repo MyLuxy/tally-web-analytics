@@ -1015,7 +1015,7 @@ a {
 .card-content .breakdown-chart {
   justify-content: space-between;
   margin-top: 20px;
-  padding: 0 15% 0 4%;
+  padding: 0 15% 0 9%;
 }
 
 /* the expanded sheet stacks chart above legend, both centred, instead of the
