@@ -607,12 +607,15 @@ a {
   transform: translateY(0);
 }
 
-/* the breakdown card's tab switcher sits inside a card that's otherwise one
-   big click target -- hovering/clicking a tab shouldn't also lift the whole
-   card, that read as a stray animation for something you're not actually
-   clicking into */
+/* same idea for the breakdown card's tab switcher and the Statistics card's
+   24h/7d/30d/all range tabs -- both sit inside a card that's otherwise one
+   big click target, and hovering/clicking them shouldn't also lift the
+   whole card. That read as a stray animation for something you're not
+   actually clicking into */
 .panel-clickable:has(.breakdown-tabs:hover),
-.panel-clickable:has(.breakdown-tabs:focus-within) {
+.panel-clickable:has(.breakdown-tabs:focus-within),
+.panel-clickable:has(.range-header:hover),
+.panel-clickable:has(.range-header:focus-within) {
   transform: none;
   border-color: var(--line);
   box-shadow: var(--shadow-card);
