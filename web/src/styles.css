@@ -880,6 +880,17 @@ a {
   stroke-linecap: round;
 }
 
+.sparkline-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.sparkline-axis {
+  fill: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+}
+
 .activity-stats {
   display: flex;
   justify-content: center;

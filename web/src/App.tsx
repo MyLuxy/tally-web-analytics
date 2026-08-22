@@ -440,7 +440,7 @@ export function App() {
               </div>
               {/* a plain preview, not the full Statistics chart -- clicking
                   the card is what gets the grid/axis/tooltip version */}
-              {activityData && <Sparkline series={activityData.series} />}
+              {activityData && <Sparkline series={activityData.series} hour12={hour12} />}
               <div className="activity-stats">
                 <div>
                   <span className="activity-stat-value num">
