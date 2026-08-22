@@ -1908,7 +1908,7 @@ a {
 /* Activity's centred position (via the rule above) sat a bit too low --
    nudge it up from centre without touching Traffic, which was fine there */
 .sheet-activity {
-  margin-top: -50px;
+  margin-top: -90px;
 }
 
 .sheet-subhead {
