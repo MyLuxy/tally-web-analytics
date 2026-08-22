@@ -982,13 +982,15 @@ export function App() {
                   long; the others keep the plain list, they rarely need it. */}
               {breakdownRows && breakdownRows.length > (activePlatformTab.chart?.length ?? 0) && (
                 <>
-                  <h3 className="sheet-subhead">More {activePlatformTab.label.toLowerCase()}</h3>
+                  {/* countries repeats the ones already shown in the donut above,
+                      instead of picking up where it left off -- one continuous,
+                      complete ranked list reads more sensibly here than a second
+                      list that mysteriously starts at #11 */}
+                  <h3 className="sheet-subhead">
+                    {breakdownTab === "countries" ? "All countries" : `More ${activePlatformTab.label.toLowerCase()}`}
+                  </h3>
                   {breakdownTab === "countries" ? (
-                    <RankedBoard
-                      rows={breakdownRows.slice(activePlatformTab.chart?.length ?? 0)}
-                      icon={countryFlagRowIcon}
-                      empty=""
-                    />
+                    <RankedBoard rows={breakdownRows} icon={countryFlagRowIcon} empty="" />
                   ) : (
                     <Rows rows={breakdownRows.slice(activePlatformTab.chart?.length ?? 0)} empty="" />
                   )}
