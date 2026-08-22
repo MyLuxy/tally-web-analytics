@@ -1005,9 +1005,14 @@ a {
 .breakdown-chart {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 26px;
   flex-wrap: wrap;
+}
+
+/* centred only in the expanded sheet (.sheet-content wraps it there) -- the
+   compact card keeps its original left-aligned layout */
+.sheet-content .breakdown-chart {
+  justify-content: center;
 }
 
 .breakdown-chart-legend {
