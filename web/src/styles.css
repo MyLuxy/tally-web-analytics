@@ -607,6 +607,15 @@ a {
   transform: translateY(0);
 }
 
+/* clicking inside the breakdown/range tab menus shouldn't dip the whole
+   card down and back up -- you're not clicking the card itself. The hover
+   lift stays (that one's fine, wanted); only the :active press-down is
+   cancelled while the press is on one of these menus. */
+.panel-clickable:has(.breakdown-tabs:active),
+.panel-clickable:has(.range-header:active) {
+  transform: translateY(-3px);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .panel-clickable {
     transition: border-color 0.15s ease;
