@@ -1053,7 +1053,9 @@ a {
    the same x, rather than each one stopping wherever its own name ends. */
 .card-content .breakdown-chart-legend {
   display: grid;
-  grid-template-columns: auto auto;
+  /* the wider min-width pushes just this column's left edge further left --
+     the stats column stays anchored on the right, its position untouched */
+  grid-template-columns: minmax(150px, auto) auto;
   column-gap: 4%;
   row-gap: 10px;
 }
