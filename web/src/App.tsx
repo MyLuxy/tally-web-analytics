@@ -986,7 +986,7 @@ function DeltaChip({ delta }: { delta: Delta }) {
 // mark at this size instead of a fuzzy little hook.
 function DeltaUpIcon() {
   return (
-    <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M12 3 22 20H2Z" />
     </svg>
   );
@@ -994,7 +994,7 @@ function DeltaUpIcon() {
 
 function DeltaDownIcon() {
   return (
-    <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M12 21 2 4h20Z" />
     </svg>
   );
