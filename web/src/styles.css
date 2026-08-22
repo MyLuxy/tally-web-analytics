@@ -1037,18 +1037,10 @@ a {
   gap: 10px;
 }
 
-/* the compact card keeps its original layout: legend fills the card's width
-   and the name pushes stats to the right edge. The expanded sheet's version
-   (below) doesn't stretch -- there, name and stats stay close together. */
-.card-content .breakdown-chart-legend {
-  flex: 1;
-}
-
-.card-content .breakdown-chart-name {
-  flex: 1;
-  max-width: none; /* the base 14em cap stopped the flex-grow short of the
-    row's true right edge -- the stats ended up stranded mid-row instead of
-    pinned to the edge like the rest of this card's rows */
+/* name and stats sit close together, same as the sheet -- no more
+   flex:1 stretching them apart to the card's edge */
+.card-content .breakdown-chart-row {
+  gap: 14px;
 }
 
 .breakdown-chart-row {
