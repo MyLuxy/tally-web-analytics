@@ -597,6 +597,27 @@ a {
   min-width: 0;
 }
 
+/* text and chrome pull in on phones -- less padding, smaller titles, tighter
+   gaps between cards -- so the charts/donuts/numbers (the actual point of
+   each card) get more of the limited width instead of competing with
+   generous desktop spacing that was never sized for a 360px screen. --gap
+   drives every grid's own gap plus the space between stacked cards, so
+   tightening it once here tightens the whole page at once. */
+@media (max-width: 480px) {
+  :root {
+    --gap: 14px;
+  }
+  .panel {
+    padding: 16px 16px;
+  }
+  .panel-title {
+    font-size: 15px;
+  }
+  .kpi-value {
+    font-size: 24px;
+  }
+}
+
 /* the whole card is the click target for cards with a fuller list behind
    them (see StatList) -- the interaction itself is the point, so the hover
    state stays quiet: the border darkens a touch and the card nudges up a
@@ -1074,6 +1095,32 @@ a {
   padding: 0 15% 0 9%;
 }
 
+/* the side-by-side layout above assumes real width to spread across --
+   below that, a deliberate stack (donut on top, legend centred underneath)
+   reads far better than the same row just getting squeezed by flex-wrap.
+   The chart is the point of the card, so it keeps first billing; the
+   legend's own numbers/gaps tighten too, in their own rules below. */
+@media (max-width: 560px) {
+  .breakdown-chart {
+    flex-direction: column;
+    text-align: center;
+  }
+  .card-content .breakdown-chart {
+    padding: 0;
+    margin-top: 16px;
+  }
+  .sheet-breakdown-chart .breakdown-chart {
+    padding: 0;
+    margin-top: 24px;
+  }
+  /* the legend is a grid sized to its own content, not the full row -- a
+     flex-column's default stretch would otherwise leave it pinned to the
+     left edge of the now-wider-than-it-needs box instead of centred */
+  .breakdown-chart-legend {
+    align-self: center;
+  }
+}
+
 /* same two-column table as the compact card (see .card-content's version),
    just bigger throughout -- text and icons should actually read as "the
    sheet's main visual", not just a scaled-up copy of the card's fine print */
@@ -1120,6 +1167,24 @@ a {
   height: 24px;
 }
 
+/* the desktop gap/name-width above assumes a lot of spare width -- both eat
+   into a phone-width sheet fast */
+@media (max-width: 560px) {
+  .sheet-breakdown-chart .breakdown-chart-legend {
+    column-gap: 28px;
+  }
+  .sheet-breakdown-chart .breakdown-chart-name {
+    max-width: 11em;
+  }
+  .sheet-breakdown-chart .breakdown-chart-name,
+  .sheet-breakdown-chart .breakdown-chart-value {
+    font-size: 16px;
+  }
+  .sheet-breakdown-chart .breakdown-chart-pct {
+    font-size: 14px;
+  }
+}
+
 .breakdown-chart-legend {
   min-width: 170px;
   list-style: none;
@@ -1142,6 +1207,15 @@ a {
   grid-template-columns: minmax(150px, auto) auto;
   column-gap: 4%;
   row-gap: 10px;
+}
+
+/* the 150px floor is sized for a roomy card -- too wide on its own for a
+   phone-width one */
+@media (max-width: 560px) {
+  .card-content .breakdown-chart-legend {
+    grid-template-columns: minmax(90px, auto) auto;
+    column-gap: 6%;
+  }
 }
 
 .card-content .breakdown-chart-row {
