@@ -1010,10 +1010,12 @@ a {
 }
 
 /* donut on the left, legend on the right -- spread to the two sides of the
-   card instead of clustered together */
+   card instead of clustered together, but inset from the true edges (not a
+   full edge-to-edge space-between) so the spread reads a bit tighter */
 .card-content .breakdown-chart {
   justify-content: space-between;
   margin-top: 20px;
+  padding: 0 15%;
 }
 
 /* the expanded sheet stacks chart above legend, both centred, instead of the
