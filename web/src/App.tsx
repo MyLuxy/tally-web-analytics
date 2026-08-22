@@ -813,7 +813,7 @@ export function App() {
             <div className="sheet-events">
               {data && data.events.length > 0 ? (
                 <div className="sheet-content">
-                  <BarChart bars={data.events.map((e) => ({ label: e.name, value: e.count }))} grid />
+                  <BarChart bars={data.events.map((e) => ({ label: e.name, value: e.count }))} />
                 </div>
               ) : (
                 <div className="panel-empty">

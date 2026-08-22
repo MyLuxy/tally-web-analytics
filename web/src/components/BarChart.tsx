@@ -5,11 +5,7 @@ export type Bar = { label: string; value: number };
 
 const W = 400;
 const H = 240;
-const PAD = { top: 30, bottom: 26, x: 10 };
-// the expanded sheet's version additionally adds left-aligned value guides
-// (see `grid` below), which need real room on the left -- the compact card
-// doesn't have those, but both show the exact count above each bar.
-const PAD_GRID_LEFT = 34;
+const PAD = { top: 30, bottom: 26, left: 34, right: 10 };
 
 const fmt = (n: number) => n.toLocaleString("en-US");
 
@@ -27,11 +23,10 @@ const PALETTE = [
   "color-mix(in srgb, var(--accent-5) 70%, var(--ink-faint))",
 ];
 
-export function BarChart({ bars, grid = false }: { bars: Bar[]; grid?: boolean }) {
+export function BarChart({ bars }: { bars: Bar[] }) {
   const max = Math.max(1, ...bars.map((b) => b.value));
   const n = Math.max(1, bars.length);
-  const padLeft = grid ? PAD_GRID_LEFT : PAD.x;
-  const plotW = W - padLeft - PAD.x;
+  const plotW = W - PAD.left - PAD.right;
   const plotH = H - PAD.top - PAD.bottom;
   const slot = plotW / n;
   const barW = Math.min(36, slot * 0.55);
@@ -39,14 +34,14 @@ export function BarChart({ bars, grid = false }: { bars: Bar[]; grid?: boolean }
 
   // two guides (half and full) -- same lightweight treatment as the
   // Sparkline's, just enough to read the scale without a denser grid
-  const guides = grid ? [...new Set([0.5, 1].map((f) => Math.round(max * f)))] : [];
+  const guides = [...new Set([0.5, 1].map((f) => Math.round(max * f)))];
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="bar-svg" role="img" aria-label="Bar chart">
       {guides.map((g) => (
         <g key={g}>
-          <line className="sparkline-grid" x1={padLeft} x2={W - PAD.x} y1={yFor(g)} y2={yFor(g)} />
-          <text className="sparkline-axis" x={padLeft - 6} y={yFor(g) + 3} textAnchor="end">
+          <line className="sparkline-grid" x1={PAD.left} x2={W - PAD.right} y1={yFor(g)} y2={yFor(g)} />
+          <text className="sparkline-axis" x={PAD.left - 6} y={yFor(g) + 3} textAnchor="end">
             {fmt(g)}
           </text>
         </g>
@@ -54,7 +49,7 @@ export function BarChart({ bars, grid = false }: { bars: Bar[]; grid?: boolean }
 
       {bars.map((b, i) => {
         const h = (b.value / max) * plotH;
-        const cx = padLeft + slot * i + slot / 2;
+        const cx = PAD.left + slot * i + slot / 2;
         const y = PAD.top + (plotH - h);
         return (
           <g key={b.label}>
