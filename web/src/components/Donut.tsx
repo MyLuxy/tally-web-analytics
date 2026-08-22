@@ -91,7 +91,7 @@ export function Donut({
                     r={r}
                     fill="none"
                     stroke="transparent"
-                    strokeWidth={thickness + 24}
+                    strokeWidth={thickness + 44}
                     strokeDasharray={`${dash} ${circumference - dash}`}
                     strokeDashoffset={-dashOffset}
                     strokeLinecap={linecap}
