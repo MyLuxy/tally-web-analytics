@@ -4,8 +4,8 @@
 export type Bar = { label: string; value: number };
 
 const W = 400;
-const H = 180;
-const PAD = { top: 12, bottom: 24, x: 10 };
+const H = 240;
+const PAD = { top: 22, bottom: 26, x: 10 };
 
 // Each bar gets its own colour, cycling through the palette -- with several
 // different event names on screen at once, one flat colour made them
