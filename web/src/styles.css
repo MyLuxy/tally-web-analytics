@@ -276,6 +276,16 @@ a {
   height: 22px;
 }
 
+.settings-btn {
+  width: 32px;
+  height: 32px;
+}
+
+.settings-btn svg {
+  width: 28px;
+  height: 28px;
+}
+
 .icon-btn:hover {
   color: var(--ink);
 }
