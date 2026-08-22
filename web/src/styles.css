@@ -1046,22 +1046,33 @@ a {
   gap: 10px;
 }
 
-/* name and stats sit close together, same as the sheet -- no more
-   flex:1 stretching them apart to the card's edge */
-.card-content .breakdown-chart-row {
-  gap: 14px;
+/* a real two-column table (name+icon, then stats) instead of independent
+   flex rows -- each .breakdown-chart-row becomes "display: contents" so its
+   two spans are direct grid items, and the grid auto-sizes the first column
+   to the widest name. That's what actually lines every row's stats up at
+   the same x, rather than each one stopping wherever its own name ends. */
+.card-content .breakdown-chart-legend {
+  display: grid;
+  grid-template-columns: auto auto;
+  column-gap: 4%;
+  row-gap: 10px;
 }
 
-/* extra room specifically on the icon side of the name -- the row's own
-   gap alone still read as too tight there */
-.card-content .breakdown-chart-name {
-  margin-left: 8px;
+.card-content .breakdown-chart-row {
+  display: contents;
 }
 
 .breakdown-chart-row {
   display: flex;
   align-items: center;
   gap: 9px;
+}
+
+.breakdown-chart-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .breakdown-chart-icon {

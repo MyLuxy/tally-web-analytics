@@ -75,10 +75,12 @@ export function BreakdownChart({
           const pct = Math.round((it.value / total) * 100);
           return (
             <li key={it.name} className="breakdown-chart-row">
-              <span className="breakdown-chart-icon" style={{ color: it.color }}>
-                {icon?.(it.name, it.code)}
+              <span className="breakdown-chart-main">
+                <span className="breakdown-chart-icon" style={{ color: it.color }}>
+                  {icon?.(it.name, it.code)}
+                </span>
+                <span className="breakdown-chart-name">{it.name}</span>
               </span>
-              <span className="breakdown-chart-name">{it.name}</span>
               <span className="breakdown-chart-stats">
                 <span className="breakdown-chart-pct num">{pct}%</span>
                 <span className="breakdown-chart-value num">{it.value.toLocaleString("en-US")}</span>
