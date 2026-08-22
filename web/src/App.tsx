@@ -9,7 +9,7 @@ import { Sparkline } from "./components/Sparkline.js";
 import { BarChart } from "./components/BarChart.js";
 import { ExportCsvButton, ExpandIcon, Rows, StatList } from "./components/StatList.js";
 import { BreakdownCard } from "./components/BreakdownCard.js";
-import { TrafficSourcesCard, TrafficSourcesContent } from "./components/TrafficSources.js";
+import { ReferrerBoard, TrafficSourcesCard, TrafficSourcesContent } from "./components/TrafficSources.js";
 import { ClickableCard } from "./components/ClickableCard.js";
 import type { Row } from "./components/StatList.js";
 
@@ -807,7 +807,7 @@ export function App() {
                   <span className="spinner" />
                 </div>
               ) : (
-                <Rows rows={sourceRows} empty="All traffic came in direct." />
+                <ReferrerBoard rows={sourceRows} empty="All traffic came in direct." />
               )}
             </div>
           ) : breakdownError ? (

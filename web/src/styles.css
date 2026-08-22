@@ -1057,6 +1057,76 @@ a {
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
 }
 
+/* ---- referrer board (see ReferrerBoard) -- a wrapping grid rather than one
+   tall column, since this list is the one that can genuinely run long ---- */
+.referrer-scroll {
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.referrer-grid {
+  list-style: none;
+  margin: 0;
+  padding: 2px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.referrer-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--panel);
+}
+
+.referrer-rank {
+  flex-shrink: 0;
+  min-width: 16px;
+  font-size: 11px;
+  color: var(--ink-faint);
+  text-align: right;
+}
+
+.referrer-favicon {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.referrer-domain {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.referrer-value {
+  position: relative;
+  z-index: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent-ink);
+}
+
+.referrer-fill {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 2px;
+  background: var(--accent-5);
+  opacity: 0.55;
+}
+
 /* ---- chart ---- */
 .chart {
   position: relative;
