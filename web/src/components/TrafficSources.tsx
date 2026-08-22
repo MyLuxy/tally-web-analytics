@@ -50,8 +50,10 @@ export function TrafficSourcesContent({
             <li key={c.key} className="traffic-source-row">
               <span className="dot" style={{ background: c.color }} />
               <span className="traffic-source-label">{c.label}</span>
-              <span className="traffic-source-pct num">{pct}%</span>
-              <span className="traffic-source-value num">{value.toLocaleString("en-US")}</span>
+              <span className="traffic-source-stats">
+                <span className="traffic-source-pct num">{pct}%</span>
+                <span className="traffic-source-value num">{value.toLocaleString("en-US")}</span>
+              </span>
             </li>
           );
         })}
