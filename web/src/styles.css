@@ -774,7 +774,7 @@ a {
 
 .traffic-sources-column .traffic-sources-legend {
   width: 100%;
-  max-width: 260px;
+  max-width: 420px;
   min-width: 0;
   margin: 0 auto;
 }
@@ -956,9 +956,9 @@ a {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px 20px;
 }
 
 .traffic-source-row {
