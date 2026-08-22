@@ -811,16 +811,28 @@ export function App() {
               )}
             </div>
           ) : expanded === "events" ? (
-            data && data.events.length > 0 ? (
-              <div className="sheet-content">
-                <BarChart bars={data.events.map((e) => ({ label: e.name, value: e.count }))} />
-              </div>
-            ) : (
-              <div className="panel-empty">
-                <TallyMarks count={3} className="panel-empty-mark" />
-                <p className="ink-soft">No custom events recorded.</p>
-              </div>
-            )
+            <div className="sheet-events">
+              {data && data.events.length > 0 ? (
+                <div className="sheet-content">
+                  <BarChart bars={data.events.map((e) => ({ label: e.name, value: e.count }))} grid />
+                </div>
+              ) : (
+                <div className="panel-empty">
+                  <TallyMarks count={3} className="panel-empty-mark" />
+                  <p className="ink-soft">No custom events recorded.</p>
+                </div>
+              )}
+              {/* the chart above is only the top 10 (same as the compact card,
+                  just with a readable grid) -- whatever's left of the full,
+                  higher-capped breakdown list shows underneath, same pattern
+                  as trafficSources' "All referrers" */}
+              {breakdownRows && breakdownRows.length > 10 && (
+                <>
+                  <h3 className="sheet-subhead">More events</h3>
+                  <Rows rows={breakdownRows.slice(10)} empty="" />
+                </>
+              )}
+            </div>
           ) : breakdownError ? (
             <div className="notice notice-error">
               <strong>Couldn't load the full list.</strong> {breakdownError}
