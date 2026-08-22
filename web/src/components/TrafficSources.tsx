@@ -85,7 +85,7 @@ export function ReferrerBoard({ rows, empty }: { rows: Row[]; empty: string }) {
           const domain = typeof r.label === "string" ? r.label : (r.title ?? String(r.value));
           return (
             <li className="referrer-item" key={r.title ?? domain}>
-              <span className="referrer-rank">.{i + 1}</span>
+              <span className="referrer-rank">{i + 1}</span>
               {/* best-effort site icon -- just a nicety, so a missing/blocked
                   one silently leaves the fallback dot rather than a broken-image icon */}
               <img
