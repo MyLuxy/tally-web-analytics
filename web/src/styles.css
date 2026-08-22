@@ -627,10 +627,10 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6px;
+  padding: 5px;
   border: 0;
   background: transparent;
-  color: var(--ink-faint);
+  color: var(--ink-soft);
   cursor: pointer;
   border-radius: 7px;
   transition: color 0.15s ease, background 0.15s ease;
