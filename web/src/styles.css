@@ -859,6 +859,27 @@ a {
   --accent-2: var(--accent-3);
 }
 
+/* fills the card width, real (gentle) aspect ratio -- not stretched flat,
+   not shrunk down small either */
+.sparkline {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 4px;
+}
+
+.sparkline-area {
+  fill: color-mix(in srgb, var(--accent-5) 18%, transparent);
+}
+
+.sparkline-line {
+  fill: none;
+  stroke: var(--accent-5);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
 .activity-stats {
   display: flex;
   justify-content: center;
