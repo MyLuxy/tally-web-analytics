@@ -527,37 +527,29 @@ a {
   padding-top: 2px;
 }
 
-/* period-over-period change badge -- green/red is purely functional here
-   (a drop has to read as a drop), the only place the palette uses either.
-   A solid fill + a soft tinted shadow instead of the washed-out tint every
-   other chip in the app uses -- this is the one number meant to catch your
-   eye at a glance, not blend in with the rest of the card. */
+/* period-over-period change, next to the value -- no chip/pill chrome, just
+   coloured text. green/red is purely functional here (a drop has to read as
+   a drop), the only place the palette uses either; both are picked dark/
+   saturated enough to still hold up as plain text on a light background,
+   not just inside a filled badge. */
 .kpi-delta {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 13px;
+  gap: 3px;
+  font-size: 14px;
   font-weight: 700;
-  background: var(--line);
   color: var(--ink-soft);
 }
 
 .kpi-delta-up {
-  background: var(--positive);
-  color: #fff;
-  box-shadow: 0 3px 10px -2px color-mix(in srgb, var(--positive) 60%, transparent);
+  color: var(--positive);
 }
 
 .kpi-delta-down {
-  background: var(--negative);
-  color: #fff;
-  box-shadow: 0 3px 10px -2px color-mix(in srgb, var(--negative) 60%, transparent);
+  color: var(--negative);
 }
 
 .kpi-delta-new {
-  background: var(--accent-wash);
   color: var(--accent-ink);
 }
 
