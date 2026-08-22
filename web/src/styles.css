@@ -1027,12 +1027,9 @@ a {
   padding: 0 15% 0 9%;
 }
 
-/* the expanded sheet stacks chart above legend, both centred, instead of the
-   compact card's side-by-side row -- a bigger donut reads as the sheet's
-   main visual this way instead of just one item sharing a row with its own
-   legend off to the side */
+/* side by side, same as the compact card, just centred as a group instead
+   of spread to the two edges */
 .sheet-breakdown-chart .breakdown-chart {
-  flex-direction: column;
   justify-content: center;
   margin-top: 20px;
 }
@@ -1041,7 +1038,6 @@ a {
    just bigger throughout -- text and icons should actually read as "the
    sheet's main visual", not just a scaled-up copy of the card's fine print */
 .sheet-breakdown-chart .breakdown-chart-legend {
-  width: 100%;
   max-width: 420px;
   display: grid;
   grid-template-columns: auto auto;
