@@ -837,13 +837,16 @@ a {
   height: auto;
 }
 
-/* fill is set per-bar inline (see BarChart.tsx's PALETTE) */
+/* fill is set per-bar inline (see BarChart.tsx's PALETTE). A brightness
+   bump instead of the old opacity dip -- fading an already-muted colour
+   toward transparent just washed it out, especially blown up bigger in the
+   expanded sheet. */
 .bar-rect {
-  transition: opacity 0.15s ease;
+  transition: filter 0.15s ease;
 }
 
 .bar-rect:hover {
-  opacity: 0.8;
+  filter: brightness(1.18);
 }
 
 .bar-label {
