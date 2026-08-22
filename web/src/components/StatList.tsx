@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { TallyMarks } from "./TallyMarks.js";
 import { ClickableCard } from "./ClickableCard.js";
 import { downloadCsv, rowsToCsv } from "../lib/csv.js";
@@ -113,28 +114,112 @@ export function Rows({ rows, empty }: { rows: Row[]; empty: string }) {
 }
 
 // Downloads whatever rows are currently shown (the panel's top-10 slice, or
-// the full list when used inside the "View all" modal) as a two-column CSV.
+// the full list when used inside the "View all" modal) as a two-column CSV --
+// after a confirm step, since this can sit inside a whole-card click target
+// and a stray click shouldn't silently trigger a file download.
 export function ExportCsvButton({ title, rows }: { title: string; rows: Row[] }) {
+  const [confirming, setConfirming] = useState(false);
+
+  function download() {
+    const csvRows = rows.map((r) => ({
+      label: r.title ?? (typeof r.label === "string" ? r.label : String(r.value)),
+      value: r.value,
+    }));
+    const csv = rowsToCsv([title, "count"], csvRows);
+    const stamp = new Date().toISOString().slice(0, 10);
+    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    downloadCsv(`tally-${slug}-${stamp}.csv`, csv);
+  }
+
   return (
-    <button
-      type="button"
-      className="export-btn"
-      title={`Export "${title}" as CSV`}
-      aria-label={`Export ${title} as CSV`}
+    <>
+      <button
+        type="button"
+        className="export-btn"
+        title={`Export "${title}" as CSV`}
+        aria-label={`Export ${title} as CSV`}
+        onClick={(e) => {
+          e.stopPropagation(); // sits inside a whole-card click target (see StatList)
+          setConfirming(true);
+        }}
+      >
+        <DownloadIcon />
+      </button>
+      {confirming && (
+        <ExportConfirm
+          title={title}
+          count={rows.length}
+          onCancel={() => setConfirming(false)}
+          onConfirm={() => {
+            setConfirming(false);
+            download();
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+// Rendered into document.body (not inline) -- the button can sit inside a
+// card that gets a hover/active transform, and a transformed ancestor turns
+// position:fixed into "fixed to that ancestor" instead of the viewport.
+function ExportConfirm({
+  title,
+  count,
+  onCancel,
+  onConfirm,
+}: {
+  title: string;
+  count: number;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCancel();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onCancel]);
+
+  return createPortal(
+    <div
+      className="modal-overlay"
+      role="presentation"
       onClick={(e) => {
-        e.stopPropagation(); // sits inside a whole-card click target (see StatList)
-        const csvRows = rows.map((r) => ({
-          label: r.title ?? (typeof r.label === "string" ? r.label : String(r.value)),
-          value: r.value,
-        }));
-        const csv = rowsToCsv([title, "count"], csvRows);
-        const stamp = new Date().toISOString().slice(0, 10);
-        const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-        downloadCsv(`tally-${slug}-${stamp}.csv`, csv);
+        // React re-bubbles portal clicks through the component tree (not
+        // the DOM), so without this, clicking the backdrop to dismiss would
+        // also reach the card underneath and open/close it
+        e.stopPropagation();
+        onCancel();
       }}
     >
-      <DownloadIcon />
-    </button>
+      <div
+        className="modal export-confirm"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Export CSV"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="modal-head">
+          <h2 className="modal-title">Export CSV</h2>
+        </div>
+        <div className="modal-body">
+          <p className="ink-soft">
+            Download &ldquo;{title}&rdquo; as a CSV file? {count} row{count === 1 ? "" : "s"}.
+          </p>
+          <div className="confirm-actions">
+            <button type="button" className="btn-secondary" onClick={onCancel}>
+              Cancel
+            </button>
+            <button type="button" className="btn-primary" onClick={onConfirm}>
+              Download
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body,
   );
 }
 

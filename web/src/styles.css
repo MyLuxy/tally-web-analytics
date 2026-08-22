@@ -1736,6 +1736,53 @@ a {
   display: none; /* Chrome, Safari */
 }
 
+/* ---- CSV export confirm (see ExportCsvButton) -- a small dialog, not the
+   full settings-modal width ---- */
+.export-confirm {
+  max-width: 380px;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn-primary {
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--paper);
+  background: var(--accent);
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-primary:hover {
+  background: var(--accent-ink);
+}
+
+.btn-secondary {
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.btn-secondary:hover {
+  color: var(--ink);
+  border-color: var(--ink-soft);
+  background: var(--accent-wash);
+}
+
 .modal-head {
   display: flex;
   align-items: center;
