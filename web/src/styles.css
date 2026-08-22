@@ -958,13 +958,13 @@ a {
   padding: 0;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px 20px;
+  gap: 22px 40px;
 }
 
 .traffic-source-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
 }
 
 .traffic-source-row .dot {
