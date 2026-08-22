@@ -1034,15 +1034,42 @@ a {
 .sheet-breakdown-chart .breakdown-chart {
   flex-direction: column;
   justify-content: center;
+  margin-top: 20px;
 }
 
-/* centred as a block (align-items:center above positions this capped-width
-   box), but NOT each row individually -- rows keep their natural left-to-
-   right flow so icons/names/stats line up in a column instead of each row
-   centering around a different point depending on its own text length */
+/* same two-column table as the compact card (see .card-content's version),
+   just bigger throughout -- text and icons should actually read as "the
+   sheet's main visual", not just a scaled-up copy of the card's fine print */
 .sheet-breakdown-chart .breakdown-chart-legend {
   width: 100%;
-  max-width: 360px;
+  max-width: 420px;
+  display: grid;
+  grid-template-columns: auto auto;
+  column-gap: 4%;
+  row-gap: 14px;
+}
+
+.sheet-breakdown-chart .breakdown-chart-row {
+  display: contents;
+}
+
+.sheet-breakdown-chart .breakdown-chart-name,
+.sheet-breakdown-chart .breakdown-chart-value {
+  font-size: 17px;
+}
+
+.sheet-breakdown-chart .breakdown-chart-pct {
+  font-size: 15px;
+}
+
+.sheet-breakdown-chart .breakdown-chart-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.sheet-breakdown-chart .breakdown-chart-icon .flag {
+  width: 24px;
+  height: 24px;
 }
 
 .breakdown-chart-legend {
