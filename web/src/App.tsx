@@ -66,17 +66,17 @@ function countryName(code: string): string {
 }
 
 // Flag emoji don't render everywhere (Windows and many Samsung phones show the
-// bare letters instead), so use small flag images keyed by the country code.
+// bare letters instead), so use small flag icons keyed by the country code --
+// self-hosted circular SVGs (see scripts/sync-flags.mjs), not an external CDN.
 function CountryLabel({ code }: { code: string }) {
   const cc = code.toLowerCase();
   return (
     <span className="country">
       <img
         className="flag"
-        src={`https://flagcdn.com/24x18/${cc}.png`}
-        srcSet={`https://flagcdn.com/48x36/${cc}.png 2x`}
-        width={24}
-        height={18}
+        src={`${import.meta.env.BASE_URL}flags/${cc}.svg`}
+        width={20}
+        height={20}
         alt=""
         loading="lazy"
       />

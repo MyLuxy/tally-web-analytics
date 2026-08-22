@@ -13,6 +13,9 @@ web-dist/
 # local-only tooling, never meant to ship in the public repo
 server/scripts/
 
+# generated from the circle-flags dependency by web/scripts/sync-flags.mjs
+web/public/flags/
+
 # editor / os junk
 .DS_Store
 .vscode/*
