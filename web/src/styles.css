@@ -1893,6 +1893,18 @@ a {
   padding: 22px 24px 28px;
 }
 
+/* Traffic/Activity's content (a chart + range tabs, or a KPI row + chart)
+   doesn't come close to filling the sheet's full height the way a long
+   breakdown list does -- centering it vertically reads as intentional
+   instead of leaving a stray gap stranded at the bottom. Only kicks in for
+   sheets actually shaped like this one (:has), so every other sheet keeps
+   its normal top-anchored scroll. */
+.sheet-body:has(> .sheet-traffic) {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 .sheet-subhead {
   margin: 22px 0 10px;
   font-size: 14px;
