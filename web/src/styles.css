@@ -1015,7 +1015,7 @@ a {
 .card-content .breakdown-chart {
   justify-content: space-between;
   margin-top: 20px;
-  padding: 0 15% 0 9%;
+  padding: 0 7% 0 9%;
 }
 
 /* the expanded sheet stacks chart above legend, both centred, instead of the
@@ -1054,7 +1054,7 @@ a {
 .card-content .breakdown-chart-legend {
   display: grid;
   grid-template-columns: auto auto;
-  column-gap: 4%;
+  column-gap: 10%;
   row-gap: 10px;
 }
 
