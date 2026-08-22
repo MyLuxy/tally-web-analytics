@@ -419,6 +419,7 @@ export function App() {
           <div className="chart-row">
             <ClickableCard
               cardKey="traffic"
+              expanded={expanded === "traffic"}
               transitioning={transitioningKey === "traffic"}
               onExpand={() => openCard("traffic")}
               ariaLabel="Traffic: view full chart"
@@ -443,6 +444,7 @@ export function App() {
             {data && (
               <TrafficSourcesCard
                 sources={data.trafficSources}
+                expanded={expanded === "trafficSources"}
                 transitioning={transitioningKey === "trafficSources"}
                 onExpand={() => openCard("trafficSources")}
               />
@@ -453,6 +455,7 @@ export function App() {
           <div className="chart-row">
             <ClickableCard
               cardKey="activity"
+              expanded={expanded === "activity"}
               transitioning={transitioningKey === "activity"}
               onExpand={() => openCard("activity")}
               ariaLabel="Activity: view details"
@@ -482,6 +485,7 @@ export function App() {
 
             <ClickableCard
               cardKey="events"
+              expanded={expanded === "events"}
               transitioning={transitioningKey === "events"}
               onExpand={() => openCard("events")}
               ariaLabel="Events: view all"
@@ -506,6 +510,7 @@ export function App() {
           <div className="card-grid">
             <StatList
               cardKey="pages"
+              expanded={expanded === "pages"}
               transitioning={transitioningKey === "pages"}
               title="Top pages"
               unit="views"
@@ -517,6 +522,7 @@ export function App() {
             />
             <StatList
               cardKey="entryPages"
+              expanded={expanded === "entryPages"}
               transitioning={transitioningKey === "entryPages"}
               title="Entry pages"
               unit="visitors"
@@ -527,6 +533,7 @@ export function App() {
             />
             <StatList
               cardKey="referrers"
+              expanded={expanded === "referrers"}
               transitioning={transitioningKey === "referrers"}
               title="Referrers"
               unit="views"
@@ -571,6 +578,7 @@ export function App() {
                   })),
                 },
               ]}
+              expandedKey={expanded}
               transitioningKey={transitioningKey}
               onExpand={(key) => openCard(key as ExpandTarget)}
             />

@@ -61,16 +61,19 @@ export function TrafficSourcesContent({
 
 export function TrafficSourcesCard({
   sources,
+  expanded,
   transitioning,
   onExpand,
 }: {
   sources: Stats["trafficSources"];
+  expanded: boolean;
   transitioning: boolean;
   onExpand: () => void;
 }) {
   return (
     <ClickableCard
       cardKey="trafficSources"
+      expanded={expanded}
       transitioning={transitioning}
       onExpand={onExpand}
       ariaLabel="Traffic sources: view full breakdown"

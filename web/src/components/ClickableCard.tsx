@@ -10,8 +10,17 @@ import type { CSSProperties, KeyboardEvent, ReactNode } from "react";
 // giving every idle card a permanent name promoted them all into their own
 // layer and made them flash in front of the one actually animating. See
 // App.tsx's `transitioningKey` for who's currently allowed to wear it.
+//
+// `expanded` is separate: it's true for the whole time this card's own sheet
+// is open, not just during the transition. Without it, the instant the name
+// hands off to the sheet, this card goes back to being a plain, nameless,
+// fully-visible grid tile -- so it showed through (dimmed by the backdrop)
+// right where it started, alongside the copy actually animating away, i.e.
+// a ghost duplicate. Hiding it (not unmounting -- the grid shouldn't reflow)
+// for as long as its sheet is open removes the ghost in both directions.
 export function ClickableCard({
   cardKey,
+  expanded,
   transitioning,
   onExpand,
   ariaLabel,
@@ -19,13 +28,17 @@ export function ClickableCard({
   children,
 }: {
   cardKey: string;
+  expanded: boolean;
   transitioning: boolean;
   onExpand: () => void;
   ariaLabel: string;
   className?: string;
   children: ReactNode;
 }) {
-  const style: CSSProperties = { viewTransitionName: transitioning ? `card-${cardKey}` : undefined } as CSSProperties;
+  const style: CSSProperties = {
+    viewTransitionName: transitioning ? `card-${cardKey}` : undefined,
+    visibility: expanded ? "hidden" : undefined,
+  } as CSSProperties;
 
   return (
     <section
