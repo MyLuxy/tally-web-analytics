@@ -426,12 +426,6 @@ a {
   color: var(--ink-soft);
   font-size: 13px;
   padding: 5px 14px;
-  /* a floor on tap height regardless of screen size -- the padding above
-     alone doesn't clear a comfortable touch target, and unlike most sizing
-     in here that scales *down* for mobile, a tab you tap with a fingertip
-     needs to stay roomy exactly where screens get smaller, not shrink with
-     everything else */
-  min-height: 36px;
   border-radius: 999px;
   cursor: pointer;
   transition: color 0.15s ease, background 0.15s ease;
@@ -447,6 +441,16 @@ a {
 .segment[aria-selected="true"] {
   background: var(--ink);
   color: var(--paper);
+}
+
+/* a floor on tap height, phones only -- the padding above alone doesn't
+   clear a comfortable touch target for a fingertip. Scoped to mobile so it
+   doesn't also grow every tab pill on desktop, where a mouse doesn't need
+   the extra room and the old (smaller) size is the correct, unchanged look. */
+@media (max-width: 640px) {
+  .segment {
+    min-height: 36px;
+  }
 }
 
 /* the breakdown card's browsers/OS/devices/countries tab switcher -- same

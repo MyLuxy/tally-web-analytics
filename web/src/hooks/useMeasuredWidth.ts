@@ -12,7 +12,16 @@ import { useEffect, useRef, useState } from "react";
 // always equals 1 real CSS pixel, on any screen, so text set in "viewBox
 // units" (e.g. font-size: 11) is always actually ~11px on screen. No
 // breakpoints to maintain.
-export function useMeasuredWidth(fallback: number) {
+//
+// `cap` matters just as much as the floor this was built for: on a desktop
+// sheet the container is routinely *wider* than the old fixed design width
+// used to be, and that old width being upscaled by the CSS is exactly what
+// made that text read as comfortably big there -- without a cap, "real
+// pixels" on a wide screen means noticeably *smaller* text than before,
+// not just fixing small screens. Capping at the original design width
+// reproduces the old (upscaled) desktop look exactly, and still shrinks
+// for real below that.
+export function useMeasuredWidth(fallback: number, cap: number = fallback) {
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(fallback);
 
@@ -27,5 +36,5 @@ export function useMeasuredWidth(fallback: number) {
     return () => ro.disconnect();
   }, []);
 
-  return [ref, width] as const;
+  return [ref, Math.min(width, cap)] as const;
 }
