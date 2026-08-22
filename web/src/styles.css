@@ -440,15 +440,15 @@ a {
    card header rather than the page header */
 .breakdown-tabs {
   display: inline-flex;
-  padding: 2px;
+  padding: 3px;
   background: var(--paper);
   border: 1px solid var(--line-strong);
   border-radius: 999px;
 }
 
 .breakdown-tabs .segment {
-  font-size: 12px;
-  padding: 4px 10px;
+  font-size: 14px;
+  padding: 6px 14px;
 }
 
 .segment:focus-visible {
