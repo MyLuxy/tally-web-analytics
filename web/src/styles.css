@@ -848,29 +848,15 @@ a {
   text-transform: capitalize;
 }
 
-/* ---- activity card (sparkline preview) ---- */
-/* narrower and centred, not stretched to the full width of a wide card --
-   height follows the viewBox's own (real, undistorted) aspect ratio */
-.sparkline {
-  display: block;
-  width: 100%;
-  max-width: 360px;
-  height: auto;
-  margin: 4px auto 0;
-}
-
-/* a different colour than the Statistics chart above it (--accent), on
-   purpose -- two charts on the same screen shouldn't share an identity */
-.sparkline-area {
-  fill: color-mix(in srgb, var(--accent-5) 18%, transparent);
-}
-
-.sparkline-line {
-  fill: none;
-  stroke: var(--accent-5);
-  stroke-width: 2;
-  stroke-linejoin: round;
-  stroke-linecap: round;
+/* ---- activity card ---- */
+/* the Activity card uses the same full <Chart> as Statistics -- grid, axis
+   labels, tooltip -- just re-themed to its own colour pair (rose/violet
+   instead of blue/cyan) so the two charts on screen don't look identical.
+   CSS custom properties inherit, so overriding --accent/--accent-2 on this
+   wrapper is all Chart.tsx needs to pick up the different colours. */
+.activity-chart-accent {
+  --accent: var(--accent-5);
+  --accent-2: var(--accent-3);
 }
 
 .activity-stats {

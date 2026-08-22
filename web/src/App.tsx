@@ -5,7 +5,6 @@ import type { BreakdownMetric, Range, Site, Stats } from "./api.js";
 import { fetchBreakdown, fetchSites, fetchStats, getToken, setToken, Unauthorized } from "./api.js";
 import { TallyMarks } from "./components/TallyMarks.js";
 import { Chart } from "./components/Chart.js";
-import { Sparkline } from "./components/Sparkline.js";
 import { BarChart } from "./components/BarChart.js";
 import { ExportCsvButton, ExpandIcon, Rows, StatList } from "./components/StatList.js";
 import { BreakdownCard } from "./components/BreakdownCard.js";
@@ -438,7 +437,12 @@ export function App() {
                 <h2 className="panel-title">Activity</h2>
                 <span className="eyebrow">last 24h</span>
               </div>
-              {activityData && <Sparkline series={activityData.series} />}
+              {/* full chart, same as Statistics -- grid, axis labels, tooltip --
+                  just fixed to 24h and in its own colour (see .activity-chart-accent)
+                  so the two charts don't read as the same one repeated twice */}
+              <div className="chart-wrap activity-chart-accent">
+                {activityData && <Chart series={activityData.series} range="24h" hour12={hour12} />}
+              </div>
               <div className="activity-stats">
                 <div>
                   <span className="activity-stat-value num">
@@ -736,20 +740,20 @@ export function App() {
               <section className="kpi-grid">
                 <KpiCard
                   icon={<EyeIcon />}
-                  iconVar="--accent"
+                  iconVar="--accent-5"
                   label="Pageviews"
                   value={activityData?.totals.pageviews ?? 0}
                   delta={activityData?.previousTotals && deltaOf(activityData.totals.pageviews, activityData.previousTotals.pageviews)}
                 />
                 <KpiCard
                   icon={<UsersIcon />}
-                  iconVar="--accent-2"
+                  iconVar="--accent-3"
                   label="Unique visitors"
                   value={activityData?.totals.visitors ?? 0}
                   delta={activityData?.previousTotals && deltaOf(activityData.totals.visitors, activityData.previousTotals.visitors)}
                 />
               </section>
-              <div className="chart-wrap">
+              <div className="chart-wrap activity-chart-accent">
                 {activityData && <Chart series={activityData.series} range="24h" hour12={hour12} />}
               </div>
             </div>
