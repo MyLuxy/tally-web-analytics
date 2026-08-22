@@ -1911,6 +1911,12 @@ a {
   margin-top: -90px;
 }
 
+/* the Pageviews/Unique visitors boxes specifically, closer to the top of
+   the section instead of leaving the base .kpi-grid's usual gap above them */
+.sheet-activity .kpi-grid {
+  margin-top: -20px;
+}
+
 .sheet-subhead {
   margin: 22px 0 10px;
   font-size: 14px;
