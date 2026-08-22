@@ -313,16 +313,25 @@ export function App() {
     const ctrl = new AbortController();
     setSourceRows(null);
     setSourceError(null);
-    fetchBreakdown(site, range, "referrers")
-      .then((rows) => {
-        if (ctrl.signal.aborted) return;
-        setSourceRows(rows.map((r) => ({ label: r.key, value: r.value })));
-      })
-      .catch((e: unknown) => {
-        if (ctrl.signal.aborted) return;
-        setSourceError(e instanceof Error ? e.message : "something went wrong");
-      });
-    return () => ctrl.abort();
+    // a beat after the sheet's own open animation (see .sheet-in, 220ms) --
+    // firing immediately meant this list's rows (each fetching a favicon
+    // from Google) landed and started decoding mid-transition, which is
+    // what showed up as the sheet's open feeling laggy
+    const timer = setTimeout(() => {
+      fetchBreakdown(site, range, "referrers")
+        .then((rows) => {
+          if (ctrl.signal.aborted) return;
+          setSourceRows(rows.map((r) => ({ label: r.key, value: r.value })));
+        })
+        .catch((e: unknown) => {
+          if (ctrl.signal.aborted) return;
+          setSourceError(e instanceof Error ? e.message : "something went wrong");
+        });
+    }, 260);
+    return () => {
+      clearTimeout(timer);
+      ctrl.abort();
+    };
   }, [expanded, site, range]);
 
   function openCard(target: ExpandTarget) {
