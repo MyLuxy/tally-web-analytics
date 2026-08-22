@@ -17,12 +17,14 @@ export function Donut({
   thickness = 16,
   centerLabel,
   centerSub,
+  parallax = false,
 }: {
   segments: DonutSegment[];
   size?: number;
   thickness?: number;
   centerLabel?: string;
   centerSub?: string;
+  parallax?: boolean; // the expanded sheet's bigger donut only -- a 3D tilt/lift on the hovered slice
 }) {
   const [hover, setHover] = useState<{ i: number; x: number; y: number } | null>(null);
   // raw mousemove can fire far faster than React (and the browser) can
@@ -52,6 +54,15 @@ export function Donut({
   const r = (size - thickness) / 2;
   const circumference = 2 * Math.PI * r;
   const visible = segments.filter((s) => s.value > 0);
+
+  // tilt magnitude follows where the cursor sits over the slice, relative
+  // to the donut's own centre -- so it reads as a slice tipping toward the
+  // cursor rather than a single fixed pop animation
+  const maxTilt = 16;
+  const cx = size / 2;
+  const cy = size / 2;
+  const tiltX = hover ? -((hover.y - cy) / cy) * maxTilt : 0;
+  const tiltY = hover ? ((hover.x - cx) / cx) * maxTilt : 0;
 
   let offset = 0;
 
@@ -93,6 +104,14 @@ export function Donut({
                     // flush against their neighbours instead of overlapping
                     strokeLinecap={linecap}
                     className="donut-segment"
+                    style={
+                      parallax && hover?.i === i
+                        ? {
+                            transform: `perspective(600px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateZ(16px) scale(1.04)`,
+                            filter: "drop-shadow(0 10px 16px rgba(0, 0, 0, 0.35))",
+                          }
+                        : undefined
+                    }
                   />
                   {/* invisible, much wider twin -- the thin visible stroke was
                       an easy target to slip off of at normal cursor speed,

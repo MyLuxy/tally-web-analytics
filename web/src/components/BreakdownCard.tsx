@@ -46,12 +46,14 @@ export function BreakdownChart({
   empty,
   size = 140,
   thickness = 20,
+  parallax = false,
 }: {
   data: { name: string; value: number; code?: string }[];
   icon?: (name: string, code?: string) => ReactNode;
   empty: string;
   size?: number;
   thickness?: number;
+  parallax?: boolean; // the expanded sheet only -- see Donut
 }) {
   const total = data.reduce((sum, d) => sum + d.value, 0);
 
@@ -68,7 +70,12 @@ export function BreakdownChart({
 
   return (
     <div className="breakdown-chart">
-      <Donut segments={items.map((it) => ({ label: it.name, value: it.value, color: it.color }))} size={size} thickness={thickness} />
+      <Donut
+        segments={items.map((it) => ({ label: it.name, value: it.value, color: it.color }))}
+        size={size}
+        thickness={thickness}
+        parallax={parallax}
+      />
       <ul className="breakdown-chart-legend">
         {items.map((it) => {
           const pct = Math.round((it.value / total) * 100);

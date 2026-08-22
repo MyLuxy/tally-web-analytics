@@ -903,6 +903,7 @@ export function App() {
                   empty={activePlatformTab.empty}
                   size={380}
                   thickness={48}
+                  parallax
                 />
               </div>
               {/* the chart above is only the top 10 (same as the compact card) --
