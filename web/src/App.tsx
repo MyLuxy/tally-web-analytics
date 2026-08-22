@@ -795,7 +795,7 @@ export function App() {
           ) : expanded === "trafficSources" ? (
             <div className="sheet-traffic-sources">
               <div className="sheet-content">
-                {data && <TrafficSourcesContent sources={data.trafficSources} radarSize={260} />}
+                {data && <TrafficSourcesContent sources={data.trafficSources} radarSize={460} layout="column" />}
               </div>
               <h3 className="sheet-subhead">All referrers</h3>
               {sourceError ? (
