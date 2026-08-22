@@ -12,6 +12,7 @@ import { BreakdownCard, BreakdownChart } from "./components/BreakdownCard.js";
 import type { BreakdownTab } from "./components/BreakdownCard.js";
 import { RankedBoard, TrafficSourcesCard, TrafficSourcesContent } from "./components/TrafficSources.js";
 import { ClickableCard } from "./components/ClickableCard.js";
+import { Modal } from "./components/Modal.js";
 import { browserIcon, deviceIcon, osIcon } from "./components/DeviceIcons.js";
 import type { Row } from "./components/StatList.js";
 
@@ -1203,61 +1204,6 @@ function RatioIcon() {
 
 // A centered dialog over a dimmed backdrop. Closes on the backdrop, on the X, or
 // on Escape, and freezes the page scroll while it's up.
-function Modal({
-  title,
-  onClose,
-  children,
-  actions,
-}: {
-  title: string;
-  onClose: () => void;
-  children: ReactNode;
-  actions?: ReactNode;
-}) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
-    };
-  }, [onClose]);
-
-  return (
-    <div className="modal-overlay" role="presentation" onClick={onClose}>
-      {/* stop clicks inside the dialog from bubbling up and closing it */}
-      <div
-        className="modal"
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="modal-head">
-          <h2 className="modal-title">{title}</h2>
-          <div className="modal-head-actions">
-            {actions}
-            <button
-              type="button"
-              className="modal-close"
-              onClick={onClose}
-              aria-label="Close"
-              title="Close"
-            >
-              <CloseIcon />
-            </button>
-          </div>
-        </div>
-        <div className="modal-body">{children}</div>
-      </div>
-    </div>
-  );
-}
-
 // A full-screen sheet, not a small centered dialog -- what a compact card
 // (see ClickableCard) expands into. Wears the same view-transition-name the
 // card just gave up (see cardKey/App's openCard), so where the browser

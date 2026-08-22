@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { TallyMarks } from "./TallyMarks.js";
 import { ClickableCard } from "./ClickableCard.js";
+import { Modal } from "./Modal.js";
 import { downloadCsv, rowsToCsv } from "../lib/csv.js";
 
 // Ledger-style breakdown: a label, a count, and a faint bar behind each row
@@ -160,9 +160,8 @@ export function ExportCsvButton({ title, rows }: { title: string; rows: Row[] })
   );
 }
 
-// Rendered into document.body (not inline) -- the button can sit inside a
-// card that gets a hover/active transform, and a transformed ancestor turns
-// position:fixed into "fixed to that ancestor" instead of the viewport.
+// Same dialog chrome as Settings (see Modal), so this reads as part of the
+// same family rather than its own one-off popup.
 function ExportConfirm({
   title,
   count,
@@ -174,52 +173,20 @@ function ExportConfirm({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onCancel();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onCancel]);
-
-  return createPortal(
-    <div
-      className="modal-overlay"
-      role="presentation"
-      onClick={(e) => {
-        // React re-bubbles portal clicks through the component tree (not
-        // the DOM), so without this, clicking the backdrop to dismiss would
-        // also reach the card underneath and open/close it
-        e.stopPropagation();
-        onCancel();
-      }}
-    >
-      <div
-        className="modal export-confirm"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Export CSV"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="modal-head">
-          <h2 className="modal-title">Export CSV</h2>
-        </div>
-        <div className="modal-body">
-          <p className="ink-soft">
-            Download &ldquo;{title}&rdquo; as a CSV file? {count} row{count === 1 ? "" : "s"}.
-          </p>
-          <div className="confirm-actions">
-            <button type="button" className="btn-secondary" onClick={onCancel}>
-              Cancel
-            </button>
-            <button type="button" className="btn-primary" onClick={onConfirm}>
-              Download
-            </button>
-          </div>
-        </div>
+  return (
+    <Modal title="Export CSV" onClose={onCancel}>
+      <p className="ink-soft">
+        Download &ldquo;{title}&rdquo; as a CSV file? {count} row{count === 1 ? "" : "s"}.
+      </p>
+      <div className="confirm-actions">
+        <button type="button" className="btn-secondary" onClick={onCancel}>
+          Cancel
+        </button>
+        <button type="button" className="btn-primary" onClick={onConfirm}>
+          Download
+        </button>
       </div>
-    </div>,
-    document.body,
+    </Modal>
   );
 }
 

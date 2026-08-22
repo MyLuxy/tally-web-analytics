@@ -1736,12 +1736,8 @@ a {
   display: none; /* Chrome, Safari */
 }
 
-/* ---- CSV export confirm (see ExportCsvButton) -- a small dialog, not the
-   full settings-modal width ---- */
-.export-confirm {
-  max-width: 380px;
-}
-
+/* ---- CSV export confirm (see ExportCsvButton) -- same Modal chrome and
+   width as Settings, just its own content ---- */
 .confirm-actions {
   display: flex;
   justify-content: flex-end;
