@@ -891,8 +891,8 @@ export function App() {
                   data={activePlatformTab.chart ?? []}
                   icon={activePlatformTab.icon}
                   empty={activePlatformTab.empty}
-                  size={240}
-                  thickness={34}
+                  size={300}
+                  thickness={40}
                 />
               </div>
               {/* the chart above is only the top 10 (same as the compact card) --

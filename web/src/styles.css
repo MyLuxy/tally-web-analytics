@@ -455,6 +455,12 @@ a {
    sharing the card's header row */
 .sheet-breakdown-tabs {
   margin-bottom: 22px;
+  padding: 4px;
+}
+
+.sheet-breakdown-tabs .segment {
+  font-size: 15px;
+  padding: 9px 18px;
 }
 
 .segment:focus-visible {
@@ -999,12 +1005,12 @@ a {
 .breakdown-chart {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 26px;
   flex-wrap: wrap;
 }
 
 .breakdown-chart-legend {
-  flex: 1;
   min-width: 170px;
   list-style: none;
   margin: 0;
@@ -1025,9 +1031,11 @@ a {
   flex-shrink: 0;
 }
 
+/* no flex:1 -- that stretched the row to the legend's full width and pushed
+   the stats off to the far edge, away from the name they belong to */
 .breakdown-chart-name {
-  flex: 1;
   min-width: 0;
+  max-width: 14em;
   font-size: 14px;
   color: var(--ink);
   overflow: hidden;
