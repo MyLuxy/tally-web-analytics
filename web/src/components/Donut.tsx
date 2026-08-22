@@ -1,11 +1,15 @@
 // A ring chart built from plain stacked <circle> strokes -- same "no charting
 // library" approach as Chart.tsx. Each segment is a dashed stroke covering its
 // share of the circumference, offset to start where the previous one ended.
+import { useState } from "react";
 
 export type DonutSegment = {
+  label: string;
   value: number;
   color: string; // any CSS colour expression, e.g. "var(--accent)" or a color-mix()
 };
+
+const fmt = (n: number) => n.toLocaleString("en-US");
 
 export function Donut({
   segments,
@@ -20,6 +24,7 @@ export function Donut({
   centerLabel?: string;
   centerSub?: string;
 }) {
+  const [hover, setHover] = useState<{ i: number; x: number; y: number } | null>(null);
   const total = segments.reduce((sum, s) => sum + s.value, 0);
   const r = (size - thickness) / 2;
   const circumference = 2 * Math.PI * r;
@@ -28,7 +33,7 @@ export function Donut({
   let offset = 0;
 
   return (
-    <div className="donut" style={{ width: size, height: size }}>
+    <div className="donut" style={{ width: size, height: size }} onMouseLeave={() => setHover(null)}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="donut-svg">
         {/* start at 12 o'clock instead of 3 o'clock, and draw clockwise */}
         <g transform={`translate(${size / 2} ${size / 2}) rotate(-90)`}>
@@ -37,6 +42,7 @@ export function Donut({
           ) : (
             visible.map((s, i) => {
               const dash = (s.value / total) * circumference;
+              const dashOffset = offset;
               const el = (
                 <circle
                   key={i}
@@ -45,11 +51,16 @@ export function Donut({
                   stroke={s.color}
                   strokeWidth={thickness}
                   strokeDasharray={`${dash} ${circumference - dash}`}
-                  strokeDashoffset={-offset}
+                  strokeDashoffset={-dashOffset}
                   // a single full-circle segment gets round caps so it doesn't
                   // show a seam; multiple segments use butt caps so they sit
                   // flush against their neighbours instead of overlapping
                   strokeLinecap={visible.length === 1 ? "round" : "butt"}
+                  className="donut-segment"
+                  onMouseMove={(e) => {
+                    const rect = e.currentTarget.ownerSVGElement!.getBoundingClientRect();
+                    setHover({ i, x: e.clientX - rect.left, y: e.clientY - rect.top });
+                  }}
                 />
               );
               offset += dash;
@@ -62,6 +73,14 @@ export function Donut({
         <div className="donut-center">
           {centerLabel && <div className="donut-center-value num">{centerLabel}</div>}
           {centerSub && <div className="donut-center-sub eyebrow">{centerSub}</div>}
+        </div>
+      )}
+      {hover && (
+        <div className="donut-tip" style={{ left: hover.x, top: hover.y }}>
+          <strong>{visible[hover.i]!.label}</strong>
+          <span>
+            {fmt(visible[hover.i]!.value)} · {total > 0 ? Math.round((visible[hover.i]!.value / total) * 100) : 0}%
+          </span>
         </div>
       )}
     </div>

@@ -11,6 +11,7 @@ import { ExportCsvButton, Rows, StatList } from "./components/StatList.js";
 import { BreakdownCard } from "./components/BreakdownCard.js";
 import { ReferrerBoard, TrafficSourcesCard, TrafficSourcesContent } from "./components/TrafficSources.js";
 import { ClickableCard } from "./components/ClickableCard.js";
+import { browserIcon, deviceIcon, osIcon } from "./components/DeviceIcons.js";
 import type { Row } from "./components/StatList.js";
 
 // A card that expands into a full-screen sheet -- the breakdown panels
@@ -554,6 +555,8 @@ export function App() {
                   unit: "views",
                   empty: "No browser data.",
                   rows: (data?.browsers ?? []).map((b) => ({ label: b.name, value: b.views })),
+                  chart: (data?.browsers ?? []).map((b) => ({ name: b.name, value: b.views })),
+                  icon: browserIcon,
                 },
                 {
                   key: "systems",
@@ -561,6 +564,8 @@ export function App() {
                   unit: "views",
                   empty: "No OS data.",
                   rows: (data?.systems ?? []).map((s) => ({ label: s.name, value: s.views })),
+                  chart: (data?.systems ?? []).map((s) => ({ name: s.name, value: s.views })),
+                  icon: osIcon,
                 },
                 {
                   key: "devices",
@@ -568,6 +573,8 @@ export function App() {
                   unit: "views",
                   empty: "No device data.",
                   rows: (data?.devices ?? []).map((d) => ({ label: d.name, value: d.views })),
+                  chart: (data?.devices ?? []).map((d) => ({ name: d.name, value: d.views })),
+                  icon: deviceIcon,
                 },
                 {
                   key: "countries",

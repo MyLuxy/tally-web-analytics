@@ -784,6 +784,38 @@ a {
   stroke: var(--line);
 }
 
+.donut-segment {
+  cursor: default;
+}
+
+/* follows the cursor over a segment -- same dark pill look as the chart's
+   own tooltip (.chart-tip), just smaller since the donut itself is small */
+.donut-tip {
+  position: absolute;
+  transform: translate(-50%, -130%);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 7px 11px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  line-height: 1.3;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+}
+
+.donut-tip strong {
+  font-weight: 600;
+}
+
+.donut-tip span {
+  color: color-mix(in srgb, var(--paper) 75%, transparent);
+}
+
 /* ---- radar chart (traffic sources) ---- */
 .radar-svg {
   display: block;
@@ -955,6 +987,64 @@ a {
   font-weight: 600;
   color: var(--ink);
   line-height: 1.1;
+}
+
+/* ---- breakdown card's browser/OS/device donut (see BreakdownCard.tsx) ---- */
+.breakdown-chart {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  flex-wrap: wrap;
+}
+
+.breakdown-chart-legend {
+  flex: 1;
+  min-width: 170px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.breakdown-chart-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.breakdown-chart-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.breakdown-chart-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.breakdown-chart-stats {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.breakdown-chart-pct {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.breakdown-chart-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
 }
 
 .traffic-sources-legend {
