@@ -493,17 +493,13 @@ a {
   gap: 12px;
 }
 
-/* each KPI gets its own colour, a circle at a time -- not spread across
-   lines/borders/backgrounds elsewhere, just this one accent touch per card */
+/* each KPI's icon gets its own colour -- no circle behind it, just the
+   coloured stroke itself */
 .kpi-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
   flex-shrink: 0;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--kpi-icon) 16%, transparent);
   color: var(--kpi-icon);
 }
 
