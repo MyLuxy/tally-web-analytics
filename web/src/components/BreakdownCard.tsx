@@ -22,21 +22,21 @@ export type BreakdownTab = {
 // instead, which is one less repeated shape on the page for each of them.
 export function BreakdownCard({
   tabs,
-  expanded,
+  transitioningKey,
   onExpand,
 }: {
   tabs: BreakdownTab[];
-  expanded: string | null; // the currently expanded tab's key, if it's one of these
+  transitioningKey: string | null; // the tab key currently allowed to wear the transition name, if it's one of these
   onExpand: (key: string) => void;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const active = tabs[activeIndex]!;
-  const isExpanded = expanded === active.key;
+  const isTransitioning = transitioningKey === active.key;
 
   return (
     <ClickableCard
       cardKey={active.key}
-      expanded={isExpanded}
+      transitioning={isTransitioning}
       onExpand={() => onExpand(active.key)}
       ariaLabel={`${active.label}: view all`}
       className="card-span-2"

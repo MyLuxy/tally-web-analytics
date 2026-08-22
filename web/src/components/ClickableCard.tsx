@@ -3,30 +3,29 @@ import type { CSSProperties, KeyboardEvent, ReactNode } from "react";
 // Shared shell for every card that expands into a full-screen sheet on click
 // (see App.tsx's <ExpandSheet>) -- the whole tile is the click target, not a
 // button buried inside it. `cardKey` becomes the CSS view-transition-name
-// this card morphs from; it's only worn while the card is in its compact
-// form -- the moment its own sheet is open, the *sheet* wears the same name
-// instead, which is what makes the browser's default View Transition
-// interpolate card-rect -> full-screen-rect instead of just crossfading.
-//
-// The 3D hover tilt itself is plain CSS (see .panel-clickable:hover) -- a
-// fixed lift/rotation, the same every time, not something that tracks the
-// cursor's position over the card.
+// this card morphs from, but only for the moment it's actually opening or
+// closing (`transitioning` true) -- at rest, whether the sheet is open or
+// not, the card carries no name at all. Only one element on the page should
+// ever wear a given name when the browser grabs its before/after snapshots;
+// giving every idle card a permanent name promoted them all into their own
+// layer and made them flash in front of the one actually animating. See
+// App.tsx's `transitioningKey` for who's currently allowed to wear it.
 export function ClickableCard({
   cardKey,
-  expanded,
+  transitioning,
   onExpand,
   ariaLabel,
   className,
   children,
 }: {
   cardKey: string;
-  expanded: boolean;
+  transitioning: boolean;
   onExpand: () => void;
   ariaLabel: string;
   className?: string;
   children: ReactNode;
 }) {
-  const style: CSSProperties = { viewTransitionName: expanded ? undefined : `card-${cardKey}` } as CSSProperties;
+  const style: CSSProperties = { viewTransitionName: transitioning ? `card-${cardKey}` : undefined } as CSSProperties;
 
   return (
     <section

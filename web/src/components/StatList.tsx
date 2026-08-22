@@ -16,7 +16,7 @@ const PREVIEW_ROWS = 5;
 
 export function StatList({
   cardKey,
-  expanded,
+  transitioning,
   title,
   unit,
   rows,
@@ -26,7 +26,7 @@ export function StatList({
   className,
 }: {
   cardKey: string;
-  expanded: boolean;
+  transitioning: boolean;
   title: string;
   unit: string;
   rows: Row[];
@@ -66,7 +66,7 @@ export function StatList({
   return (
     <ClickableCard
       cardKey={cardKey}
-      expanded={expanded}
+      transitioning={transitioning}
       onExpand={onExpand!}
       ariaLabel={`${title}: view all`}
       className={className}

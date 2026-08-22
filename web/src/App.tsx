@@ -22,16 +22,19 @@ type ExpandTarget = BreakdownMetric | "traffic" | "trafficSources" | "activity" 
 // Chromium browser, Safari 18+; not yet Firefox) so the clicked card visibly
 // grows into the full-screen sheet instead of just swapping. Where it's
 // unsupported, `fn` still runs -- the sheet just relies on its own CSS
-// fade/scale-in instead (see ExpandSheet's fallbackAnim).
-function withViewTransition(fn: () => void) {
-  const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
+// fade/scale-in instead (see ExpandSheet's fallbackAnim). `after` (if given)
+// runs once the transition's animation has actually finished.
+function withViewTransition(fn: () => void, after?: () => void) {
+  const doc = document as Document & { startViewTransition?: (cb: () => void) => { finished: Promise<void> } };
   if (typeof doc.startViewTransition === "function") {
     // React batches state updates, so without flushSync the DOM wouldn't
     // actually reflect the change yet by the time the browser grabs its
     // "after" snapshot -- the transition would silently no-op.
-    doc.startViewTransition(() => flushSync(fn));
+    const transition = doc.startViewTransition(() => flushSync(fn));
+    if (after) transition.finished.then(after);
   } else {
     fn();
+    after?.();
   }
 }
 
@@ -128,6 +131,13 @@ export function App() {
   // is selected for the main chart -- its own small fetch, not derived from `data`
   const [activityData, setActivityData] = useState<Stats | null>(null);
   const [expanded, setExpanded] = useState<ExpandTarget | null>(null);
+  // Which single card, if any, should currently wear the shared view-transition
+  // name -- kept separate from `expanded` because the name has to move onto
+  // the card a beat *before* `expanded` changes (opening) or linger on it a
+  // beat *after* (closing). Every other card carries no name at all, ever --
+  // giving every idle card a permanent name was what made them all flash to
+  // the front and overlap the one actually animating. See ClickableCard.
+  const [transitioningKey, setTransitioningKey] = useState<ExpandTarget | null>(null);
   const [breakdownRows, setBreakdownRows] = useState<Row[] | null>(null);
   const [breakdownError, setBreakdownError] = useState<string | null>(null);
   // the expanded traffic-sources sheet shows the full, uncapped referrer
@@ -276,11 +286,24 @@ export function App() {
   }, [expanded, site, range]);
 
   function openCard(target: ExpandTarget) {
-    withViewTransition(() => setExpanded(target));
+    // committed synchronously, *before* the transition starts, so the card
+    // already wears the name at the moment the "before" snapshot is taken
+    flushSync(() => setTransitioningKey(target));
+    withViewTransition(() => {
+      setExpanded(target);
+      setTransitioningKey(null); // the sheet takes the name from here
+    });
   }
 
   function closeCard() {
-    withViewTransition(() => setExpanded(null));
+    const target = expanded;
+    withViewTransition(
+      () => {
+        setExpanded(null);
+        setTransitioningKey(target); // hand the name back to the card closing into
+      },
+      () => setTransitioningKey(null), // and let go of it once the animation's done
+    );
   }
 
   function unlock(token: string) {
@@ -396,7 +419,7 @@ export function App() {
           <div className="chart-row">
             <ClickableCard
               cardKey="traffic"
-              expanded={expanded === "traffic"}
+              transitioning={transitioningKey === "traffic"}
               onExpand={() => openCard("traffic")}
               ariaLabel="Traffic: view full chart"
             >
@@ -420,7 +443,7 @@ export function App() {
             {data && (
               <TrafficSourcesCard
                 sources={data.trafficSources}
-                expanded={expanded === "trafficSources"}
+                transitioning={transitioningKey === "trafficSources"}
                 onExpand={() => openCard("trafficSources")}
               />
             )}
@@ -430,7 +453,7 @@ export function App() {
           <div className="chart-row">
             <ClickableCard
               cardKey="activity"
-              expanded={expanded === "activity"}
+              transitioning={transitioningKey === "activity"}
               onExpand={() => openCard("activity")}
               ariaLabel="Activity: view details"
             >
@@ -459,7 +482,7 @@ export function App() {
 
             <ClickableCard
               cardKey="events"
-              expanded={expanded === "events"}
+              transitioning={transitioningKey === "events"}
               onExpand={() => openCard("events")}
               ariaLabel="Events: view all"
             >
@@ -483,7 +506,7 @@ export function App() {
           <div className="card-grid">
             <StatList
               cardKey="pages"
-              expanded={expanded === "pages"}
+              transitioning={transitioningKey === "pages"}
               title="Top pages"
               unit="views"
               info="Your most-visited pages in the selected time range, ranked by pageviews."
@@ -494,7 +517,7 @@ export function App() {
             />
             <StatList
               cardKey="entryPages"
-              expanded={expanded === "entryPages"}
+              transitioning={transitioningKey === "entryPages"}
               title="Entry pages"
               unit="visitors"
               info="The first page each visitor landed on -- where your traffic actually enters the site, as opposed to every page it later views."
@@ -504,7 +527,7 @@ export function App() {
             />
             <StatList
               cardKey="referrers"
-              expanded={expanded === "referrers"}
+              transitioning={transitioningKey === "referrers"}
               title="Referrers"
               unit="views"
               info="Where your visitors came from: the external site or search engine that linked them to you."
@@ -548,7 +571,7 @@ export function App() {
                   })),
                 },
               ]}
-              expanded={expanded}
+              transitioningKey={transitioningKey}
               onExpand={(key) => openCard(key as ExpandTarget)}
             />
           </div>
