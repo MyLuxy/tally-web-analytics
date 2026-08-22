@@ -488,9 +488,8 @@ a {
 
 .kpi-card-head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
 }
 
 /* each KPI gets its own colour, a circle at a time -- not spread across
@@ -517,11 +516,7 @@ a {
 }
 
 .kpi-label {
-  padding-top: 2px;
-}
-
-.kpi-delta {
-  margin-top: 10px;
+  margin-top: 6px;
 }
 
 /* period-over-period change badge -- green/red is purely functional here
