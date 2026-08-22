@@ -647,10 +647,16 @@ a {
   transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.panel-clickable:hover {
-  border-color: var(--line-strong);
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-float);
+/* hover: hover -- a touchscreen simulates :hover on tap with no real
+   "pointer left" event to end it, so without this the whole card (including
+   just tapping a tab pill inside it) stayed lit up until the next tap
+   elsewhere. Real hover devices (an actual mouse) are unaffected. */
+@media (hover: hover) and (pointer: fine) {
+  .panel-clickable:hover {
+    border-color: var(--line-strong);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-float);
+  }
 }
 
 .panel-clickable:focus-visible {

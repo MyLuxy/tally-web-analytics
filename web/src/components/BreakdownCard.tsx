@@ -152,7 +152,11 @@ export function BreakdownCard({
           ))}
         </div>
         <div className="panel-head-actions">
-          {active.rows.length > 0 && <ExportCsvButton title={active.label} rows={active.rows} />}
+          {/* the donut tabs (browsers/OS/devices/countries) already have
+              their own export button in the expanded sheet -- this compact
+              preview only shows the top few items anyway, so a download
+              here would just export a partial list */}
+          {!active.chart && active.rows.length > 0 && <ExportCsvButton title={active.label} rows={active.rows} />}
         </div>
       </div>
 
