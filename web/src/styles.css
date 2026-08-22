@@ -837,16 +837,19 @@ a {
   height: auto;
 }
 
-/* fill is set per-bar inline (see BarChart.tsx's PALETTE). A brightness
-   bump instead of the old opacity dip -- fading an already-muted colour
-   toward transparent just washed it out, especially blown up bigger in the
-   expanded sheet. */
+/* fill is set per-bar inline (see BarChart.tsx's PALETTE). A stroke ring on
+   hover, not opacity or filter -- both of those force a new compositing
+   layer, and inside the expanded sheet (whose backdrop uses backdrop-filter)
+   that was glitching the blurred background behind it on every hover. */
 .bar-rect {
-  transition: filter 0.15s ease;
+  stroke: transparent;
+  transition: stroke 0.15s ease;
 }
 
 .bar-rect:hover {
-  filter: brightness(1.18);
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  stroke-opacity: 0.35;
 }
 
 .bar-label {
