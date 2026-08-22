@@ -57,7 +57,19 @@ export function Donut({
 
   return (
     <div className="donut" style={{ width: size, height: size }} onMouseLeave={() => queueHover(null)}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="donut-svg">
+      {/* clears the tooltip over the hole in the middle (or the square's
+          corners outside the ring) -- neither is covered by a segment's own
+          hit-circle, so without this the last-hovered segment's tip just
+          stayed on screen instead of disappearing like it does once the
+          cursor actually leaves the donut. Each segment's own handler stops
+          the event here so hovering it doesn't immediately clear itself. */}
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        className="donut-svg"
+        onMouseMove={() => queueHover(null)}
+      >
         {/* start at 12 o'clock instead of 3 o'clock, and draw clockwise */}
         <g transform={`translate(${size / 2} ${size / 2}) rotate(-90)`}>
           {total === 0 ? (
@@ -97,6 +109,7 @@ export function Donut({
                     strokeLinecap={linecap}
                     style={{ pointerEvents: "stroke" }}
                     onMouseMove={(e) => {
+                      e.stopPropagation(); // don't also trigger the svg's clear-on-move
                       const rect = e.currentTarget.ownerSVGElement!.getBoundingClientRect();
                       queueHover({ i, x: e.clientX - rect.left, y: e.clientY - rect.top });
                     }}
