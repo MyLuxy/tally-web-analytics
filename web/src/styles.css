@@ -799,6 +799,10 @@ a {
 
 .donut-svg {
   display: block;
+  /* the visible ring is drawn flush with the viewBox edge, so the invisible
+     hit-stroke's outward half (see Donut.tsx) was getting clipped right at
+     the boundary -- only the inward widening was actually reachable */
+  overflow: visible;
 }
 
 .donut-empty {
