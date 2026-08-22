@@ -4,13 +4,14 @@
 // Simple Icons for licensing reasons), so those two -- plus the generic
 // "unrecognised" and device-type icons, which have no brand to draw -- stay
 // hand-drawn line art in the app's own style.
+//
+// Deliberately NOT tinted with each brand's real colour: Chrome, Safari and
+// Windows are all various shades of blue in real life, which read as one
+// indistinct blob next to each other in a small donut. The caller (see
+// BreakdownCard) assigns colour from its own well-separated palette instead
+// -- only the shape here is "the real logo".
 import type { ReactNode } from "react";
 import { siGooglechrome, siFirefoxbrowser, siSafari, siOpera, siApple, siAndroid, siLinux } from "simple-icons";
-
-export type PlatformIcon = {
-  icon: ReactNode;
-  color?: string; // the brand's own hex, e.g. "#4285F4" -- omitted means "use the theme's ink colour"
-};
 
 function BrandIcon({ path }: { path: string }) {
   return (
@@ -51,20 +52,20 @@ function EdgeIcon() {
   );
 }
 
-export function browserIcon(name: string): PlatformIcon {
+export function browserIcon(name: string): ReactNode {
   switch (name) {
     case "Chrome":
-      return { icon: <BrandIcon path={siGooglechrome.path} />, color: `#${siGooglechrome.hex}` };
+      return <BrandIcon path={siGooglechrome.path} />;
     case "Firefox":
-      return { icon: <BrandIcon path={siFirefoxbrowser.path} />, color: `#${siFirefoxbrowser.hex}` };
+      return <BrandIcon path={siFirefoxbrowser.path} />;
     case "Safari":
-      return { icon: <BrandIcon path={siSafari.path} />, color: `#${siSafari.hex}` };
+      return <BrandIcon path={siSafari.path} />;
     case "Opera":
-      return { icon: <BrandIcon path={siOpera.path} />, color: `#${siOpera.hex}` };
+      return <BrandIcon path={siOpera.path} />;
     case "Edge":
-      return { icon: <EdgeIcon /> }; // not in Simple Icons -- see file header
+      return <EdgeIcon />; // not in Simple Icons -- see file header
     default:
-      return { icon: <GlobeIcon /> };
+      return <GlobeIcon />;
   }
 }
 
@@ -90,24 +91,19 @@ function MonitorIcon() {
   );
 }
 
-export function osIcon(name: string): PlatformIcon {
+export function osIcon(name: string): ReactNode {
   switch (name) {
     case "Windows":
-      // not in Simple Icons either, but this schematic four-pane grid *is*
-      // the real logo's shape, so it earns the real brand blue.
-      return { icon: <WindowsIcon />, color: "#0078D6" };
+      return <WindowsIcon />; // not in Simple Icons either -- see file header
     case "macOS":
     case "iOS":
-      // one Apple mark for both -- same as most breakdown dashboards. No
-      // colour override: Apple's own guideline is plain black, which would
-      // vanish in dark mode -- the caller falls back to a palette accent.
-      return { icon: <BrandIcon path={siApple.path} /> };
+      return <BrandIcon path={siApple.path} />; // one Apple mark for both
     case "Android":
-      return { icon: <BrandIcon path={siAndroid.path} />, color: `#${siAndroid.hex}` };
+      return <BrandIcon path={siAndroid.path} />;
     case "Linux":
-      return { icon: <BrandIcon path={siLinux.path} />, color: `#${siLinux.hex}` };
+      return <BrandIcon path={siLinux.path} />;
     default:
-      return { icon: <MonitorIcon /> };
+      return <MonitorIcon />;
   }
 }
 
@@ -140,13 +136,13 @@ function TabletIcon() {
   );
 }
 
-export function deviceIcon(name: string): PlatformIcon {
+export function deviceIcon(name: string): ReactNode {
   switch (name.toLowerCase()) {
     case "mobile":
-      return { icon: <MobileIcon /> };
+      return <MobileIcon />;
     case "tablet":
-      return { icon: <TabletIcon /> };
+      return <TabletIcon />;
     default:
-      return { icon: <DesktopIcon /> };
+      return <DesktopIcon />;
   }
 }

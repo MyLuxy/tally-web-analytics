@@ -1,10 +1,10 @@
 import { useState } from "react";
+import type { ReactNode } from "react";
 import { ClickableCard } from "./ClickableCard.js";
 import { Donut } from "./Donut.js";
 import { TallyMarks } from "./TallyMarks.js";
 import { ExportCsvButton, Rows } from "./StatList.js";
 import type { Row } from "./StatList.js";
-import type { PlatformIcon } from "./DeviceIcons.js";
 
 // Cards stay compact -- a handful of rows is enough to read the shape of the
 // data; clicking the card is what gets you the rest (see StatList, which
@@ -22,19 +22,20 @@ export type BreakdownTab = {
   // better as "what share is Chrome" than as another top-10 list. Countries
   // has no natural icon set (and can run long), so it stays on `rows`.
   chart?: { name: string; value: number }[];
-  icon?: (name: string) => PlatformIcon;
+  icon?: (name: string) => ReactNode;
 };
 
-// Falls back to this when a name has no real brand colour of its own (a
-// device's form factor isn't a brand, and the hand-drawn Edge/"Other"
-// glyphs aren't accurate enough to claim a real brand colour either).
-const FALLBACK_PALETTE = [
-  "var(--accent)",
-  "var(--accent-2)",
-  "var(--accent-3)",
-  "var(--accent-4)",
-  "var(--accent-5)",
-  "var(--neutral-cat)",
+// Assigned by position, not by brand -- Chrome, Safari and Windows are all
+// some shade of blue in real life, and a real-colour donut kept clumping
+// blues together. A fixed, deliberately spread-out palette instead, so
+// whichever two items land next to each other always read as distinct.
+const CHART_PALETTE = [
+  "var(--accent)", // blue
+  "var(--accent-4)", // amber
+  "var(--accent-3)", // purple
+  "var(--accent-5)", // rose
+  "var(--accent-2)", // teal
+  "var(--neutral-cat)", // grey
 ];
 
 function BreakdownChart({
@@ -43,7 +44,7 @@ function BreakdownChart({
   empty,
 }: {
   data: { name: string; value: number }[];
-  icon?: (name: string) => PlatformIcon;
+  icon?: (name: string) => ReactNode;
   empty: string;
 }) {
   const total = data.reduce((sum, d) => sum + d.value, 0);
@@ -57,12 +58,7 @@ function BreakdownChart({
     );
   }
 
-  // real brand colour when we have one (Chrome blue, Firefox orange, ...),
-  // otherwise cycle the app's own accents so every slice still reads distinct
-  const items = data.map((d, i) => {
-    const meta = icon?.(d.name);
-    return { ...d, ...meta, color: meta?.color ?? FALLBACK_PALETTE[i % FALLBACK_PALETTE.length]! };
-  });
+  const items = data.map((d, i) => ({ ...d, color: CHART_PALETTE[i % CHART_PALETTE.length]! }));
 
   return (
     <div className="breakdown-chart">
@@ -73,7 +69,7 @@ function BreakdownChart({
           return (
             <li key={it.name} className="breakdown-chart-row">
               <span className="breakdown-chart-icon" style={{ color: it.color }}>
-                {it.icon}
+                {icon?.(it.name)}
               </span>
               <span className="breakdown-chart-name">{it.name}</span>
               <span className="breakdown-chart-stats">
