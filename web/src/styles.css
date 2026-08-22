@@ -280,16 +280,6 @@ a {
   color: var(--ink);
 }
 
-.icon-btn-lg {
-  width: 34px;
-  height: 34px;
-}
-
-.icon-btn-lg svg {
-  width: 32px;
-  height: 32px;
-}
-
 .icon-btn:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -302,10 +292,6 @@ a {
   .icon-btn {
     width: 40px;
     height: 40px;
-  }
-  .icon-btn-lg {
-    width: 44px;
-    height: 44px;
   }
 }
 
