@@ -43,22 +43,68 @@ function tickLabel(ms: number, range: Range, hour12: boolean, multiYear: boolean
 // segments) instead of straight lines between them -- reads as a soft wave
 // rather than a jagged EKG trace. `close` is used for the area fill, which
 // needs the same curve but landing back on the baseline afterwards.
+// One Catmull-Rom-to-bezier segment, i -> i+1 -- shared by the path string
+// (smoothLine) and the hover dot (curveYAt) so they agree on the exact same
+// curve instead of the dot approximating it with a straight chord.
+function bezierSegment(pts: { x: number; y: number }[], i: number) {
+  const p0 = pts[i - 1] ?? pts[i]!;
+  const p1 = pts[i]!;
+  const p2 = pts[i + 1] ?? p1;
+  const p3 = pts[i + 2] ?? p2;
+  return {
+    p1,
+    cp1: { x: p1.x + (p2.x - p0.x) / 6, y: p1.y + (p2.y - p0.y) / 6 },
+    cp2: { x: p2.x - (p3.x - p1.x) / 6, y: p2.y - (p3.y - p1.y) / 6 },
+    p2,
+  };
+}
+
+function cubicAt(a: number, b: number, c: number, d: number, t: number): number {
+  const mt = 1 - t;
+  return mt * mt * mt * a + 3 * mt * mt * t * b + 3 * mt * t * t * c + t * t * t * d;
+}
+
 function smoothLine(pts: { x: number; y: number }[]): string {
   if (pts.length === 0) return "";
   if (pts.length < 3) return pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
   let d = `M ${pts[0]!.x} ${pts[0]!.y}`;
   for (let i = 0; i < pts.length - 1; i++) {
-    const p0 = pts[i - 1] ?? pts[i]!;
-    const p1 = pts[i]!;
-    const p2 = pts[i + 1]!;
-    const p3 = pts[i + 2] ?? p2;
-    const cp1x = p1.x + (p2.x - p0.x) / 6;
-    const cp1y = p1.y + (p2.y - p0.y) / 6;
-    const cp2x = p2.x - (p3.x - p1.x) / 6;
-    const cp2y = p2.y - (p3.y - p1.y) / 6;
-    d += ` C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${p2.x} ${p2.y}`;
+    const seg = bezierSegment(pts, i);
+    d += ` C ${seg.cp1.x} ${seg.cp1.y} ${seg.cp2.x} ${seg.cp2.y} ${seg.p2.x} ${seg.p2.y}`;
   }
   return d;
+}
+
+// The line drawn on screen is this same Catmull-Rom curve, not a straight
+// segment between two points -- a dot placed by plain linear interpolation
+// (24h's continuous glide, unlike 7d/30d which snap onto real data points
+// that sit exactly on the curve) drifted visibly off the curve wherever it
+// bends. Walks the actual bezier segment to find where its x matches the
+// cursor, so the dot's y comes from the real curve instead of the chord.
+function curveYAt(pts: { x: number; y: number }[], cx: number, i0: number, frac: number): number {
+  if (pts.length <= 1) return pts[0]?.y ?? 0;
+  const seg = bezierSegment(pts, i0);
+  const STEPS = 16;
+  let prev = seg.p1;
+  for (let s = 1; s <= STEPS; s++) {
+    const t = s / STEPS;
+    const x = cubicAt(seg.p1.x, seg.cp1.x, seg.cp2.x, seg.p2.x, t);
+    const y = cubicAt(seg.p1.y, seg.cp1.y, seg.cp2.y, seg.p2.y, t);
+    if (x >= cx || s === STEPS) {
+      const span = x - prev.x;
+      const localT = span === 0 ? 0 : (cx - prev.x) / span;
+      return prev.y + (y - prev.y) * Math.min(1, Math.max(0, localT));
+    }
+    prev = { x, y };
+  }
+  // unreachable (the loop always returns by s === STEPS), kept for TS
+  return yForFallback(pts, i0, frac);
+}
+
+function yForFallback(pts: { x: number; y: number }[], i0: number, frac: number): number {
+  const a = pts[i0]!;
+  const b = pts[Math.min(pts.length - 1, i0 + 1)]!;
+  return a.y + (b.y - a.y) * frac;
 }
 
 function tipWhen(ms: number, range: Range, hour12: boolean): string {
@@ -158,15 +204,16 @@ export function Chart({
   const fracIndex = (cx: number) =>
     n <= 1 ? 0 : Math.min(n - 1, Math.max(0, ((cx - PAD.left) / innerW) * (n - 1)));
 
-  // linear-interpolate a series value at the cursor's position on the line
-  const valueAt = (cx: number, key: "pageviews" | "visitors") => {
+  const pointsFor = (key: "pageviews" | "visitors") => series.map((p, i) => ({ x: xFor(i), y: yFor(p[key]) }));
+
+  // y on the actual rendered curve at the cursor's x (see curveYAt) -- not a
+  // linear interpolation between the two neighbouring points, which drifted
+  // off the curve wherever it bends
+  const curveValueAt = (cx: number, key: "pageviews" | "visitors") => {
     if (n === 0) return 0;
     const fi = fracIndex(cx);
-    const i0 = Math.floor(fi);
-    const i1 = Math.min(n - 1, i0 + 1);
-    const a = series[i0]!;
-    const b = series[i1]!;
-    return a[key] + (b[key] - a[key]) * (fi - i0);
+    const i0 = Math.min(n - 2, Math.floor(fi));
+    return curveYAt(pointsFor(key), cx, i0, fi - i0);
   };
 
   // pointer events cover mouse hover and touch alike (paired with touch-action:
@@ -187,8 +234,8 @@ export function Chart({
   const near = show ? series[nearIdx]! : undefined;
 
   const dotX = snap ? xFor(nearIdx) : cx;
-  const viewsY = yFor(snap ? (near?.pageviews ?? 0) : valueAt(cx, "pageviews"));
-  const visitorsY = yFor(snap ? (near?.visitors ?? 0) : valueAt(cx, "visitors"));
+  const viewsY = snap ? yFor(near?.pageviews ?? 0) : curveValueAt(cx, "pageviews");
+  const visitorsY = snap ? yFor(near?.visitors ?? 0) : curveValueAt(cx, "visitors");
 
   // place the tip above the (upper) views dot; flip below when it's near the top
   const tipTop = (viewsY / H) * 100;
