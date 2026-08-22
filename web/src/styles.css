@@ -1076,6 +1076,35 @@ a {
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
 }
 
+/* a minimal scrollbar for every scrolling area in a modal/sheet -- just a
+   thin line, no track background, no arrows -- instead of the browser's
+   default chunky one */
+.referrer-scroll,
+.modal,
+.sheet-body {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.referrer-scroll::-webkit-scrollbar,
+.modal::-webkit-scrollbar,
+.sheet-body::-webkit-scrollbar {
+  width: 5px;
+}
+
+.referrer-scroll::-webkit-scrollbar-track,
+.modal::-webkit-scrollbar-track,
+.sheet-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.referrer-scroll::-webkit-scrollbar-thumb,
+.modal::-webkit-scrollbar-thumb,
+.sheet-body::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 999px;
+}
+
 /* ---- referrer board (see ReferrerBoard) -- a wrapping grid rather than one
    tall column, since this list is the one that can genuinely run long ---- */
 .referrer-scroll {
