@@ -1025,6 +1025,17 @@ a {
   gap: 10px;
 }
 
+/* the compact card keeps its original layout: legend fills the card's width
+   and the name pushes stats to the right edge. The expanded sheet's version
+   (below) doesn't stretch -- there, name and stats stay close together. */
+.card-content .breakdown-chart-legend {
+  flex: 1;
+}
+
+.card-content .breakdown-chart-name {
+  flex: 1;
+}
+
 .breakdown-chart-row {
   display: flex;
   align-items: center;
@@ -1036,8 +1047,6 @@ a {
   flex-shrink: 0;
 }
 
-/* no flex:1 -- that stretched the row to the legend's full width and pushed
-   the stats off to the far edge, away from the name they belong to */
 .breakdown-chart-name {
   min-width: 0;
   max-width: 14em;
