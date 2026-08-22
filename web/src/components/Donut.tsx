@@ -68,7 +68,15 @@ export function Donut({
   const liftedHover = lift3d && hover ? items[hover.i] : undefined;
 
   return (
-    <div className="donut" style={{ width: size, height: size }} onMouseLeave={() => queueHover(null)}>
+    <div
+      className="donut"
+      // width is the natural size on anything roomy enough for it; maxWidth
+      // + aspectRatio is what lets it actually shrink (staying square) on a
+      // narrow phone/tablet instead of forcing the card/sheet to scroll
+      // sideways
+      style={{ width: size, maxWidth: "100%", aspectRatio: "1 / 1" }}
+      onMouseLeave={() => queueHover(null)}
+    >
       {/* clears the tooltip over the hole in the middle (or the square's
           corners outside the ring) -- neither is covered by a segment's own
           hit-circle, so without this the last-hovered segment's tip just
@@ -76,8 +84,8 @@ export function Donut({
           cursor actually leaves the donut. Each segment's own handler stops
           the event here so hovering it doesn't immediately clear itself. */}
       <svg
-        width={size}
-        height={size}
+        width="100%"
+        height="100%"
         viewBox={`0 0 ${size} ${size}`}
         className="donut-svg"
         onMouseMove={() => queueHover(null)}
