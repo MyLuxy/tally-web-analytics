@@ -810,6 +810,17 @@ export function App() {
                 <ReferrerBoard rows={sourceRows} empty="All traffic came in direct." />
               )}
             </div>
+          ) : expanded === "events" ? (
+            data && data.events.length > 0 ? (
+              <div className="sheet-content">
+                <BarChart bars={data.events.map((e) => ({ label: e.name, value: e.count }))} />
+              </div>
+            ) : (
+              <div className="panel-empty">
+                <TallyMarks count={3} className="panel-empty-mark" />
+                <p className="ink-soft">No custom events recorded.</p>
+              </div>
+            )
           ) : breakdownError ? (
             <div className="notice notice-error">
               <strong>Couldn't load the full list.</strong> {breakdownError}
