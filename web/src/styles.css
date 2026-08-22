@@ -528,31 +528,37 @@ a {
 }
 
 /* period-over-period change badge -- green/red is purely functional here
-   (a drop has to read as a drop), the only place the palette uses either */
+   (a drop has to read as a drop), the only place the palette uses either.
+   A solid fill + a soft tinted shadow instead of the washed-out tint every
+   other chip in the app uses -- this is the one number meant to catch your
+   eye at a glance, not blend in with the rest of the card. */
 .kpi-delta {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  padding: 3px 8px;
+  gap: 4px;
+  padding: 4px 10px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   background: var(--line);
   color: var(--ink-soft);
 }
 
 .kpi-delta-up {
-  background: var(--positive-wash);
-  color: var(--positive);
+  background: var(--positive);
+  color: #fff;
+  box-shadow: 0 3px 10px -2px color-mix(in srgb, var(--positive) 60%, transparent);
 }
 
 .kpi-delta-down {
-  background: var(--negative-wash);
-  color: var(--negative);
+  background: var(--negative);
+  color: #fff;
+  box-shadow: 0 3px 10px -2px color-mix(in srgb, var(--negative) 60%, transparent);
 }
 
 .kpi-delta-new {
-  color: var(--ink-soft);
+  background: var(--accent-wash);
+  color: var(--accent-ink);
 }
 
 /* ---- panels ---- */

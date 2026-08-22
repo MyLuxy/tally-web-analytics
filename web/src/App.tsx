@@ -982,20 +982,20 @@ function DeltaChip({ delta }: { delta: Delta }) {
   );
 }
 
+// Solid filled triangles, not thin arrow strokes -- reads as a clean up/down
+// mark at this size instead of a fuzzy little hook.
 function DeltaUpIcon() {
   return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M6 18 18 6M9 6h9v9" />
+    <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 3 22 20H2Z" />
     </svg>
   );
 }
 
 function DeltaDownIcon() {
   return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M6 6l12 12M15 18H6V9" />
+    <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 21 2 4h20Z" />
     </svg>
   );
 }
