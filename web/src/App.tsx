@@ -819,7 +819,7 @@ export function App() {
                     delta={activityData?.previousTotals && deltaOf(activityData.totals.visitors, activityData.previousTotals.visitors)}
                   />
                 </section>
-                {activityData && <Sparkline series={activityData.series} hour12={hour12} height={300} />}
+                {activityData && <Sparkline series={activityData.series} hour12={hour12} />}
               </div>
             </div>
           ) : expanded === "trafficSources" ? (

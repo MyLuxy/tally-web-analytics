@@ -6,20 +6,12 @@ import type { Stats } from "../api.js";
 // expanded view; this just needs to read well small.
 
 const W = 600;
+const H = 130;
 const PAD = { top: 6, right: 8, bottom: 18, left: 34 };
 
 const fmt = (n: number) => n.toLocaleString("en-US");
 
-export function Sparkline({
-  series,
-  hour12,
-  height = 130,
-}: {
-  series: Stats["series"];
-  hour12: boolean;
-  height?: number; // the sheet's bigger version just wants more vertical room, same look
-}) {
-  const H = height;
+export function Sparkline({ series, hour12 }: { series: Stats["series"]; hour12: boolean }) {
   const n = series.length;
   const innerW = W - PAD.left - PAD.right;
   const innerH = H - PAD.top - PAD.bottom;
