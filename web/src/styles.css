@@ -94,6 +94,12 @@
 html,
 body {
   margin: 0;
+  /* a belt-and-braces backstop -- nothing on the page is meant to be wider
+     than the viewport, so this shouldn't normally do anything. But a single
+     stray element (a border, a shadow, a rounding artifact) anywhere in the
+     tree is enough to let the whole page pan sideways on touch, and that's
+     a worse experience than just clipping the 1-2px overflow that caused it. */
+  overflow-x: hidden;
   /* keep the page scrollable but without a visible scrollbar */
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* legacy Edge/IE */
@@ -581,6 +587,14 @@ a {
   border-radius: var(--radius);
   padding: 22px 24px;
   box-shadow: var(--shadow-card);
+  /* every card lives as a flex or grid item somewhere (.card-grid,
+     .chart-row, ...), and both default an item's min-width to auto, not 0 --
+     without this, a card whose content has a large intrinsic minimum (a
+     chart's SVG, mainly) can force its own track wider than it was actually
+     given instead of shrinking to fit. Set here once instead of per
+     container, so it doesn't need rediscovering in the next grid a card
+     ends up in. */
+  min-width: 0;
 }
 
 /* the whole card is the click target for cards with a fuller list behind
@@ -1924,6 +1938,14 @@ a {
   display: flex;
   flex-direction: column;
   justify-content: center;
+}
+
+/* a flex item's default min-width is auto, not 0 -- meaning it won't shrink
+   below its content's own intrinsic width. The chart inside can (and on a
+   narrow phone, does) want to be wider than that, which pushed this whole
+   sheet wider than the screen instead of the chart just shrinking to fit. */
+.sheet-traffic {
+  min-width: 0;
 }
 
 /* Activity's centred position (via the rule above) sat a bit too low --
