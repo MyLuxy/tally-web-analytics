@@ -1484,7 +1484,7 @@ a {
 .chart-line-views {
   fill: none;
   stroke: var(--accent);
-  stroke-width: 2.5;
+  stroke-width: 1.8;
   stroke-linejoin: round;
   stroke-linecap: round;
 }
@@ -1492,7 +1492,7 @@ a {
 .chart-line-visitors {
   fill: none;
   stroke: var(--accent-2);
-  stroke-width: 1.5;
+  stroke-width: 1.1;
   stroke-dasharray: 3 4;
   stroke-linecap: round;
 }
