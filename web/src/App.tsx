@@ -10,7 +10,7 @@ import { BarChart } from "./components/BarChart.js";
 import { ExportCsvButton, Rows, StatList } from "./components/StatList.js";
 import { BreakdownCard, BreakdownChart } from "./components/BreakdownCard.js";
 import type { BreakdownTab } from "./components/BreakdownCard.js";
-import { ReferrerBoard, TrafficSourcesCard, TrafficSourcesContent } from "./components/TrafficSources.js";
+import { RankedBoard, TrafficSourcesCard, TrafficSourcesContent } from "./components/TrafficSources.js";
 import { ClickableCard } from "./components/ClickableCard.js";
 import { browserIcon, deviceIcon, osIcon } from "./components/DeviceIcons.js";
 import type { Row } from "./components/StatList.js";
@@ -97,6 +97,28 @@ function countryIcon(_name: string, code?: string) {
   return <img className="flag" src={`${import.meta.env.BASE_URL}flags/${code.toLowerCase()}.svg`} width={16} height={16} alt="" />;
 }
 
+// RankedBoard icon resolvers (see TrafficSources.tsx) -- a flag for the
+// "More countries" list, a favicon for "All referrers".
+function countryFlagRowIcon(row: Row) {
+  return countryIcon("", row.code);
+}
+
+function referrerFaviconIcon(row: Row) {
+  const domain = typeof row.label === "string" ? row.label : (row.title ?? "");
+  return (
+    <img
+      className="referrer-favicon"
+      src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32`}
+      alt=""
+      loading="lazy"
+      draggable={false}
+      onError={(e) => {
+        e.currentTarget.style.visibility = "hidden";
+      }}
+    />
+  );
+}
+
 // One entry per panel that has a "View all" button. Maps the flat
 // {key, value} rows from /api/stats/breakdown back to each panel's own
 // title/empty copy and row rendering (e.g. countries get a flag).
@@ -121,7 +143,7 @@ const VIEW_ALL_CONFIG: Record<
   countries: {
     title: "Countries",
     empty: "No country data.",
-    toRow: (r) => ({ label: <CountryLabel code={r.key} />, title: countryName(r.key), value: r.value }),
+    toRow: (r) => ({ label: countryName(r.key), title: countryName(r.key), value: r.value, code: r.key }),
   },
   events: {
     title: "Events",
@@ -839,7 +861,7 @@ export function App() {
                   <span className="spinner" />
                 </div>
               ) : (
-                <ReferrerBoard rows={sourceRows} empty="All traffic came in direct." />
+                <RankedBoard rows={sourceRows} icon={referrerFaviconIcon} empty="All traffic came in direct." />
               )}
             </div>
           ) : expanded === "events" ? (
@@ -886,23 +908,34 @@ export function App() {
                   </button>
                 ))}
               </div>
-              <div className="sheet-content">
+              <div className="sheet-content sheet-breakdown-chart">
                 <BreakdownChart
                   data={activePlatformTab.chart ?? []}
                   icon={activePlatformTab.icon}
                   empty={activePlatformTab.empty}
-                  size={300}
-                  thickness={40}
+                  size={380}
+                  thickness={48}
                 />
               </div>
               {/* the chart above is only the top 10 (same as the compact card) --
                   rarely more than that for browsers/OS/devices, but countries
                   routinely has far more, so whatever's left of the full,
-                  higher-capped breakdown list shows underneath */}
+                  higher-capped breakdown list shows underneath. Countries gets
+                  the same ranked-grid-with-flags treatment as "All referrers"
+                  (see RankedBoard) since it's the one that can genuinely run
+                  long; the others keep the plain list, they rarely need it. */}
               {breakdownRows && breakdownRows.length > (activePlatformTab.chart?.length ?? 0) && (
                 <>
                   <h3 className="sheet-subhead">More {activePlatformTab.label.toLowerCase()}</h3>
-                  <Rows rows={breakdownRows.slice(activePlatformTab.chart?.length ?? 0)} empty="" />
+                  {breakdownTab === "countries" ? (
+                    <RankedBoard
+                      rows={breakdownRows.slice(activePlatformTab.chart?.length ?? 0)}
+                      icon={countryFlagRowIcon}
+                      empty=""
+                    />
+                  ) : (
+                    <Rows rows={breakdownRows.slice(activePlatformTab.chart?.length ?? 0)} empty="" />
+                  )}
                 </>
               )}
             </div>

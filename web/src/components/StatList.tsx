@@ -8,7 +8,9 @@ import { downloadCsv, rowsToCsv } from "../lib/csv.js";
 // scaled to the leader. Used for pages, referrers and browsers alike.
 
 // label can be a node (e.g. a flag + name); title is the plain-text tooltip.
-export type Row = { label: ReactNode; value: number; title?: string };
+// `code` is an optional secondary lookup key, separate from the display
+// label -- a country's flag is keyed by its ISO code, not by "France".
+export type Row = { label: ReactNode; value: number; title?: string; code?: string };
 
 // Cards stay compact on the base dashboard -- a handful of rows is enough to
 // read the shape of the data; clicking the card is what gets you the rest.

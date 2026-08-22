@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { Stats } from "../api.js";
 import { RadarChart } from "./RadarChart.js";
 import { TallyMarks } from "./TallyMarks.js";
@@ -63,13 +64,16 @@ export function TrafficSourcesContent({
   );
 }
 
-// "All referrers" -- unlike every other breakdown, this one can genuinely run
-// long (a site can accumulate hundreds of distinct hosts), so it doesn't use
-// the plain bar-list every other panel shares. A wrapping grid of small
-// cards fills the sheet's width instead of one narrow column, and a bounded,
+// A ranked, icon-led list for any breakdown that can genuinely run long (a
+// site can accumulate hundreds of distinct referrer hosts, or list most of
+// the world's countries) -- unlike the others, these don't use the plain
+// bar-list every other panel shares. A wrapping grid of small cards fills
+// the sheet's width instead of one narrow column, and a bounded,
 // independently-scrolling area keeps a long tail from stretching the sheet
-// itself -- the chart and legend above stay put while just this scrolls.
-export function ReferrerBoard({ rows, empty }: { rows: Row[]; empty: string }) {
+// itself -- whatever's above (a chart, a donut) stays put while just this
+// scrolls. `icon` renders whatever identifies each row -- a site favicon for
+// referrers, a flag for countries -- so this one list serves both.
+export function RankedBoard({ rows, icon, empty }: { rows: Row[]; icon: (row: Row) => ReactNode; empty: string }) {
   if (rows.length === 0) {
     return (
       <div className="panel-empty">
@@ -85,23 +89,12 @@ export function ReferrerBoard({ rows, empty }: { rows: Row[]; empty: string }) {
     <div className="referrer-scroll">
       <ul className="referrer-grid">
         {rows.map((r, i) => {
-          const domain = typeof r.label === "string" ? r.label : (r.title ?? String(r.value));
+          const label = typeof r.label === "string" ? r.label : (r.title ?? String(r.value));
           return (
-            <li className="referrer-item" key={r.title ?? domain}>
+            <li className="referrer-item" key={r.title ?? label}>
               <span className="referrer-rank">{i + 1}</span>
-              {/* best-effort site icon -- just a nicety, so a missing/blocked
-                  one silently leaves the fallback dot rather than a broken-image icon */}
-              <img
-                className="referrer-favicon"
-                src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32`}
-                alt=""
-                loading="lazy"
-                draggable={false}
-                onError={(e) => {
-                  e.currentTarget.style.visibility = "hidden";
-                }}
-              />
-              <span className="referrer-domain" title={domain}>
+              {icon(r)}
+              <span className="referrer-domain" title={label}>
                 {r.label}
               </span>
               <span className="referrer-value num">{r.value.toLocaleString("en-US")}</span>

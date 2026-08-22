@@ -1009,10 +1009,18 @@ a {
   flex-wrap: wrap;
 }
 
-/* centred only in the expanded sheet (.sheet-content wraps it there) -- the
-   compact card keeps its original left-aligned layout */
-.sheet-content .breakdown-chart {
+/* the expanded sheet stacks chart above legend, both centred, instead of the
+   compact card's side-by-side row -- a bigger donut reads as the sheet's
+   main visual this way instead of just one item sharing a row with its own
+   legend off to the side */
+.sheet-breakdown-chart .breakdown-chart {
+  flex-direction: column;
   justify-content: center;
+}
+
+.sheet-breakdown-chart .breakdown-chart-legend {
+  width: 100%;
+  max-width: 360px;
 }
 
 .breakdown-chart-legend {
