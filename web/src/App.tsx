@@ -294,16 +294,27 @@ export function App() {
     const ctrl = new AbortController();
     setBreakdownRows(null);
     setBreakdownError(null);
-    fetchBreakdown(site, range, metric)
-      .then((rows) => {
-        if (ctrl.signal.aborted) return;
-        setBreakdownRows(rows.map(VIEW_ALL_CONFIG[metric].toRow));
-      })
-      .catch((e: unknown) => {
-        if (ctrl.signal.aborted) return;
-        setBreakdownError(e instanceof Error ? e.message : "something went wrong");
-      });
-    return () => ctrl.abort();
+    // a beat after the sheet's own open animation (see .sheet-in, 220ms) --
+    // same reasoning as trafficSources' bonus referrer list below: these
+    // lists can run into the hundreds of rows (server caps at 500), and for
+    // referrers specifically each one fetches a favicon. Firing immediately
+    // meant that landed and started decoding mid-transition, which is what
+    // showed up as the sheet's open feeling laggy.
+    const timer = setTimeout(() => {
+      fetchBreakdown(site, range, metric)
+        .then((rows) => {
+          if (ctrl.signal.aborted) return;
+          setBreakdownRows(rows.map(VIEW_ALL_CONFIG[metric].toRow));
+        })
+        .catch((e: unknown) => {
+          if (ctrl.signal.aborted) return;
+          setBreakdownError(e instanceof Error ? e.message : "something went wrong");
+        });
+    }, 260);
+    return () => {
+      clearTimeout(timer);
+      ctrl.abort();
+    };
   }, [expanded, site, range]);
 
   // The traffic-sources sheet's bonus "all referrers" list, uncapped --
@@ -341,6 +352,17 @@ export function App() {
     withViewTransition(() => {
       setExpanded(target);
       setTransitioningKey(null); // the sheet takes the name from here
+      // whatever the last-opened breakdown list left behind here doesn't
+      // get cleared until its own fetch effect runs *after* this commits --
+      // one tick too late for the view transition, which already grabbed
+      // its "new" snapshot by then. Opening a short list (Top pages) right
+      // after a long one (Referrers) meant that stale, much taller list
+      // was what actually got captured and animated in for a frame,
+      // visibly poking out past the sheet before the real (short) data
+      // swapped in. Clearing synchronously here keeps the spinner state
+      // out of the transition's way instead.
+      setBreakdownRows(null);
+      setBreakdownError(null);
     });
   }
 
