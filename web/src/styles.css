@@ -1345,9 +1345,29 @@ a {
   color: var(--ink);
 }
 
+/* the 2-up grid's 60px column-gap assumes real width either side -- on a
+   phone-width card each column shrinks to barely more than the label
+   itself, so dot+"Referral"+pct+value has nowhere to go but off the edge.
+   One column and smaller type fixes both: every row gets the card's full
+   width instead of half of it, and the smaller text needs less of it. */
 @media (max-width: 480px) {
   .traffic-sources {
     justify-content: center;
+  }
+  .traffic-sources-legend {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .traffic-source-row {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .traffic-source-label,
+  .traffic-source-value {
+    font-size: 14px;
+  }
+  .traffic-source-pct {
+    font-size: 13px;
   }
 }
 

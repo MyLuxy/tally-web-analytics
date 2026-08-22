@@ -7,10 +7,11 @@ export type RadarAxis = { label: string; value: number };
 
 // Label margins are their own dimension, not a slice of the plot radius --
 // axis labels are wide (text) but only need a little vertical room, so the
-// viewBox gets extra width/height on top of the circle itself. Fixed, real
-// pixel values (not proportional to the plot) on purpose: the label text
-// sits in this margin, and letting it scale down with a narrow container is
-// exactly the bug useMeasuredWidth exists to avoid elsewhere (see Chart.tsx).
+// viewBox gets extra width/height on top of the circle itself. Real pixel
+// values (not proportional to the plot), same idea as useMeasuredWidth
+// elsewhere -- letting the margin/label text scale down with the viewBox is
+// what shrinks it below legible. These are the full-size default; a narrow
+// container gets its own smaller pair below instead (see `narrow`).
 const PAD_X = 120;
 const PAD_Y = 46;
 
@@ -26,11 +27,17 @@ export function RadarChart({
   // differently for the compact card vs. the bigger sheet) already caps how
   // big that's allowed to be per context, so this naturally respects `size`
   // on a roomy screen and shrinks on a narrow one instead of overflowing it.
-  // The circle gets smaller on a phone; the fixed-px label margins (and
-  // their text) don't.
   const [wrapRef, W] = useMeasuredWidth(size + PAD_X * 2);
-  const plotSize = Math.max(60, W - PAD_X * 2);
-  const H = plotSize + PAD_Y * 2;
+  // below a certain point the full-size label margin leaves barely any
+  // circle at all -- shrinking the margin *and* the label text together
+  // (real px, not viewBox-scaled) trades label reach for a bigger, more
+  // legible plot, which is the one thing this chart is actually for
+  const narrow = W < 380;
+  const padX = narrow ? 68 : PAD_X;
+  const padY = narrow ? 32 : PAD_Y;
+  const labelFontSize = narrow ? 13 : 18;
+  const plotSize = Math.max(60, W - padX * 2);
+  const H = plotSize + padY * 2;
   const cx = W / 2;
   const cy = H / 2;
   const r = plotSize / 2;
@@ -79,11 +86,18 @@ export function RadarChart({
           // sideways gets an x-only nudge, one pointing up/down a y-only nudge
           const p = pointAt(i, 1);
           const angle = angleFor(i);
-          const lx = p.x + Math.cos(angle) * (PAD_X * 0.2);
-          const ly = p.y + Math.sin(angle) * (PAD_Y * 0.55) + 4;
+          const lx = p.x + Math.cos(angle) * (padX * 0.2);
+          const ly = p.y + Math.sin(angle) * (padY * 0.55) + 4;
           const anchor = Math.abs(Math.cos(angle)) < 0.2 ? "middle" : Math.cos(angle) > 0 ? "start" : "end";
           return (
-            <text key={a.label} x={lx} y={ly} textAnchor={anchor} className="radar-label">
+            <text
+              key={a.label}
+              x={lx}
+              y={ly}
+              textAnchor={anchor}
+              className="radar-label"
+              style={{ fontSize: labelFontSize }}
+            >
               {a.label}
             </text>
           );
