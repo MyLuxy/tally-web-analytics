@@ -1009,6 +1009,13 @@ a {
   flex-wrap: wrap;
 }
 
+/* compact card: donut stays on the left, the legend block (tight internally,
+   see .card-content .breakdown-chart-row) pushes all the way to the right
+   edge instead of just sitting next to the donut with empty space beyond it */
+.card-content .breakdown-chart {
+  justify-content: space-between;
+}
+
 /* the expanded sheet stacks chart above legend, both centred, instead of the
    compact card's side-by-side row -- a bigger donut reads as the sheet's
    main visual this way instead of just one item sharing a row with its own
