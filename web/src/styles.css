@@ -1023,6 +1023,10 @@ a {
   max-width: 360px;
 }
 
+.sheet-breakdown-chart .breakdown-chart-row {
+  justify-content: center;
+}
+
 .breakdown-chart-legend {
   min-width: 170px;
   list-style: none;
@@ -1042,6 +1046,9 @@ a {
 
 .card-content .breakdown-chart-name {
   flex: 1;
+  max-width: none; /* the base 14em cap stopped the flex-grow short of the
+    row's true right edge -- the stats ended up stranded mid-row instead of
+    pinned to the edge like the rest of this card's rows */
 }
 
 .breakdown-chart-row {

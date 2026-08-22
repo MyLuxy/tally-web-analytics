@@ -908,33 +908,42 @@ export function App() {
                   </button>
                 ))}
               </div>
-              <div className="sheet-content sheet-breakdown-chart">
-                <BreakdownChart
-                  data={activePlatformTab.chart ?? []}
-                  icon={activePlatformTab.icon}
-                  empty={activePlatformTab.empty}
-                  size={380}
-                  thickness={48}
-                />
-              </div>
-              {/* the chart above is only the top 10 (same as the compact card) --
-                  rarely more than that for browsers/OS/devices, but countries
-                  routinely has far more, so whatever's left of the full,
-                  higher-capped breakdown list shows underneath. Countries gets
-                  the same ranked-grid-with-flags treatment as "All referrers"
-                  (see RankedBoard) since it's the one that can genuinely run
-                  long; the others keep the plain list, they rarely need it. */}
-              {breakdownRows && breakdownRows.length > (activePlatformTab.chart?.length ?? 0) && (
+              {breakdownTab === "countries" ? (
+                // Countries skips the donut entirely -- too many possible
+                // countries for a pie to stay readable. Same ranked grid with
+                // flags as "All referrers" instead, the full list at once
+                // rather than a top-10-chart-plus-overflow split.
+                breakdownError ? (
+                  <div className="notice notice-error">
+                    <strong>Couldn't load the full list.</strong> {breakdownError}
+                  </div>
+                ) : breakdownRows === null ? (
+                  <div className="modal-loading" role="status" aria-label="Loading">
+                    <span className="spinner" />
+                  </div>
+                ) : (
+                  <RankedBoard rows={breakdownRows} icon={countryFlagRowIcon} empty={activePlatformTab.empty} />
+                )
+              ) : (
                 <>
-                  <h3 className="sheet-subhead">More {activePlatformTab.label.toLowerCase()}</h3>
-                  {breakdownTab === "countries" ? (
-                    <RankedBoard
-                      rows={breakdownRows.slice(activePlatformTab.chart?.length ?? 0)}
-                      icon={countryFlagRowIcon}
-                      empty=""
+                  <div className="sheet-content sheet-breakdown-chart">
+                    <BreakdownChart
+                      data={activePlatformTab.chart ?? []}
+                      icon={activePlatformTab.icon}
+                      empty={activePlatformTab.empty}
+                      size={380}
+                      thickness={48}
                     />
-                  ) : (
-                    <Rows rows={breakdownRows.slice(activePlatformTab.chart?.length ?? 0)} empty="" />
+                  </div>
+                  {/* the chart is only the top 10 (same as the compact card) --
+                      browsers/OS/devices rarely have more than that, but on
+                      the off chance they do, whatever's left of the full,
+                      higher-capped breakdown list shows underneath */}
+                  {breakdownRows && breakdownRows.length > (activePlatformTab.chart?.length ?? 0) && (
+                    <>
+                      <h3 className="sheet-subhead">More {activePlatformTab.label.toLowerCase()}</h3>
+                      <Rows rows={breakdownRows.slice(activePlatformTab.chart?.length ?? 0)} empty="" />
+                    </>
                   )}
                 </>
               )}
