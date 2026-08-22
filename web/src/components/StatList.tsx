@@ -27,6 +27,7 @@ export function StatList({
   info,
   onExpand,
   className,
+  icon,
 }: {
   cardKey: string;
   expanded: boolean;
@@ -37,6 +38,7 @@ export function StatList({
   info?: string; // optional one-liner explaining the section
   onExpand?: () => void; // cards show a short preview; clicking opens the full list full-screen
   className?: string; // e.g. "card-span-2" -- lets the dashboard's bento grid vary this card's width
+  icon?: (row: Row) => ReactNode; // e.g. a referrer's favicon; most lists (pages) have none
 }) {
   const clickable = Boolean(onExpand && rows.length > 0);
 
@@ -54,7 +56,7 @@ export function StatList({
 
   const body = (
     <div className="card-content">
-      <Rows rows={rows.slice(0, PREVIEW_ROWS)} empty={empty} />
+      <Rows rows={rows.slice(0, PREVIEW_ROWS)} empty={empty} icon={icon} />
     </div>
   );
 
@@ -85,7 +87,7 @@ export function StatList({
 
 // The bar-chart-style row list, shared between a panel's top-10 slice and the
 // "View all" modal's full list -- same look, just a different row count.
-export function Rows({ rows, empty }: { rows: Row[]; empty: string }) {
+export function Rows({ rows, empty, icon }: { rows: Row[]; empty: string; icon?: (row: Row) => ReactNode }) {
   const max = Math.max(1, ...rows.map((r) => r.value));
 
   if (rows.length === 0) {
@@ -104,7 +106,10 @@ export function Rows({ rows, empty }: { rows: Row[]; empty: string }) {
         return (
           <li className="row" key={title ?? i}>
             <span className="row-bar" style={{ width: `${(r.value / max) * 100}%` }} />
-            <span className="row-label" title={title}>{r.label}</span>
+            <span className="row-label" title={title}>
+              {icon && <span className="row-icon">{icon(r)}</span>}
+              <span className="row-label-text">{r.label}</span>
+            </span>
             <span className="row-value num">{r.value.toLocaleString("en-US")}</span>
           </li>
         );

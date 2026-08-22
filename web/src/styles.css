@@ -1255,12 +1255,24 @@ a {
 .row-label {
   position: relative;
   z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   flex: 1;
+  min-width: 0;
+  font-size: 14px;
+}
+
+.row-icon {
+  flex-shrink: 0;
+  display: flex;
+}
+
+.row-label-text {
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 14px;
 }
 
 .row-value {

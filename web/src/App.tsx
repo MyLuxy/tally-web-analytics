@@ -625,6 +625,7 @@ export function App() {
               rows={(data?.topReferrers ?? []).map((r) => ({ label: r.source, value: r.views }))}
               onExpand={() => openCard("referrers")}
               className="card-span-2"
+              icon={referrerFaviconIcon}
             />
             <BreakdownCard
               tabs={platformTabs}
@@ -936,7 +937,11 @@ export function App() {
             </div>
           ) : (
             <div className="sheet-content">
-              <Rows rows={breakdownRows} empty={VIEW_ALL_CONFIG[expanded].empty} />
+              <Rows
+                rows={breakdownRows}
+                empty={VIEW_ALL_CONFIG[expanded].empty}
+                icon={expanded === "referrers" ? referrerFaviconIcon : undefined}
+              />
             </div>
           )}
         </ExpandSheet>
