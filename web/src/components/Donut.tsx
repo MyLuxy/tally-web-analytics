@@ -98,8 +98,10 @@ export function Donut({
                     style={
                       lift3d && hover?.i === i
                         ? {
-                            transform: "perspective(600px) rotateX(10deg) translateZ(14px) scale(1.05)",
-                            filter: "drop-shadow(0 8px 12px rgba(0, 0, 0, 0.3))",
+                            // no actual movement -- the "lift" is just a cast
+                            // shadow plus a touch of extra brightness, like
+                            // light catching a raised surface
+                            filter: "drop-shadow(0 6px 9px rgba(0, 0, 0, 0.35)) brightness(1.1)",
                           }
                         : undefined
                     }

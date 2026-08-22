@@ -811,9 +811,7 @@ a {
 
 .donut-segment {
   cursor: default;
-  transform-box: view-box;
-  transform-origin: center;
-  transition: transform 0.15s ease, filter 0.15s ease;
+  transition: filter 0.15s ease;
 }
 
 /* follows the cursor over a segment -- same dark pill look as the chart's
