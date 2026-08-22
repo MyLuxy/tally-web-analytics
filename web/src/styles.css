@@ -980,7 +980,7 @@ a {
 .traffic-source-stats {
   display: flex;
   align-items: baseline;
-  gap: 4px;
+  gap: 8px;
 }
 
 .traffic-source-pct {
