@@ -1004,7 +1004,10 @@ export function App() {
               <span className="spinner" />
             </div>
           ) : (
-            <div className="sheet-content">
+            // sheet-content-list opts this out of the shared "sheet-content"
+            // view transition (see styles.css) -- see card-content-list in
+            // StatList.tsx for why
+            <div className="sheet-content sheet-content-list">
               <Rows
                 rows={breakdownRows}
                 empty={VIEW_ALL_CONFIG[expanded].empty}

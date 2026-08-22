@@ -2158,8 +2158,17 @@ a {
 .sheet-title {
   view-transition-name: sheet-title;
 }
-.panel-clickable.card-transitioning .card-content,
-.sheet-content {
+/* :not(.card-content-list)/:not(.sheet-content-list) -- a row list (Top
+   pages, Entry pages, Referrers) doesn't get this. Its compact preview (5
+   rows, from the dashboard's own capped fetch) and its expanded sheet (up
+   to 500 rows, a separate fetch, so not even guaranteed the exact same
+   max/proportions) aren't "the same visual, bigger" the way a donut or
+   chart card's content is -- morphing between two lists with genuinely
+   different content and bar proportions read as the bars jumping mid-
+   transition instead of a real scale-up. These just cross-fade with the
+   rest of the (unnamed) snapshot instead. */
+.panel-clickable.card-transitioning .card-content:not(.card-content-list),
+.sheet-content:not(.sheet-content-list) {
   view-transition-name: sheet-content;
 }
 

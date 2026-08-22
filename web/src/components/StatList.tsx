@@ -55,7 +55,12 @@ export function StatList({
   );
 
   const body = (
-    <div className="card-content">
+    // card-content-list opts this out of the shared "sheet-content" view
+    // transition (see styles.css) -- morphing a 5-row preview into a list
+    // that can run to hundreds of rows (a different fetch, different
+    // proportions) reads as the bars jumping mid-animation, not a real
+    // scale-up the way it works for a donut/chart card's own visual.
+    <div className="card-content card-content-list">
       <Rows rows={rows.slice(0, PREVIEW_ROWS)} empty={empty} icon={icon} />
     </div>
   );
