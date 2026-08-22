@@ -431,7 +431,7 @@ export function App() {
                   <ExpandIcon />
                 </div>
               </div>
-              <div className="chart-wrap">
+              <div className="chart-wrap card-content">
                 {data && <Chart series={data.series} range={range} hour12={hour12} />}
                 {loading && (
                   <div className="chart-loading" role="status" aria-label="Loading">
@@ -466,19 +466,21 @@ export function App() {
               </div>
               {/* a plain preview, not the full Statistics chart -- clicking
                   the card is what gets the grid/axis/tooltip version */}
-              {activityData && <Sparkline series={activityData.series} hour12={hour12} />}
-              <div className="activity-stats">
-                <div>
-                  <span className="activity-stat-value num">
-                    {(activityData?.totals.pageviews ?? 0).toLocaleString("en-US")}
-                  </span>
-                  <span className="activity-stat-label eyebrow">Pageviews</span>
-                </div>
-                <div>
-                  <span className="activity-stat-value num">
-                    {(activityData?.totals.visitors ?? 0).toLocaleString("en-US")}
-                  </span>
-                  <span className="activity-stat-label eyebrow">Visitors</span>
+              <div className="card-content">
+                {activityData && <Sparkline series={activityData.series} hour12={hour12} />}
+                <div className="activity-stats">
+                  <div>
+                    <span className="activity-stat-value num">
+                      {(activityData?.totals.pageviews ?? 0).toLocaleString("en-US")}
+                    </span>
+                    <span className="activity-stat-label eyebrow">Pageviews</span>
+                  </div>
+                  <div>
+                    <span className="activity-stat-value num">
+                      {(activityData?.totals.visitors ?? 0).toLocaleString("en-US")}
+                    </span>
+                    <span className="activity-stat-label eyebrow">Visitors</span>
+                  </div>
                 </div>
               </div>
             </ClickableCard>
@@ -495,7 +497,9 @@ export function App() {
                 <span className="eyebrow">{rangeEyebrow(range)}</span>
               </div>
               {data && data.events.length > 0 ? (
-                <BarChart bars={data.events.map((e) => ({ label: e.name, value: e.count }))} />
+                <div className="card-content">
+                  <BarChart bars={data.events.map((e) => ({ label: e.name, value: e.count }))} />
+                </div>
               ) : (
                 <div className="panel-empty">
                   <TallyMarks count={3} className="panel-empty-mark" />
@@ -754,7 +758,7 @@ export function App() {
             </div>
           ) : expanded === "traffic" ? (
             <div className="sheet-traffic">
-              <div className="chart-wrap">
+              <div className="chart-wrap sheet-content">
                 {data && <Chart series={data.series} range={range} hour12={hour12} />}
                 {loading && (
                   <div className="chart-loading" role="status" aria-label="Loading">
@@ -766,29 +770,33 @@ export function App() {
             </div>
           ) : expanded === "activity" ? (
             <div className="sheet-traffic">
-              <section className="kpi-grid">
-                <KpiCard
-                  icon={<EyeIcon />}
-                  iconVar="--accent-5"
-                  label="Pageviews"
-                  value={activityData?.totals.pageviews ?? 0}
-                  delta={activityData?.previousTotals && deltaOf(activityData.totals.pageviews, activityData.previousTotals.pageviews)}
-                />
-                <KpiCard
-                  icon={<UsersIcon />}
-                  iconVar="--accent-3"
-                  label="Unique visitors"
-                  value={activityData?.totals.visitors ?? 0}
-                  delta={activityData?.previousTotals && deltaOf(activityData.totals.visitors, activityData.previousTotals.visitors)}
-                />
-              </section>
-              <div className="chart-wrap activity-chart-accent">
-                {activityData && <Chart series={activityData.series} range="24h" hour12={hour12} />}
+              <div className="sheet-content">
+                <section className="kpi-grid">
+                  <KpiCard
+                    icon={<EyeIcon />}
+                    iconVar="--accent-5"
+                    label="Pageviews"
+                    value={activityData?.totals.pageviews ?? 0}
+                    delta={activityData?.previousTotals && deltaOf(activityData.totals.pageviews, activityData.previousTotals.pageviews)}
+                  />
+                  <KpiCard
+                    icon={<UsersIcon />}
+                    iconVar="--accent-3"
+                    label="Unique visitors"
+                    value={activityData?.totals.visitors ?? 0}
+                    delta={activityData?.previousTotals && deltaOf(activityData.totals.visitors, activityData.previousTotals.visitors)}
+                  />
+                </section>
+                <div className="chart-wrap activity-chart-accent">
+                  {activityData && <Chart series={activityData.series} range="24h" hour12={hour12} />}
+                </div>
               </div>
             </div>
           ) : expanded === "trafficSources" ? (
             <div className="sheet-traffic-sources">
-              {data && <TrafficSourcesContent sources={data.trafficSources} radarSize={260} />}
+              <div className="sheet-content">
+                {data && <TrafficSourcesContent sources={data.trafficSources} radarSize={260} />}
+              </div>
               <h3 className="sheet-subhead">All referrers</h3>
               {sourceError ? (
                 <div className="notice notice-error">
@@ -811,7 +819,9 @@ export function App() {
               <span className="spinner" />
             </div>
           ) : (
-            <Rows rows={breakdownRows} empty={VIEW_ALL_CONFIG[expanded].empty} />
+            <div className="sheet-content">
+              <Rows rows={breakdownRows} empty={VIEW_ALL_CONFIG[expanded].empty} />
+            </div>
           )}
         </ExpandSheet>
       )}

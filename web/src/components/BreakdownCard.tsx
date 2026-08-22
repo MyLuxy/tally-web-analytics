@@ -70,7 +70,9 @@ export function BreakdownCard({
         </div>
       </div>
 
-      <Rows rows={active.rows.slice(0, PREVIEW_ROWS)} empty={active.empty} />
+      <div className="card-content">
+        <Rows rows={active.rows.slice(0, PREVIEW_ROWS)} empty={active.empty} />
+      </div>
     </ClickableCard>
   );
 }

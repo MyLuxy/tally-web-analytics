@@ -54,7 +54,11 @@ export function StatList({
     </div>
   );
 
-  const body = <Rows rows={rows.slice(0, PREVIEW_ROWS)} empty={empty} />;
+  const body = (
+    <div className="card-content">
+      <Rows rows={rows.slice(0, PREVIEW_ROWS)} empty={empty} />
+    </div>
+  );
 
   if (!clickable) {
     return (

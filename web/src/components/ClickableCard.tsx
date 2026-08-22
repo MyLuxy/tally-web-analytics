@@ -42,7 +42,11 @@ export function ClickableCard({
 
   return (
     <section
-      className={`panel panel-clickable${className ? ` ${className}` : ""}`}
+      // "card-transitioning" is what lets a couple of inner pieces (the
+      // title, the main visual -- see .panel-title/.card-content in
+      // styles.css) morph on their own instead of just crossfading along
+      // with everything else in this card's flat snapshot.
+      className={`panel panel-clickable${transitioning ? " card-transitioning" : ""}${className ? ` ${className}` : ""}`}
       style={style}
       role="button"
       tabIndex={0}

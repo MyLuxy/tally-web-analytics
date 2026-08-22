@@ -1540,11 +1540,28 @@ a {
 }
 
 /* the browser's default View Transition is already a clean resize + crossfade
-   -- this just brings its timing in line with the rest of the app's motion,
-   and turns it off outright under reduced-motion */
+   -- this brings its timing in line with the rest of the app's motion (a
+   slight overshoot, so the box feels like it's actually moving rather than
+   just easing into place), and turns it off outright under reduced-motion */
 ::view-transition-group(*) {
-  animation-duration: 260ms;
-  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  animation-duration: 320ms;
+  animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* the title and the card's main visual (chart/radar/rows -- see .card-content
+   below) get their own named group instead of crossfading as part of the
+   whole card. Each one then morphs its own position/size independently --
+   the title visibly grows into the sheet's, the chart/list visibly resizes
+   into place -- rather than the whole card being one flat image dissolving
+   into another. A fixed (not per-card) name is fine: only one card is ever
+   `.card-transitioning` at a time, and only one sheet is ever mounted. */
+.panel-clickable.card-transitioning .panel-title,
+.sheet-title {
+  view-transition-name: sheet-title;
+}
+.panel-clickable.card-transitioning .card-content,
+.sheet-content {
+  view-transition-name: sheet-content;
 }
 
 /* nothing behind the sheet actually changes -- the dashboard grid is
