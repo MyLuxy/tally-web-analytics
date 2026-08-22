@@ -627,12 +627,12 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 4px;
+  padding: 6px;
   border: 0;
   background: transparent;
   color: var(--ink-faint);
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: 7px;
   transition: color 0.15s ease, background 0.15s ease;
 }
 
@@ -1529,12 +1529,12 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 38px;
+  height: 38px;
   color: var(--ink-soft);
   background: transparent;
   border: 0;
-  border-radius: 7px;
+  border-radius: 9px;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
 }
