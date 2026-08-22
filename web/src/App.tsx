@@ -899,9 +899,18 @@ export function App() {
                     className="segment"
                     onClick={() => {
                       // just swaps what this already-open sheet shows -- no
-                      // view transition, that's only for opening/closing
+                      // view transition, that's only for opening/closing.
+                      // breakdownRows is cleared in the same batch: the
+                      // effect that refetches it for the new tab doesn't run
+                      // until after this paints, so without this the "More
+                      // X" section below briefly rendered the *previous*
+                      // tab's rows (stale data, but already sized/labelled
+                      // against the new tab) -- a one-frame flash of the
+                      // plain row list where the donut should be.
                       setBreakdownTab(t.key as PlatformKey);
                       setExpanded(t.key as ExpandTarget);
+                      setBreakdownRows(null);
+                      setBreakdownError(null);
                     }}
                   >
                     {t.label}

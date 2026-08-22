@@ -1027,21 +1027,27 @@ a {
   padding: 0 15% 0 9%;
 }
 
-/* side by side, same as the compact card, just centred as a group instead
-   of spread to the two edges */
+/* donut left, legend right -- spread toward the sides, same as the compact
+   card, instead of clustered/centred as a group */
 .sheet-breakdown-chart .breakdown-chart {
-  justify-content: center;
-  margin-top: 140px;
+  justify-content: space-between;
+  margin-top: 180px;
+  padding: 0 15% 0 9%;
 }
 
 /* same two-column table as the compact card (see .card-content's version),
    just bigger throughout -- text and icons should actually read as "the
    sheet's main visual", not just a scaled-up copy of the card's fine print */
 .sheet-breakdown-chart .breakdown-chart-legend {
-  max-width: 420px;
+  /* a %-based gap competes with the columns for the same fixed max-width --
+     past a point it just squeezes the name column down until the text
+     itself has to truncate ("Chrome" -> "C..."). A fixed px gap doesn't
+     eat into that budget the same way, so widened the box to give both
+     real room instead of fighting over it. */
+  max-width: 680px;
   display: grid;
   grid-template-columns: auto auto;
-  column-gap: 4%;
+  column-gap: 90px;
   row-gap: 14px;
 }
 
@@ -1051,11 +1057,18 @@ a {
 
 .sheet-breakdown-chart .breakdown-chart-name,
 .sheet-breakdown-chart .breakdown-chart-value {
-  font-size: 17px;
+  font-size: 21px;
 }
 
 .sheet-breakdown-chart .breakdown-chart-pct {
-  font-size: 15px;
+  font-size: 18px;
+}
+
+/* the base 14em cap (sized for the much narrower compact card) was
+   truncating longer names here, Countries especially -- more room now
+   that the sheet's legend can actually be this wide */
+.sheet-breakdown-chart .breakdown-chart-name {
+  max-width: 22em;
 }
 
 .sheet-breakdown-chart .breakdown-chart-icon svg {
