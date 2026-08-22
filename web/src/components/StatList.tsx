@@ -28,6 +28,7 @@ export function StatList({
   onExpand,
   className,
   icon,
+  variant,
 }: {
   cardKey: string;
   expanded: boolean;
@@ -39,6 +40,7 @@ export function StatList({
   onExpand?: () => void; // cards show a short preview; clicking opens the full list full-screen
   className?: string; // e.g. "card-span-2" -- lets the dashboard's bento grid vary this card's width
   icon?: (row: Row) => ReactNode; // e.g. a referrer's favicon; most lists (pages) have none
+  variant?: "bars"; // Entry pages' own look -- real bars instead of the ledger style
 }) {
   const clickable = Boolean(onExpand && rows.length > 0);
 
@@ -56,7 +58,11 @@ export function StatList({
 
   const body = (
     <div className="card-content">
-      <Rows rows={rows.slice(0, PREVIEW_ROWS)} empty={empty} icon={icon} />
+      {variant === "bars" ? (
+        <BarRows rows={rows.slice(0, PREVIEW_ROWS)} empty={empty} />
+      ) : (
+        <Rows rows={rows.slice(0, PREVIEW_ROWS)} empty={empty} icon={icon} />
+      )}
     </div>
   );
 
@@ -111,6 +117,43 @@ export function Rows({ rows, empty, icon }: { rows: Row[]; empty: string; icon?:
               <span className="row-label-text">{r.label}</span>
             </span>
             <span className="row-value num">{r.value.toLocaleString("en-US")}</span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+// Entry pages' own look: a real bar under each path instead of the faint
+// bar-behind-text ledger style every other list shares -- reads more like an
+// actual chart. Same row set/order as Rows, just a different rendering.
+export function BarRows({ rows, empty }: { rows: Row[]; empty: string }) {
+  if (rows.length === 0) {
+    return (
+      <div className="panel-empty">
+        <TallyMarks count={3} className="panel-empty-mark" />
+        <p className="ink-soft">{empty}</p>
+      </div>
+    );
+  }
+
+  const max = Math.max(1, ...rows.map((r) => r.value));
+
+  return (
+    <ul className="bar-rows">
+      {rows.map((r, i) => {
+        const title = r.title ?? (typeof r.label === "string" ? r.label : undefined);
+        return (
+          <li className="bar-row" key={title ?? i}>
+            <span className="bar-row-label" title={title}>
+              {r.label}
+            </span>
+            <span className="bar-row-track-wrap">
+              <span className="bar-row-track">
+                <span className="bar-row-fill" style={{ width: `${(r.value / max) * 100}%` }} />
+              </span>
+              <span className="bar-row-value num">{r.value.toLocaleString("en-US")}</span>
+            </span>
           </li>
         );
       })}

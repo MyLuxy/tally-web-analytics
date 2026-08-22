@@ -1283,6 +1283,56 @@ a {
   color: var(--accent-ink);
 }
 
+/* ---- entry pages: real bars instead of the ledger style above ---- */
+.bar-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bar-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bar-row-label {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bar-row-track-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bar-row-track {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.bar-row-fill {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--accent);
+}
+
+.bar-row-value {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-ink);
+}
+
 /* country rows: a small flag image next to the name (emoji flags don't render
    on Windows or many Android phones) */
 .country {
