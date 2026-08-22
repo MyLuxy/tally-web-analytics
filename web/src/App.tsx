@@ -438,6 +438,7 @@ export function App() {
                 <h2 className="panel-title">Activity</h2>
                 <span className="eyebrow">last 24h</span>
               </div>
+              {activityData && <Sparkline series={activityData.series} />}
               <div className="activity-stats">
                 <div>
                   <span className="activity-stat-value num">
@@ -452,7 +453,6 @@ export function App() {
                   <span className="activity-stat-label eyebrow">Visitors</span>
                 </div>
               </div>
-              {activityData && <Sparkline series={activityData.series} />}
             </ClickableCard>
 
             <ClickableCard

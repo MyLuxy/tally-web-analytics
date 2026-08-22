@@ -1,11 +1,12 @@
 import type { Stats } from "../api.js";
 
 // A bare preview of a traffic trend -- no axis, grid, legend or tooltip
-// (that's what the full <Chart> is for). preserveAspectRatio="none" so it
-// stretches to whatever box the card gives it.
+// (that's what the full <Chart> is for). A real (non-stretched) aspect
+// ratio this time -- CSS just scales it down to fit, it doesn't distort it
+// into a flat smear the way preserveAspectRatio="none" used to.
 export function Sparkline({ series }: { series: Stats["series"] }) {
-  const W = 300;
-  const H = 64;
+  const W = 320;
+  const H = 150;
   const n = series.length;
   const maxY = Math.max(1, ...series.map((p) => p.pageviews));
   const xFor = (i: number) => (n <= 1 ? W / 2 : (i / (n - 1)) * W);
@@ -20,7 +21,7 @@ export function Sparkline({ series }: { series: Stats["series"] }) {
       : "";
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="sparkline" aria-hidden="true">
+    <svg viewBox={`0 0 ${W} ${H}`} className="sparkline" aria-hidden="true">
       <path d={areaPath} className="sparkline-area" />
       {n > 1 && <path d={linePath} className="sparkline-line" />}
     </svg>

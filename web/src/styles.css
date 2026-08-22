@@ -849,11 +849,14 @@ a {
 }
 
 /* ---- activity card (sparkline preview) ---- */
+/* narrower and centred, not stretched to the full width of a wide card --
+   height follows the viewBox's own (real, undistorted) aspect ratio */
 .sparkline {
   display: block;
   width: 100%;
-  height: 64px;
-  margin-top: 14px;
+  max-width: 360px;
+  height: auto;
+  margin: 4px auto 0;
 }
 
 /* a different colour than the Statistics chart above it (--accent), on
@@ -872,18 +875,23 @@ a {
 
 .activity-stats {
   display: flex;
+  justify-content: center;
   gap: 28px;
+  margin-top: 16px;
 }
 
 .activity-stat-value {
   display: block;
+  text-align: center;
   font-size: 22px;
   font-weight: 700;
   color: var(--ink);
 }
 
 .activity-stat-label {
+  display: block;
   margin-top: 2px;
+  text-align: center;
 }
 
 /* ---- two-up chart rows (Statistics+Traffic sources, Activity+Events) ---- */
