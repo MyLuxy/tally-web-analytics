@@ -295,6 +295,20 @@ a {
   outline-offset: 2px;
 }
 
+/* a bigger tap target on touch-sized screens -- the icon itself stays the
+   same visual size, this just gives a thumb more room around it than the
+   26px box a mouse cursor can aim at precisely but a fingertip can't */
+@media (max-width: 640px) {
+  .icon-btn {
+    width: 40px;
+    height: 40px;
+  }
+  .icon-btn-lg {
+    width: 44px;
+    height: 44px;
+  }
+}
+
 .back-link {
   display: inline-flex;
   align-items: center;
@@ -426,6 +440,12 @@ a {
   color: var(--ink-soft);
   font-size: 13px;
   padding: 5px 14px;
+  /* a floor on tap height regardless of screen size -- the padding above
+     alone doesn't clear a comfortable touch target, and unlike most sizing
+     in here that scales *down* for mobile, a tab you tap with a fingertip
+     needs to stay roomy exactly where screens get smaller, not shrink with
+     everything else */
+  min-height: 36px;
   border-radius: 999px;
   cursor: pointer;
   transition: color 0.15s ease, background 0.15s ease;
