@@ -1018,13 +1018,13 @@ a {
   justify-content: center;
 }
 
+/* centred as a block (align-items:center above positions this capped-width
+   box), but NOT each row individually -- rows keep their natural left-to-
+   right flow so icons/names/stats line up in a column instead of each row
+   centering around a different point depending on its own text length */
 .sheet-breakdown-chart .breakdown-chart-legend {
   width: 100%;
   max-width: 360px;
-}
-
-.sheet-breakdown-chart .breakdown-chart-row {
-  justify-content: center;
 }
 
 .breakdown-chart-legend {
