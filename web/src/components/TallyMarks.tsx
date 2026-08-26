@@ -1,8 +1,4 @@
-// The signature mark. Draws `count` strokes the way you'd actually tally on
-// paper: four uprights and a diagonal slash through them for every fifth.
-// Used in the wordmark and in empty states, where a hand-counted glyph says
-// "counting" far better than an icon from a set would.
-
+// draws count as actual tally marks -- 4 uprights + a diagonal slash every 5th
 type Props = {
   count?: number;
   className?: string;

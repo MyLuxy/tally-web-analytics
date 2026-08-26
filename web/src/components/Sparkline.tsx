@@ -1,20 +1,12 @@
 import type { Stats } from "../api.js";
 import { useMeasuredWidth } from "../hooks/useMeasuredWidth.js";
 
-// A light preview of a traffic trend -- axis labels so the numbers mean
-// something at a glance, but none of the full <Chart>'s interactivity
-// (tooltip, cursor, legend, per-point markers). That stays reserved for the
-// expanded view; this just needs to read well small.
-
 const H = 130;
 const PAD = { top: 6, right: 8, bottom: 18, left: 34 };
 
 const fmt = (n: number) => n.toLocaleString("en-US");
 
 export function Sparkline({ series, hour12 }: { series: Stats["series"]; hour12: boolean }) {
-  // W is the card's actual measured width, not a fixed "design" width -- see
-  // useMeasuredWidth for why that's what keeps the axis text legible on any
-  // screen instead of shrinking along with a narrow card.
   const [wrapRef, W] = useMeasuredWidth(600);
   const n = series.length;
   const innerW = W - PAD.left - PAD.right;
@@ -33,11 +25,8 @@ export function Sparkline({ series, hour12 }: { series: Stats["series"]; hour12:
         ` L ${xFor(n - 1)} ${baseline} Z`
       : "";
 
-  // just two guides (half and full) -- enough to read the scale without
-  // turning this back into the full chart's denser grid
   const guides = [...new Set([0.5, 1].map((f) => Math.round(maxY * f)))];
 
-  // a handful of x-axis time labels, evenly spaced
   const tickCount = Math.min(4, n);
   const tickStep = tickCount > 1 ? Math.max(1, Math.floor((n - 1) / (tickCount - 1))) : 1;
   const ticks = series.map((p, i) => ({ p, i })).filter(({ i }) => i % tickStep === 0 || i === n - 1);

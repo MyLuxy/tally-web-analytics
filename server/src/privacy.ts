@@ -1,18 +1,11 @@
 import { createHash, randomBytes } from "node:crypto";
 import { getSalt, putSalt } from "./db.js";
 
-// The whole privacy story lives here. Two rules we never break:
-//   1. we don't store IP addresses
-//   2. the id we use to count unique visitors must not survive past today
-//
-// We get both by hashing (salt + site + ip + ua) where `salt` is a random
-// value that rotates at midnight UTC. The hash is enough to dedupe a visitor
-// within a day; tomorrow the salt is different so the same person hashes to
-// something new and uncountable against today.
+// hash ip+ua+salt instead of storing ip raw, salt rotates daily so nobody's
+// trackable past 24h
 
-const utcDay = (at = new Date()) => at.toISOString().slice(0, 10); // YYYY-MM-DD
+const utcDay = (at = new Date()) => at.toISOString().slice(0, 10);
 
-// tiny in-process cache so we're not hitting the db on every single event
 let cached: { day: string; salt: Buffer } | null = null;
 
 function saltForToday(): Buffer {
@@ -22,8 +15,8 @@ function saltForToday(): Buffer {
   let salt = getSalt(day);
   if (!salt) {
     salt = randomBytes(16);
-    putSalt(day, salt); // INSERT OR IGNORE -> safe if two requests race here
-    salt = getSalt(day)!; // re-read so everyone agrees on the winner
+    putSalt(day, salt); // INSERT OR IGNORE, so races are fine
+    salt = getSalt(day)!; // re-read in case we lost the race
   }
   cached = { day, salt };
   return salt;
@@ -40,18 +33,14 @@ export function visitorHash(site: string, ip: string, userAgent: string): string
     .update("|")
     .update(userAgent)
     .digest("hex")
-    .slice(0, 32); // half a sha256 is plenty to avoid collisions here
+    .slice(0, 32);
 }
 
-// Respect Do-Not-Track / Global Privacy Control. If a visitor opted out we
-// just don't record them, full stop.
 export function optedOut(headers: Record<string, unknown>): boolean {
   return headers["dnt"] === "1" || headers["sec-gpc"] === "1";
 }
 
-// Minimal UA parsing. A real project would reach for a library, but the big
-// ones ship megabytes of regexes and we only want three buckets. This covers
-// the common cases and degrades to "Other" gracefully.
+// quick and dirty UA sniffing, not pulling in a whole library for 3 buckets
 export function parseUserAgent(ua = ""): {
   browser: string;
   os: string;

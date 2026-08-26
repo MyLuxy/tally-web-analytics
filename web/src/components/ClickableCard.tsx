@@ -1,23 +1,7 @@
 import type { CSSProperties, KeyboardEvent, ReactNode } from "react";
 
-// Shared shell for every card that expands into a full-screen sheet on click
-// (see App.tsx's <ExpandSheet>) -- the whole tile is the click target, not a
-// button buried inside it. `cardKey` becomes the CSS view-transition-name
-// this card morphs from, but only for the moment it's actually opening or
-// closing (`transitioning` true) -- at rest, whether the sheet is open or
-// not, the card carries no name at all. Only one element on the page should
-// ever wear a given name when the browser grabs its before/after snapshots;
-// giving every idle card a permanent name promoted them all into their own
-// layer and made them flash in front of the one actually animating. See
-// App.tsx's `transitioningKey` for who's currently allowed to wear it.
-//
-// `expanded` is separate: it's true for the whole time this card's own sheet
-// is open, not just during the transition. Without it, the instant the name
-// hands off to the sheet, this card goes back to being a plain, nameless,
-// fully-visible grid tile -- so it showed through (dimmed by the backdrop)
-// right where it started, alongside the copy actually animating away, i.e.
-// a ghost duplicate. Hiding it (not unmounting -- the grid shouldn't reflow)
-// for as long as its sheet is open removes the ghost in both directions.
+// whole tile is the click target for the ExpandSheet in App.tsx. cardKey only wears the view-transition-name while actually transitioning, otherwise every idle card would fight for the same layer and flicker
+// expanded stays true the whole sheet's open (not just mid-transition) so we hide the card instead of it showing through as a ghost duplicate behind the backdrop
 export function ClickableCard({
   cardKey,
   expanded,
@@ -42,10 +26,7 @@ export function ClickableCard({
 
   return (
     <section
-      // "card-transitioning" is what lets a couple of inner pieces (the
-      // title, the main visual -- see .panel-title/.card-content in
-      // styles.css) morph on their own instead of just crossfading along
-      // with everything else in this card's flat snapshot.
+      // card-transitioning lets title/content morph on their own instead of just crossfading with the rest, see styles.css
       className={`panel panel-clickable${transitioning ? " card-transitioning" : ""}${className ? ` ${className}` : ""}`}
       style={style}
       role="button"

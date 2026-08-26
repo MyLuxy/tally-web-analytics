@@ -3,24 +3,14 @@ import { openDb } from "../db.js";
 import { bearerGuard } from "../auth.js";
 import { categorizeReferrer } from "../referrerCategory.js";
 
-// Read side. One endpoint that returns everything the dashboard needs for a
-// given site + time range in a single round trip. If this grows we can split
-// it, but for now a fat summary object beats six chatty endpoints.
-
 const DAY = 24 * 60 * 60 * 1000;
 
-// each fixed range is a set number of evenly spaced buckets. "all" is handled
-// separately below, since its window depends on how far back the data goes.
 const RANGES: Record<string, { buckets: number; bucketMs: number }> = {
   "24h": { buckets: 24, bucketMs: 60 * 60 * 1000 },
   "7d": { buckets: 7, bucketMs: DAY },
   "30d": { buckets: 30, bucketMs: DAY },
 };
 
-// The window for a stats request: where it starts, the last (aligned) bucket,
-// and how wide each bucket is. Fixed ranges read straight off the table; "all"
-// runs from the site's first event, with a bucket size that scales to the span
-// so the chart never turns into hundreds of points.
 function resolveWindow(
   db: ReturnType<typeof openDb>,
   site: string,
@@ -48,12 +38,7 @@ function resolveWindow(
 
 type Query = { site?: string; range?: string };
 
-// Panels only ever show a top-N slice of these breakdowns (see the LIMITs
-// below); "View all" in the dashboard re-runs the same grouping without a
-// cap so nothing that got tracked looks "missing" just because it fell
-// outside the panel's top 10. A generous LIMIT still applies here so one
-// pathological site (e.g. thousands of distinct referrer URLs) can't hand
-// the dashboard an unbounded response.
+// "View all" reruns these without the top-10 cap the dashboard panels use, still limited to 500 tho
 const BREAKDOWN_METRICS = {
   pages: `SELECT path AS key, COUNT(*) AS value FROM events
           WHERE site_id = ? AND ts >= ? AND name = 'pageview'
@@ -76,11 +61,7 @@ const BREAKDOWN_METRICS = {
   events: `SELECT name AS key, COUNT(*) AS value FROM events
            WHERE site_id = ? AND ts >= ? AND name <> 'pageview'
            GROUP BY name ORDER BY value DESC LIMIT 500`,
-  // The first pageview of each visitor's window, i.e. what page brought them
-  // in -- distinct from "top pages" (every view, including internal
-  // navigation). ROW_NUMBER over each visitor's events ordered by time gives
-  // the earliest row per visitor; keeping only rn=1 before grouping by path
-  // is what turns "most-viewed page" into "most common entry page".
+  // first pageview per visitor = entry page, ROW_NUMBER grabs just that
   entryPages: `SELECT path AS key, COUNT(*) AS value FROM (
                  SELECT path, ROW_NUMBER() OVER (PARTITION BY visitor_hash ORDER BY ts ASC) AS rn
                  FROM events WHERE site_id = ? AND ts >= ? AND name = 'pageview'
@@ -91,12 +72,8 @@ const BREAKDOWN_METRICS = {
 type BreakdownMetric = keyof typeof BREAKDOWN_METRICS;
 
 export async function statsRoutes(app: FastifyInstance) {
-  // Guard the whole read side. Scoped to this plugin, so /api/collect (a
-  // separate plugin) stays open. No-ops unless TALLY_TOKEN is set.
-  app.addHook("onRequest", bearerGuard);
+  app.addHook("onRequest", bearerGuard); // only guards this plugin, collect stays open
 
-  // The dashboard asks for this on load to populate its site picker, instead of
-  // hard-coding which sites exist. Most active first.
   app.get("/api/sites", async () => {
     const db = openDb();
     const sites = db
@@ -121,14 +98,8 @@ export async function statsRoutes(app: FastifyInstance) {
         .code(400)
         .send({ error: `range must be one of ${[...Object.keys(RANGES), "all"].join(", ")}` });
     }
-    // since: window start, aligned to a clean hour/day/bucket boundary.
-    // nowBucket: the last bucket. bucketMs: how wide each bucket is.
     const { since, nowBucket, bucketMs } = win;
 
-    // Pageviews count only real pageviews; custom events (name != 'pageview')
-    // get their own panel below and must not inflate the traffic numbers.
-    // Visitors stay counted across everything -- a person is a person whether
-    // they loaded a page or fired an event.
     const totals = db
       .prepare(
         `SELECT COUNT(*) FILTER (WHERE name = 'pageview') AS pageviews,
@@ -137,9 +108,7 @@ export async function statsRoutes(app: FastifyInstance) {
       )
       .get(site, since) as { pageviews: number; visitors: number };
 
-    // Same-length window immediately before this one, so the dashboard can show
-    // "+12% vs last period" next to the headline metrics. Doesn't apply to
-    // "all" -- there's no period before all of recorded history.
+    // for the "+12% vs last period" thing, doesn't make sense for range=all
     let previousTotals: { pageviews: number; visitors: number } | null = null;
     if (range !== "all") {
       const windowMs = nowBucket - since + bucketMs;
@@ -153,7 +122,6 @@ export async function statsRoutes(app: FastifyInstance) {
         .get(site, prevSince, since) as { pageviews: number; visitors: number };
     }
 
-    // Everything from here down describes the traffic, so it's pageviews only.
     const topPages = db
       .prepare(
         `SELECT path, COUNT(*) AS views
@@ -162,10 +130,7 @@ export async function statsRoutes(app: FastifyInstance) {
       )
       .all(site, since);
 
-    // Every distinct referrer host in the window (uncapped, unlike topReferrers'
-    // top-10), so the direct/search/social/referral split below is accurate --
-    // a site with a long tail of small referrers would otherwise undercount
-    // "referral" and overcount "direct" if only the top 10 were considered.
+    // uncapped this time, otherwise long-tail referrers get miscounted as direct
     const allReferrers = db
       .prepare(
         `SELECT referrer, COUNT(*) AS views
@@ -232,8 +197,6 @@ export async function statsRoutes(app: FastifyInstance) {
       )
       .all(site, since);
 
-    // Custom events -- anything the site reported with tally('name'). This is
-    // the flip side of the pageview filter above: only the non-pageview rows.
     const events = db
       .prepare(
         `SELECT name, COUNT(*) AS count
@@ -242,14 +205,10 @@ export async function statsRoutes(app: FastifyInstance) {
       )
       .all(site, since);
 
-    // timeseries: count per bucket, then fill in every bucket in the window
-    // (empty ones included) so the chart always has exactly `buckets` points,
-    // evenly spaced -- no gaps, no stray extra day.
     type Bucket = { bucket: number; pageviews: number; visitors: number };
     const counted = db
       .prepare(
-        // CAST forces integer division -- without it SQLite divides in floating
-        // point and every event lands in its own bucket instead of snapping.
+        // CAST or sqlite does float division and nothing snaps to a bucket right
         `SELECT CAST(ts / ? AS INTEGER) * ? AS bucket,
                 COUNT(*) FILTER (WHERE name = 'pageview') AS pageviews,
                 COUNT(DISTINCT visitor_hash) AS visitors
@@ -284,10 +243,7 @@ export async function statsRoutes(app: FastifyInstance) {
     };
   });
 
-  // Powers the "live now" pulse in the header: visitors seen in the last five
-  // minutes. Deliberately its own cheap endpoint (not folded into /api/stats)
-  // so the dashboard can poll it on a short interval without re-running the
-  // full stats query every time.
+  // separate endpoint so the header can poll this cheaply without rerunning the big query
   app.get("/api/live", async (req, reply) => {
     const { site } = req.query as Query;
     if (!site) {
@@ -304,8 +260,6 @@ export async function statsRoutes(app: FastifyInstance) {
     return { visitors: row.visitors };
   });
 
-  // Backs the "View all" button on each panel: same grouping as above, same
-  // site/range window, but without the top-10 cap.
   app.get("/api/stats/breakdown", async (req, reply) => {
     const { site, range = "7d", metric } = req.query as Query & { metric?: string };
     if (!site) {

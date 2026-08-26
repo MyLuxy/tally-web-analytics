@@ -5,16 +5,9 @@ import { ClickableCard } from "./ClickableCard.js";
 import { Modal } from "./Modal.js";
 import { downloadCsv, rowsToCsv } from "../lib/csv.js";
 
-// Ledger-style breakdown: a label, a count, and a faint bar behind each row
-// scaled to the leader. Used for pages, referrers and browsers alike.
-
-// label can be a node (e.g. a flag + name); title is the plain-text tooltip.
-// `code` is an optional secondary lookup key, separate from the display
-// label -- a country's flag is keyed by its ISO code, not by "France".
+// label can be a node (flag + name etc), title's the plain-text tooltip, code's an optional lookup key separate from the display label
 export type Row = { label: ReactNode; value: number; title?: string; code?: string };
 
-// Cards stay compact on the base dashboard -- a handful of rows is enough to
-// read the shape of the data; clicking the card is what gets you the rest.
 const PREVIEW_ROWS = 5;
 
 export function StatList({
@@ -55,11 +48,7 @@ export function StatList({
   );
 
   const body = (
-    // card-content-list opts this out of the shared "sheet-content" view
-    // transition (see styles.css) -- morphing a 5-row preview into a list
-    // that can run to hundreds of rows (a different fetch, different
-    // proportions) reads as the bars jumping mid-animation, not a real
-    // scale-up the way it works for a donut/chart card's own visual.
+    // card-content-list skips the shared view transition, a 5-row preview morphing into a hundred-row list just looks like the bars jumping
     <div className="card-content card-content-list">
       <Rows rows={rows.slice(0, PREVIEW_ROWS)} empty={empty} icon={icon} />
     </div>
@@ -90,8 +79,6 @@ export function StatList({
 }
 
 
-// The bar-chart-style row list, shared between a panel's top-10 slice and the
-// "View all" modal's full list -- same look, just a different row count.
 export function Rows({ rows, empty, icon }: { rows: Row[]; empty: string; icon?: (row: Row) => ReactNode }) {
   const max = Math.max(1, ...rows.map((r) => r.value));
 
@@ -123,10 +110,7 @@ export function Rows({ rows, empty, icon }: { rows: Row[]; empty: string; icon?:
   );
 }
 
-// Downloads whatever rows are currently shown (the panel's top-10 slice, or
-// the full list when used inside the "View all" modal) as a two-column CSV --
-// after a confirm step, since this can sit inside a whole-card click target
-// and a stray click shouldn't silently trigger a file download.
+// confirm step first, this sits inside a whole-card click target and a stray click shouldn't silently download a file
 export function ExportCsvButton({ title, rows }: { title: string; rows: Row[] }) {
   const [confirming, setConfirming] = useState(false);
 
@@ -170,8 +154,6 @@ export function ExportCsvButton({ title, rows }: { title: string; rows: Row[] })
   );
 }
 
-// Same dialog chrome as Settings (see Modal), so this reads as part of the
-// same family rather than its own one-off popup.
 function ExportConfirm({
   title,
   count,
@@ -209,7 +191,6 @@ function DownloadIcon() {
   );
 }
 
-// A little info button next to a section title; click to pop a short blurb.
 function InfoDot({ text }: { text: string }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLSpanElement>(null);
@@ -231,9 +212,7 @@ function InfoDot({ text }: { text: string }) {
   }, [open]);
 
   return (
-    // stopPropagation: this can sit inside a whole-card click target (see
-    // StatList) and shouldn't also trigger it
-    <span className="info" ref={ref} onClick={(e) => e.stopPropagation()}>
+    <span className="info" ref={ref} onClick={(e) => e.stopPropagation()}> {/* sits inside a whole-card click target */}
       <button
         type="button"
         className="info-btn"

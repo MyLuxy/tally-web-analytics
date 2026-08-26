@@ -1,8 +1,6 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-// Drive the whole app in-process with inject(), against a throwaway in-memory
-// db. This exercises the real wiring -- routing, body parsing, the privacy
-// hashing and UA parsing -- not just the helpers in isolation.
+// inject() against a throwaway in-memory db, exercises the real routing/parsing/hashing, not just the helpers
 process.env.TALLY_DB = ":memory:";
 
 import { buildApp } from "../index.js";
@@ -10,7 +8,6 @@ import { openDb, insertEvent } from "../db.js";
 
 let app: Awaited<ReturnType<typeof buildApp>>;
 
-// A Chrome-on-Windows desktop string, so we can assert the breakdowns too.
 const CHROME_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36";
 
@@ -32,7 +29,6 @@ afterAll(async () => {
 });
 
 beforeEach(() => {
-  // each test starts from an empty db
   openDb().exec("DELETE FROM events; DELETE FROM salts;");
 });
 
@@ -47,48 +43,37 @@ describe("POST /api/collect", () => {
 
     const stats = (await app.inject({ url: "/api/stats?site=s1&range=7d" })).json();
     expect(stats.totals).toEqual({ pageviews: 1, visitors: 1 });
-    // query string dropped, only the path is kept
-    expect(stats.topPages).toContainEqual({ path: "/home", views: 1 });
-    // referrer reduced to its host
-    expect(stats.topReferrers).toContainEqual({ source: "twitter.com", views: 1 });
-    // UA parsed into the breakdowns
+    expect(stats.topPages).toContainEqual({ path: "/home", views: 1 }); // query string dropped
+    expect(stats.topReferrers).toContainEqual({ source: "twitter.com", views: 1 }); // reduced to host
     expect(stats.browsers).toContainEqual({ name: "Chrome", views: 1 });
     expect(stats.systems).toContainEqual({ name: "Windows", views: 1 });
     expect(stats.devices).toContainEqual({ name: "desktop", views: 1 });
   });
 
   it("keeps custom events out of the traffic numbers and lists them on their own", async () => {
-    await collect({ site: "s1", path: "/pricing" }); // a real pageview
-    await collect({ site: "s1", name: "signup", path: "/pricing" }); // a custom event
+    await collect({ site: "s1", path: "/pricing" });
+    await collect({ site: "s1", name: "signup", path: "/pricing" });
 
     const stats = (await app.inject({ url: "/api/stats?site=s1&range=7d" })).json();
-    // the event doesn't count as a view, but the visitor is still the same one
-    expect(stats.totals).toEqual({ pageviews: 1, visitors: 1 });
-    // ...and it doesn't inflate the page's view count either
+    expect(stats.totals).toEqual({ pageviews: 1, visitors: 1 }); // custom event doesn't count as a view
     expect(stats.topPages).toContainEqual({ path: "/pricing", views: 1 });
-    // it surfaces in its own panel instead
     expect(stats.events).toContainEqual({ name: "signup", count: 1 });
-    // which never carries plain pageviews
     expect(stats.events).not.toContainEqual({ name: "pageview", count: expect.anything() });
   });
 
   it("drops self-referrals so your own domain isn't in the referrers", async () => {
-    // a visitor clicking from one of your pages to another: the referrer host
-    // matches the page's own host, which the browser sends as the Origin
+    // referrer host == page's own host, same as the browser's Origin on internal nav
     await app.inject({
       method: "POST",
       url: "/api/collect",
       headers: { "user-agent": CHROME_UA, origin: "https://mysite.com" },
       payload: { site: "s1", path: "/b", referrer: "https://mysite.com/a" },
     });
-    // ...while a genuine external referrer still counts
     await collect({ site: "s1", path: "/c", referrer: "https://twitter.com/x" }, { origin: "https://mysite.com" });
 
     const stats = (await app.inject({ url: "/api/stats?site=s1&range=7d" })).json();
-    // internal navigation left no referrer row
-    expect(stats.topReferrers).toEqual([{ source: "twitter.com", views: 1 }]);
-    // but both hits still counted as pageviews
-    expect(stats.totals.pageviews).toBe(2);
+    expect(stats.topReferrers).toEqual([{ source: "twitter.com", views: 1 }]); // internal nav dropped
+    expect(stats.totals.pageviews).toBe(2); // but both still counted as pageviews
   });
 
   it("rejects a payload with no site", async () => {
@@ -97,7 +82,6 @@ describe("POST /api/collect", () => {
   });
 
   it("accepts a sendBeacon body (JSON posted as text/plain)", async () => {
-    // browsers beacon the body as text/plain, not application/json
     const res = await app.inject({
       method: "POST",
       url: "/api/collect",
@@ -136,15 +120,13 @@ describe("POST /api/collect", () => {
   });
 
   it("rate-limits an IP that floods the endpoint", async () => {
-    // spin up a throwaway app with a tiny limit so we don't burn the shared
-    // one's budget (its store is per-app and would leak into later tests)
+    // own app instance so we don't burn the shared one's rate-limit budget
     process.env.TALLY_RATE_MAX = "2";
     const limited = await buildApp();
     try {
       expect((await limited.inject({ method: "POST", url: "/api/collect", headers: { "user-agent": CHROME_UA }, payload: { site: "s1", path: "/" } })).statusCode).toBe(204);
       expect((await limited.inject({ method: "POST", url: "/api/collect", headers: { "user-agent": CHROME_UA }, payload: { site: "s1", path: "/" } })).statusCode).toBe(204);
-      // third hit in the window is over the limit
-      const over = await limited.inject({ method: "POST", url: "/api/collect", headers: { "user-agent": CHROME_UA }, payload: { site: "s1", path: "/" } });
+      const over = await limited.inject({ method: "POST", url: "/api/collect", headers: { "user-agent": CHROME_UA }, payload: { site: "s1", path: "/" } }); // third hit, over the limit
       expect(over.statusCode).toBe(429);
     } finally {
       await limited.close();
@@ -153,7 +135,7 @@ describe("POST /api/collect", () => {
   });
 
   it("counts repeat hits from the same visitor as one unique", async () => {
-    // same IP + UA + day => same visitor_hash, so pageviews climb but visitors don't
+    // same IP+UA+day => same visitor_hash
     await collect({ site: "s1", path: "/a" });
     await collect({ site: "s1", path: "/b" });
 
@@ -173,21 +155,18 @@ describe("GET /api/stats", () => {
   });
 
   it("range=all reaches back to the very first event", async () => {
-    // a pageview from over a year ago -- older than any fixed window covers.
-    // insertEvent lets us backdate ts, which the collect route never would.
+    // insertEvent backdates ts directly, past any fixed window -- collect route can't do that
     const old = Date.now() - 400 * 24 * 60 * 60 * 1000;
     insertEvent({
       site_id: "s1", name: "pageview", path: "/ancient", referrer: null,
       visitor_hash: "old-visitor", browser: "Chrome", os: "Windows", device: "desktop",
       country: null, ts: old,
     });
-    await collect({ site: "s1", path: "/today" }); // and one just now
+    await collect({ site: "s1", path: "/today" });
 
-    // the 7-day window only sees the recent hit...
     const week = (await app.inject({ url: "/api/stats?site=s1&range=7d" })).json();
     expect(week.totals.pageviews).toBe(1);
 
-    // ...while all-time sees both, and its window starts at/before the old event
     const all = (await app.inject({ url: "/api/stats?site=s1&range=all" })).json();
     expect(all.totals.pageviews).toBe(2);
     expect(all.since).toBeLessThanOrEqual(old);
@@ -198,9 +177,7 @@ describe("GET /api/stats", () => {
 describe("entryPages in GET /api/stats", () => {
   it("counts each visitor's first pageview, not every page they viewed", async () => {
     const now = Date.now();
-    // visitor 1: lands on /a, then browses to /b a second later (2 views, 1 entry at /a).
-    // Explicit, strictly increasing ts (insertEvent lets us set it directly) so the
-    // "first pageview" ordering can't come down to same-millisecond luck.
+    // strictly increasing ts so "first pageview" ordering can't come down to same-millisecond luck
     insertEvent({
       site_id: "s1", name: "pageview", path: "/a", referrer: null,
       visitor_hash: "visitor-1", browser: "Chrome", os: "Windows", device: "desktop",
@@ -211,7 +188,6 @@ describe("entryPages in GET /api/stats", () => {
       visitor_hash: "visitor-1", browser: "Chrome", os: "Windows", device: "desktop",
       country: null, ts: now + 1000,
     });
-    // visitor 2: lands directly on /b (1 view, 1 entry at /b)
     insertEvent({
       site_id: "s1", name: "pageview", path: "/b", referrer: null,
       visitor_hash: "visitor-2", browser: "Chrome", os: "Windows", device: "desktop",
@@ -278,7 +254,6 @@ describe("GET /api/sites", () => {
 });
 
 describe("bearer auth on the read API", () => {
-  // bearerGuard reads TALLY_TOKEN per request, so we can toggle it here
   afterEach(() => {
     delete process.env.TALLY_TOKEN;
   });

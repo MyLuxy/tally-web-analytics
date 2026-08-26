@@ -2,12 +2,7 @@ import Database from "better-sqlite3";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 
-// One event = one row. We keep the schema deliberately flat: analytics queries
-// are mostly "group by something, count rows in a time window", and a single
-// wide table is the easiest thing to make fast with a couple of indexes.
-//
-// Everything here goes through this module so the rest of the app never touches
-// SQL directly -- the day we outgrow SQLite, only this file changes.
+// flat table, one row per event. all SQL lives here, nowhere else touches it directly
 
 export type EventRow = {
   site_id: string;
@@ -39,8 +34,7 @@ CREATE TABLE IF NOT EXISTS events (
 
 CREATE INDEX IF NOT EXISTS idx_events_site_ts ON events (site_id, ts);
 
--- daily salts used to derive visitor hashes; rotating these is what keeps
--- visitors from being trackable across days. See privacy.ts.
+-- daily salts, see privacy.ts
 CREATE TABLE IF NOT EXISTS salts (
   day  TEXT PRIMARY KEY,   -- YYYY-MM-DD (UTC)
   salt BLOB NOT NULL
@@ -54,14 +48,11 @@ export function openDb(file = process.env.TALLY_DB ?? "tally.sqlite") {
 
   mkdirSync(dirname(file) || ".", { recursive: true });
   db = new Database(file);
-  db.pragma("journal_mode = WAL"); // many small writes, the odd read
+  db.pragma("journal_mode = WAL");
   db.pragma("synchronous = NORMAL");
-  // Keep a chunk of the db resident so the dashboard isn't slow on the first
-  // open (the tell: sluggish first load, snappy after a reload -- cold disk
-  // cache). This page cache lives in the process for the server's whole life,
-  // so idle time on the box can't evict it the way the OS file cache would.
-  db.pragma("cache_size = -20000"); // ~20 MB page cache (negative = KiB)
-  db.pragma("mmap_size = 268435456"); // 256 MB memory-mapped reads
+  // keeps a chunk of the db in memory so the first query isn't slow
+  db.pragma("cache_size = -20000"); // ~20MB
+  db.pragma("mmap_size = 268435456"); // 256MB
   db.pragma("temp_store = MEMORY");
   db.exec(SCHEMA);
   migrate(db);
@@ -69,20 +60,15 @@ export function openDb(file = process.env.TALLY_DB ?? "tally.sqlite") {
   return db;
 }
 
-// Pull the events table into the cache at startup, so the first stats query a
-// visitor triggers is already warm instead of hitting cold disk. One-off and
-// cheap for the sizes a self-hosted analytics db reaches.
 function warmUp(db: Database.Database) {
   try {
     db.prepare("SELECT COUNT(*) FROM events").get();
   } catch {
-    // brand-new db, nothing to warm yet
+    // fresh db, nothing to warm
   }
 }
 
-// Tiny forward-only migration: add columns we introduced after the first
-// release so an existing tally.sqlite keeps working instead of erroring on
-// insert. SQLite only allows adding columns, which is all we need so far.
+// adds columns to old dbs that predate them, sqlite can only add columns not much else
 function migrate(db: Database.Database) {
   const cols = db.prepare("PRAGMA table_info(events)").all() as { name: string }[];
   const has = (name: string) => cols.some((c) => c.name === name);
@@ -99,8 +85,6 @@ export function insertEvent(row: EventRow) {
   insertStmt().run(row);
 }
 
-// salt storage -- the actual rotation logic lives in privacy.ts, this is just
-// read/write so we survive a restart within the same day.
 export function getSalt(day: string): Buffer | undefined {
   const row = openDb()
     .prepare<[string]>("SELECT salt FROM salts WHERE day = ?")

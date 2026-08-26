@@ -16,27 +16,16 @@ import { Modal } from "./components/Modal.js";
 import { browserIcon, deviceIcon, osIcon } from "./components/DeviceIcons.js";
 import type { Row } from "./components/StatList.js";
 
-// A card that expands into a full-screen sheet -- the breakdown panels
-// (pages, referrers, ...) plus the two hand-built ones, traffic and traffic
-// sources, that don't come from a single fetchBreakdown call.
 type ExpandTarget = BreakdownMetric | "traffic" | "trafficSources" | "activity" | "site";
 
-// The BreakdownCard's four tabs -- its own donut+icon chart, shared between
-// the compact card and (bigger, with its own tab switcher) the expanded sheet.
 type PlatformKey = "browsers" | "systems" | "devices" | "countries";
 
-// Runs `fn` inside the View Transitions API when the browser has it (every
-// Chromium browser, Safari 18+; not yet Firefox) so the clicked card visibly
-// grows into the full-screen sheet instead of just swapping. Where it's
-// unsupported, `fn` still runs -- the sheet just relies on its own CSS
-// fade/scale-in instead (see ExpandSheet's fallbackAnim). `after` (if given)
-// runs once the transition's animation has actually finished.
+// uses the View Transitions API where supported (not firefox yet) so the card grows
+// into the sheet instead of just swapping
 function withViewTransition(fn: () => void, after?: () => void) {
   const doc = document as Document & { startViewTransition?: (cb: () => void) => { finished: Promise<void> } };
   if (typeof doc.startViewTransition === "function") {
-    // React batches state updates, so without flushSync the DOM wouldn't
-    // actually reflect the change yet by the time the browser grabs its
-    // "after" snapshot -- the transition would silently no-op.
+    // flushSync or the DOM hasn't updated yet when the transition grabs its snapshot
     const transition = doc.startViewTransition(() => flushSync(fn));
     if (after) transition.finished.then(after);
   } else {
@@ -45,35 +34,26 @@ function withViewTransition(fn: () => void, after?: () => void) {
   }
 }
 
-// Set at build time (e.g. `VITE_BACK_LINK_URL=/admin npm run build`) when
-// Tally is embedded inside another app's admin panel, so a "Back to CMS"
-// link can point back there. Undefined for a standalone deployment -- Tally
-// stays a generic tool with no hardcoded knowledge of any particular site.
+// set VITE_BACK_LINK_URL at build time if this is embedded in another app's admin panel
 const BACK_LINK_URL = import.meta.env.VITE_BACK_LINK_URL as string | undefined;
 const BACK_LINK_LABEL = (import.meta.env.VITE_BACK_LINK_LABEL as string | undefined) ?? "Back to CMS";
 
 const RANGES: Range[] = ["24h", "7d", "30d", "all"];
 
-// The numeric ranges read fine as-is; "all" gets a proper word on the tab.
 const RANGE_LABELS: Record<Range, string> = { "24h": "24h", "7d": "7d", "30d": "30d", all: "All" };
 
-// "last 7d" reads well for the fixed windows, but "last all" doesn't -- so the
-// all-time view says "all time" instead.
 const rangeEyebrow = (r: Range) => (r === "all" ? "all time" : `last ${r}`);
 
-// Country name from a 2-letter code, via Intl so we don't ship a lookup table.
 const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
 function countryName(code: string): string {
   try {
     return regionNames.of(code) ?? code;
   } catch {
-    return code; // not a real region code -- just show what we got
+    return code;
   }
 }
 
-// Flag emoji don't render everywhere (Windows and many Samsung phones show the
-// bare letters instead), so use small flag icons keyed by the country code --
-// self-hosted circular SVGs (see scripts/sync-flags.mjs), not an external CDN.
+// flag emoji don't render on windows/samsung, using svg icons instead
 function CountryLabel({ code }: { code: string }) {
   const cc = code.toLowerCase();
   return (
@@ -91,15 +71,11 @@ function CountryLabel({ code }: { code: string }) {
   );
 }
 
-// Same flag icon, standalone -- for the breakdown donut's legend, which
-// already shows the country name as text next to it.
 function countryIcon(_name: string, code?: string) {
   if (!code) return null;
   return <img className="flag" src={`${import.meta.env.BASE_URL}flags/${code.toLowerCase()}.svg`} width={16} height={16} alt="" />;
 }
 
-// RankedBoard icon resolvers (see TrafficSources.tsx) -- a flag for the
-// "More countries" list, a favicon for "All referrers".
 function countryFlagRowIcon(row: Row) {
   return countryIcon("", row.code);
 }
@@ -109,16 +85,9 @@ function referrerFaviconIcon(row: Row) {
   return <LazyFavicon domain={domain} />;
 }
 
-// A list of referrers can run into the hundreds (the "View all" breakdowns
-// cap at 500) -- `loading="lazy"` on a plain <img> only defers the network
-// fetch, not the DOM node itself, so mounting one eagerly per row still
-// meant hundreds of image elements existing at once: slow to lay out on
-// open, slow for the view transition to snapshot on close, slow to
-// composite while scrolling past them. This only ever mounts the real <img>
-// once its slot is actually about to be on screen, so at any moment there
-// are only ever a handful of real images in the DOM regardless of how long
-// the list is -- a fixed-size placeholder holds the row's layout steady
-// either way, so nothing shifts once the image does appear.
+// only mounts the real <img> when its row is about to scroll into view, otherwise
+// hundreds of favicons in a long list tanks perf. loading="lazy" alone isn't enough,
+// it still creates the DOM node
 function LazyFavicon({ domain }: { domain: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   const [visible, setVisible] = useState(false);
@@ -156,9 +125,6 @@ function LazyFavicon({ domain }: { domain: string }) {
   );
 }
 
-// One entry per panel that has a "View all" button. Maps the flat
-// {key, value} rows from /api/stats/breakdown back to each panel's own
-// title/empty copy and row rendering (e.g. countries get a flag).
 const VIEW_ALL_CONFIG: Record<
   BreakdownMetric,
   { title: string; empty: string; toRow: (row: { key: string; value: number }) => Row }
@@ -199,41 +165,24 @@ export function App() {
   const [locked, setLocked] = useState(false); // server wants a token
   const [reload, setReload] = useState(0); // bumped to retry after unlocking
   const [settingsOpen, setSettingsOpen] = useState(false);
-  // the Activity card is always the last 24h, independent of whatever range
-  // is selected for the main chart -- its own small fetch, not derived from `data`
-  const [activityData, setActivityData] = useState<Stats | null>(null);
+  const [activityData, setActivityData] = useState<Stats | null>(null); // always last 24h, own fetch
   const [expanded, setExpanded] = useState<ExpandTarget | null>(null);
-  // Which single card, if any, should currently wear the shared view-transition
-  // name -- kept separate from `expanded` because the name has to move onto
-  // the card a beat *before* `expanded` changes (opening) or linger on it a
-  // beat *after* (closing). Every other card carries no name at all, ever --
-  // giving every idle card a permanent name was what made them all flash to
-  // the front and overlap the one actually animating. See ClickableCard.
+  // which card owns the view-transition-name right now, separate from `expanded` because
+  // it has to move a beat before/after the actual state change, see ClickableCard
   const [transitioningKey, setTransitioningKey] = useState<ExpandTarget | null>(null);
   const [breakdownRows, setBreakdownRows] = useState<Row[] | null>(null);
   const [breakdownError, setBreakdownError] = useState<string | null>(null);
-  // which of the BreakdownCard's 4 tabs is showing -- shared between the
-  // compact card and the sheet's own tab switcher, so closing the sheet on
-  // whichever tab you last looked at morphs back into the matching card.
   const [breakdownTab, setBreakdownTab] = useState<PlatformKey>("browsers");
-  // the expanded traffic-sources sheet shows the full, uncapped referrer
-  // list underneath the same donut -- data the compact card never fetches
   const [sourceRows, setSourceRows] = useState<Row[] | null>(null);
   const [sourceError, setSourceError] = useState<string | null>(null);
-  // Mirrors the inline script in index.html, which already set this on <html>
-  // before React mounted (so there's no flash of the wrong palette) -- this
-  // just brings React's own state in sync with what's already on screen.
+  // index.html already set this on <html> before mount to avoid a flash, just syncing state
   const [theme, setTheme] = useState<"light" | "dark">(
     () => (localStorage.getItem("tally_theme") === "light" ? "light" : "dark"),
   );
-  // 12-hour (American, the default) vs 24-hour clock in the chart labels
   const [hour12, setHour12] = useState(
     () => localStorage.getItem("tally_hour12") !== "false",
   );
 
-  // reflect the theme on <html> so the CSS variables flip, and remember it. On a
-  // real toggle (not the first mount) we briefly flag the document so the whole
-  // UI cross-fades between the two palettes instead of snapping.
   const themeMounted = useRef(false);
   useEffect(() => {
     const html = document.documentElement;
@@ -252,21 +201,19 @@ export function App() {
     localStorage.setItem("tally_hour12", String(hour12));
   }, [hour12]);
 
-  // Pull the list of sites once, then default to the most active one.
   useEffect(() => {
     fetchSites()
       .then((list) => {
         setLocked(false);
         setSites(list);
         setSite((current) => current ?? list[0]?.site ?? null);
-        if (list.length === 0) setLoading(false); // nothing to fetch stats for
+        if (list.length === 0) setLoading(false);
       })
       .catch((e: unknown) => {
         if (e instanceof Unauthorized) {
           setLocked(true);
           setLoading(false);
         }
-        // other errors surface through the stats fetch below
       });
   }, [reload]);
 
@@ -277,9 +224,7 @@ export function App() {
     setError(null);
     fetchStats(site, range)
       .then((s) => {
-        // a slower earlier request can resolve after this effect was torn down
-        // (we switched site/range) -- drop it so it can't clobber fresher data
-        if (ctrl.signal.aborted) return;
+        if (ctrl.signal.aborted) return; // stale request from before site/range changed
         setLocked(false);
         setData(s);
       })
@@ -297,8 +242,6 @@ export function App() {
     return () => ctrl.abort();
   }, [site, range, reload]);
 
-  // Activity card: always the last 24h, on its own schedule -- unaffected by
-  // the range picker on the main Statistics chart.
   useEffect(() => {
     if (!site) return;
     const ctrl = new AbortController();
@@ -306,16 +249,10 @@ export function App() {
       .then((s) => {
         if (!ctrl.signal.aborted) setActivityData(s);
       })
-      .catch(() => {
-        // the main fetch above already surfaces a real error notice; this
-        // card just stays empty rather than showing a second one
-      });
+      .catch(() => {}); // main fetch above already shows an error, don't double up
     return () => ctrl.abort();
   }, [site, reload]);
 
-  // Fetches the full (uncapped) list for whichever card expanded -- closing a
-  // sheet (expanded -> null) needs no fetch, and neither does trafficSources
-  // (see the next effect, which fetches its own bonus "all referrers" list).
   useEffect(() => {
     if (
       !site ||
@@ -330,12 +267,7 @@ export function App() {
     const ctrl = new AbortController();
     setBreakdownRows(null);
     setBreakdownError(null);
-    // a beat after the sheet's own open animation (see .sheet-in, 220ms) --
-    // same reasoning as trafficSources' bonus referrer list below: these
-    // lists can run into the hundreds of rows (server caps at 500), and for
-    // referrers specifically each one fetches a favicon. Firing immediately
-    // meant that landed and started decoding mid-transition, which is what
-    // showed up as the sheet's open feeling laggy.
+    // delay so the favicon fetches don't start mid open-animation and make it feel laggy
     const timer = setTimeout(() => {
       fetchBreakdown(site, range, metric)
         .then((rows) => {
@@ -353,17 +285,11 @@ export function App() {
     };
   }, [expanded, site, range]);
 
-  // The traffic-sources sheet's bonus "all referrers" list, uncapped --
-  // separate from the 4-way category split, which the compact card already has.
   useEffect(() => {
     if (expanded !== "trafficSources" || !site) return;
     const ctrl = new AbortController();
     setSourceRows(null);
     setSourceError(null);
-    // a beat after the sheet's own open animation (see .sheet-in, 220ms) --
-    // firing immediately meant this list's rows (each fetching a favicon
-    // from Google) landed and started decoding mid-transition, which is
-    // what showed up as the sheet's open feeling laggy
     const timer = setTimeout(() => {
       fetchBreakdown(site, range, "referrers")
         .then((rows) => {
@@ -382,21 +308,12 @@ export function App() {
   }, [expanded, site, range]);
 
   function openCard(target: ExpandTarget) {
-    // committed synchronously, *before* the transition starts, so the card
-    // already wears the name at the moment the "before" snapshot is taken
-    flushSync(() => setTransitioningKey(target));
+    flushSync(() => setTransitioningKey(target)); // needs to happen before the transition snapshot
     withViewTransition(() => {
       setExpanded(target);
-      setTransitioningKey(null); // the sheet takes the name from here
-      // whatever the last-opened breakdown list left behind here doesn't
-      // get cleared until its own fetch effect runs *after* this commits --
-      // one tick too late for the view transition, which already grabbed
-      // its "new" snapshot by then. Opening a short list (Top pages) right
-      // after a long one (Referrers) meant that stale, much taller list
-      // was what actually got captured and animated in for a frame,
-      // visibly poking out past the sheet before the real (short) data
-      // swapped in. Clearing synchronously here keeps the spinner state
-      // out of the transition's way instead.
+      setTransitioningKey(null);
+      // clear synchronously or the old (possibly taller) list flashes for a frame before
+      // the new data loads in
       setBreakdownRows(null);
       setBreakdownError(null);
     });
@@ -407,9 +324,9 @@ export function App() {
     withViewTransition(
       () => {
         setExpanded(null);
-        setTransitioningKey(target); // hand the name back to the card closing into
+        setTransitioningKey(target);
       },
-      () => setTransitioningKey(null), // and let go of it once the animation's done
+      () => setTransitioningKey(null),
     );
   }
 
@@ -429,9 +346,6 @@ export function App() {
 
   const currentSiteInfo = sites.find((s) => s.site === site);
 
-  // Shared between the compact BreakdownCard and the expanded sheet's own
-  // tab switcher (see PlatformKey/breakdownTab above) -- one definition, so
-  // the two never drift apart.
   const platformTabs: BreakdownTab[] = [
     {
       key: "browsers",
@@ -944,15 +858,8 @@ export function App() {
                     aria-selected={t.key === breakdownTab}
                     className="segment"
                     onClick={() => {
-                      // just swaps what this already-open sheet shows -- no
-                      // view transition, that's only for opening/closing.
-                      // breakdownRows is cleared in the same batch: the
-                      // effect that refetches it for the new tab doesn't run
-                      // until after this paints, so without this the "More
-                      // X" section below briefly rendered the *previous*
-                      // tab's rows (stale data, but already sized/labelled
-                      // against the new tab) -- a one-frame flash of the
-                      // plain row list where the donut should be.
+                      // no view transition here, just swapping tabs. clear breakdownRows
+                      // too or the old tab's rows flash for a frame before refetch
                       setBreakdownTab(t.key as PlatformKey);
                       setExpanded(t.key as ExpandTarget);
                       setBreakdownRows(null);
@@ -1006,9 +913,7 @@ export function App() {
               <span className="spinner" />
             </div>
           ) : (
-            // sheet-content-list opts this out of the shared "sheet-content"
-            // view transition (see styles.css) -- see card-content-list in
-            // StatList.tsx for why
+            // sheet-content-list opts out of the shared transition, see StatList.tsx
             <div className="sheet-content sheet-content-list">
               <Rows
                 rows={breakdownRows}
@@ -1075,8 +980,6 @@ function TokenGate({ onSubmit }: { onSubmit: (token: string) => void }) {
   );
 }
 
-// The 24h/7d/30d switch. Rendered twice -- in the header on desktop, under the
-// chart on phones -- with CSS deciding which copy shows.
 function RangeTabs({
   range,
   setRange,
@@ -1087,8 +990,7 @@ function RangeTabs({
   className: string;
 }) {
   return (
-    // stopPropagation: this can sit inside a whole-card click target (the
-    // Statistics chart card) and shouldn't also trigger it
+    // stopPropagation, this sits inside a whole-card click target
     <div
       className={`segmented ${className}`}
       role="group"
@@ -1110,8 +1012,6 @@ function RangeTabs({
 }
 
 
-// Build a URL to open the tracked site in a new tab. data-site is usually a
-// domain (e.g. "example.com"); add https:// if there's no scheme already.
 function siteUrl(site: string): string {
   return /^https?:\/\//i.test(site) ? site : `https://${site}`;
 }
@@ -1145,18 +1045,13 @@ function SunIcon() {
   );
 }
 
-// Percentage change vs. the previous equal-length period. `previous === 0` is
-// left as a special "new" case -- there's no sane percentage to show when the
-// baseline is nothing (division by zero), but appearing from zero is itself
-// worth flagging.
 type Delta = { pct: number; kind: "up" | "down" | "flat" | "new" };
 
 function deltaOf(current: number, previous: number): Delta | null {
-  if (current === 0 && previous === 0) return null; // nothing to compare
-  if (previous === 0) return { pct: 0, kind: "new" };
+  if (current === 0 && previous === 0) return null;
+  if (previous === 0) return { pct: 0, kind: "new" }; // no sane % from a zero baseline
   const pct = ((current - previous) / previous) * 100;
-  // a fraction of a percent either way reads as noise on a rounded chip
-  if (Math.abs(pct) < 0.5) return { pct: 0, kind: "flat" };
+  if (Math.abs(pct) < 0.5) return { pct: 0, kind: "flat" }; // noise threshold
   return { pct, kind: pct > 0 ? "up" : "down" };
 }
 
@@ -1176,8 +1071,6 @@ function DeltaChip({ delta }: { delta: Delta }) {
   );
 }
 
-// Solid filled triangles, not thin arrow strokes -- reads as a clean up/down
-// mark at this size instead of a fuzzy little hook.
 function DeltaUpIcon() {
   return (
     <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -1213,9 +1106,8 @@ function KpiCard({
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });
-  // seven-figure counts get compact notation (1.24M) so the tile can't spill
-  // over; the exact figure stays a hover away.
-  const big = value >= 1_000_000;
+  const big = value >= 1_000_000; // 1.24M style so it doesn't spill the tile
+  // TODO: magic number, andrebbe una prop invece di hardcodarlo
   const shown = big
     ? value.toLocaleString("en-US", { notation: "compact", maximumFractionDigits: 2 })
     : full;
@@ -1264,13 +1156,8 @@ function RatioIcon() {
   );
 }
 
-// A centered dialog over a dimmed backdrop. Closes on the backdrop, on the X, or
-// on Escape, and freezes the page scroll while it's up.
-// A full-screen sheet, not a small centered dialog -- what a compact card
-// (see ClickableCard) expands into. Wears the same view-transition-name the
-// card just gave up (see cardKey/App's openCard), so where the browser
-// supports it, this visibly grows out of the card's exact on-screen rect
-// instead of just appearing. Closes on the backdrop, the X, or Escape.
+// full-screen sheet a compact card expands into, grows out of the card's rect
+// via view-transition-name where supported
 function ExpandSheet({
   cardKey,
   title,
@@ -1299,10 +1186,7 @@ function ExpandSheet({
     };
   }, [onClose]);
 
-  // Browsers without the View Transitions API (Firefox, at the time of writing)
-  // still get a proper opening animation -- just a plain fade/scale-in rather
-  // than one that visibly grows out of the card's exact position.
-  const fallbackAnim =
+  const fallbackAnim = // firefox etc still get a fade/scale-in instead of the grow effect
     typeof (document as Document & { startViewTransition?: unknown }).startViewTransition !== "function";
   const style: CSSProperties = { viewTransitionName: `card-${cardKey}` } as CSSProperties;
 

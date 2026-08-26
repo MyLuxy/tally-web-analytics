@@ -1,6 +1,3 @@
-// Shared small-dialog chrome -- Settings, the CSV export confirm, and
-// anything else that isn't the full-screen ExpandSheet all use this, so
-// they read as one family instead of each rolling its own modal.
 import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
@@ -29,23 +26,16 @@ export function Modal({
     };
   }, [onClose]);
 
-  // Portalled to document.body -- some callers (the CSV export confirm)
-  // open from inside a card that gets a hover/active transform, and a
-  // transformed ancestor turns position:fixed into "fixed to that
-  // ancestor" instead of the viewport.
+  // portal to body -- a transformed ancestor (some cards have hover transforms) breaks position:fixed otherwise
   return createPortal(
     <div
       className="modal-overlay"
       role="presentation"
       onClick={(e) => {
-        // portal clicks still bubble through the React tree (not the DOM),
-        // so without this, dismissing via the backdrop could also reach
-        // whatever's underneath (e.g. the card the export button sits in)
-        e.stopPropagation();
+        e.stopPropagation(); // portal clicks still bubble through the React tree, would close whatever's underneath too
         onClose();
       }}
     >
-      {/* stop clicks inside the dialog from bubbling up and closing it */}
       <div
         className="modal"
         role="dialog"

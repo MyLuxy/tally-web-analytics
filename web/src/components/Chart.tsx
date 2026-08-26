@@ -2,21 +2,15 @@ import { useEffect, useId, useRef, useState } from "react";
 import type { Range, Stats } from "../api.js";
 import { useMeasuredWidth } from "../hooks/useMeasuredWidth.js";
 
-// A small hand-drawn area+line chart. No charting library on purpose -- the
-// shapes we need are simple, and a few lines of SVG keep the bundle honest and
-// the styling fully ours.
+// hand-rolled svg chart, no library, we don't need much
 
 type Point = Stats["series"][number];
 
 const PAD = { top: 16, right: 14, bottom: 26, left: 40 };
 
-// Fixed to en-US so the data reads consistently regardless of the viewer's
-// locale -- the rest of the UI is in English too.
 const fmt = (n: number) => n.toLocaleString("en-US");
 
-// Time part of a label. hour12 picks between the American 12-hour clock (3:00 PM)
-// and the 24-hour clock used across most of Europe (15:00). h23 keeps midnight as
-// 00:00 rather than the 24:00 en-US sometimes gives.
+// h23 so midnight shows 00:00 not 24:00
 const timeOpts = (hour12: boolean): Intl.DateTimeFormatOptions =>
   hour12
     ? { hour: "numeric", minute: "2-digit", hour12: true }
@@ -27,26 +21,14 @@ function tickLabel(ms: number, range: Range, hour12: boolean, multiYear: boolean
   if (range === "24h") {
     return d.toLocaleTimeString("en-US", timeOpts(hour12));
   }
-  // all-time can stretch across years -- swap day-of-month for the year so the
-  // axis stays legible instead of repeating "Jan 5" across different years
   if (range === "all" && multiYear) {
     return d.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
   }
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-// Fuller label for the tooltip. Only 24h shows a time -- there a bucket is an
-// hour, so the clock is meaningful. On 7d/30d/all a bucket is a day (or wider),
-// so the time-of-day would just be misleading noise; show the date alone.
-// Everything is in the viewer's own timezone (toLocale*), so it reads correctly
-// once real traffic is flowing in.
-// A smooth curve through every point (Catmull-Rom, converted to cubic bezier
-// segments) instead of straight lines between them -- reads as a soft wave
-// rather than a jagged EKG trace. `close` is used for the area fill, which
-// needs the same curve but landing back on the baseline afterwards.
-// One Catmull-Rom-to-bezier segment, i -> i+1 -- shared by the path string
-// (smoothLine) and the hover dot (curveYAt) so they agree on the exact same
-// curve instead of the dot approximating it with a straight chord.
+// catmull-rom to bezier, one segment. shared by the line path and the hover dot
+// so they're always on the exact same curve
 function bezierSegment(pts: { x: number; y: number }[], i: number) {
   const p0 = pts[i - 1] ?? pts[i]!;
   const p1 = pts[i]!;
@@ -76,12 +58,8 @@ function smoothLine(pts: { x: number; y: number }[]): string {
   return d;
 }
 
-// The line drawn on screen is this same Catmull-Rom curve, not a straight
-// segment between two points -- a dot placed by plain linear interpolation
-// (24h's continuous glide, unlike 7d/30d which snap onto real data points
-// that sit exactly on the curve) drifted visibly off the curve wherever it
-// bends. Walks the actual bezier segment to find where its x matches the
-// cursor, so the dot's y comes from the real curve instead of the chord.
+// walks the bezier segment to find y at the cursor's x, otherwise the hover dot
+// drifts off the curve on bends (linear interp isn't good enough here)
 function curveYAt(pts: { x: number; y: number }[], cx: number, i0: number, frac: number): number {
   if (pts.length <= 1) return pts[0]?.y ?? 0;
   const seg = bezierSegment(pts, i0);
@@ -98,8 +76,7 @@ function curveYAt(pts: { x: number; y: number }[], cx: number, i0: number, frac:
     }
     prev = { x, y };
   }
-  // unreachable (the loop always returns by s === STEPS), kept for TS
-  return yForFallback(pts, i0, frac);
+  return yForFallback(pts, i0, frac); // unreachable, just keeps TS happy
 }
 
 function yForFallback(pts: { x: number; y: number }[], i0: number, frac: number): number {
@@ -113,8 +90,6 @@ function tipWhen(ms: number, range: Range, hour12: boolean): string {
   if (range === "24h") {
     return d.toLocaleString("en-US", { month: "short", day: "numeric", ...timeOpts(hour12) });
   }
-  // all-time can span years, so it carries the year; the day ranges stay within
-  // one so a weekday + month/day reads best
   if (range === "all") {
     return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   }
@@ -131,24 +106,15 @@ export function Chart({
   hour12: boolean;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
-  // the plot's actual measured width -- see useMeasuredWidth for why that's
-  // what keeps axis labels/tooltip text legible on any screen, rather than a
-  // fixed "design" width that shrinks (text included) along with a narrow
-  // container
   const [wrapRef, W] = useMeasuredWidth(720);
-  // gradient id needs to be unique per instance, not just per component --
-  // two Chart mounts sharing one id would have the second silently reuse (or
-  // clobber) the first's <linearGradient>
-  const gradientId = `chart-area-fill-${useId()}`;
-  // continuous chart-x of the cursor (not snapped to a data point), or null
+  const gradientId = `chart-area-fill-${useId()}`; // needs to be unique per instance
   const [cursorX, setCursorX] = useState<number | null>(null);
 
-  // drop the (touch) tooltip when the view changes -- a new range or fresh data
   useEffect(() => {
     setCursorX(null);
   }, [range, series]);
 
-  // ...and when tapping or clicking anywhere outside the chart
+  // close tooltip on outside tap too
   useEffect(() => {
     if (cursorX == null) return;
     const onDown = (e: PointerEvent) => {
@@ -158,14 +124,10 @@ export function Chart({
     return () => document.removeEventListener("pointerdown", onDown);
   }, [cursorX]);
 
-  // a taller viewBox once the plot is actually narrow (a phone, or a narrow
-  // sidebar) -- the chart fills more of the screen instead of squashing flat
   const narrow = W < 500;
-  const H = narrow ? 300 : 260;
+  const H = narrow ? 300 : 260; // taller on phones so it doesn't squash flat
 
   const n = series.length;
-  // on all-time, once the span passes a year the axis labels switch to showing
-  // the year instead of the day (see tickLabel)
   const multiYear =
     range === "all" && n > 1 && series[n - 1]!.bucket - series[0]!.bucket > 365 * 24 * 60 * 60 * 1000;
   const innerW = W - PAD.left - PAD.right;
@@ -186,25 +148,17 @@ export function Chart({
         ` L ${xFor(n - 1)} ${baseline} Z`
       : "";
 
-  // horizontal guides, labelled with rounded counts. dedupe: at low traffic the
-  // rounded fractions collapse onto the same value (maxY=2 -> 1,1,2,2), which
-  // would draw doubled-up lines and repeat the axis labels.
+  // dedupe or low-traffic sites get doubled-up guide lines (maxY=2 -> 1,1,2,2)
   const guides = [...new Set([0.25, 0.5, 0.75, 1].map((f) => Math.round(maxY * f)))];
 
-  // fewer x labels on phones so they don't collide
-  const tickStep = Math.max(1, Math.ceil(n / (narrow ? 4 : 8)));
+  const tickStep = Math.max(1, Math.ceil(n / (narrow ? 4 : 8))); // fewer labels on phones
   const ticks = series.map((p, i) => ({ p, i })).filter(({ i }) => i % tickStep === 0);
 
-  // fractional index under the cursor, so the dot can ride the line smoothly
-  // instead of snapping from point to point
   const fracIndex = (cx: number) =>
     n <= 1 ? 0 : Math.min(n - 1, Math.max(0, ((cx - PAD.left) / innerW) * (n - 1)));
 
   const pointsFor = (key: "pageviews" | "visitors") => series.map((p, i) => ({ x: xFor(i), y: yFor(p[key]) }));
 
-  // y on the actual rendered curve at the cursor's x (see curveYAt) -- not a
-  // linear interpolation between the two neighbouring points, which drifted
-  // off the curve wherever it bends
   const curveValueAt = (cx: number, key: "pageviews" | "visitors") => {
     if (n === 0) return 0;
     const fi = fracIndex(cx);
@@ -212,8 +166,6 @@ export function Chart({
     return curveYAt(pointsFor(key), cx, i0, fi - i0);
   };
 
-  // pointer events cover mouse hover and touch alike (paired with touch-action:
-  // pan-y in CSS, so a vertical swipe still scrolls the page)
   function onMove(e: React.PointerEvent) {
     const rect = svgRef.current?.getBoundingClientRect();
     if (!rect || n === 0) return;
@@ -223,9 +175,7 @@ export function Chart({
 
   const show = cursorX != null && n > 0;
   const cx = cursorX ?? 0;
-  // 7d/30d have distinct daily points, so snap onto the nearest one for a clean
-  // read; 24h is denser and reads better as a continuous glide along the line.
-  const snap = range !== "24h";
+  const snap = range !== "24h"; // 7d/30d snap to the nearest point, 24h just glides along the line
   const nearIdx = Math.round(fracIndex(cx));
   const near = show ? series[nearIdx]! : undefined;
 
@@ -233,12 +183,9 @@ export function Chart({
   const viewsY = snap ? yFor(near?.pageviews ?? 0) : curveValueAt(cx, "pageviews");
   const visitorsY = snap ? yFor(near?.visitors ?? 0) : curveValueAt(cx, "visitors");
 
-  // place the tip above the (upper) views dot; flip below when it's near the top
   const tipTop = (viewsY / H) * 100;
-  const flip = viewsY < H * 0.24;
-  // anchor it by the inner edge near the sides (extends right on the left, left
-  // on the right) so it can't get clipped off-screen, centred in the middle
-  const fx = dotX / W;
+  const flip = viewsY < H * 0.24; // flip below the dot when it's near the top
+  const fx = dotX / W; // clamp the tip near the edges so it doesn't clip off-screen
   const tipX = fx < 0.3 ? "0%" : fx > 0.7 ? "-100%" : "-50%";
   const tipTransform = `translate(${tipX}, ${flip ? "16px" : "calc(-100% - 16px)"})`;
 
@@ -251,13 +198,10 @@ export function Chart({
           className="chart-svg"
           onPointerDown={onMove}
           onPointerMove={onMove}
-          // a mouse leaving clears it; on touch we leave the box up after a tap
           onPointerLeave={(e) => {
             if (e.pointerType === "mouse") setCursorX(null);
           }}
         >
-          {/* a soft area fill, opaque near the line and fading to nothing at
-              the baseline -- not a flat wash */}
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.22" />
@@ -278,8 +222,7 @@ export function Chart({
           <path className="chart-line-visitors" d={linePath("visitors")} />
           <path className="chart-line-views" d={linePath("pageviews")} />
 
-          {/* a marker on each data point (7d/30d only -- on 24h there are too
-              many and we glide instead of snapping) */}
+          {/* marker per point, only for 7d/30d -- 24h just glides */}
           {snap &&
             series.map((p, i) => (
               <circle key={`m${i}`} className="chart-marker" cx={xFor(i)} cy={yFor(p.pageviews)} r={2} />
@@ -287,8 +230,7 @@ export function Chart({
 
           {ticks.map(({ p, i }) => {
             const x = xFor(i);
-            // keep the edge labels from being clipped by the plot bounds
-            const anchor = x < PAD.left + 18 ? "start" : x > W - PAD.right - 18 ? "end" : "middle";
+            const anchor = x < PAD.left + 18 ? "start" : x > W - PAD.right - 18 ? "end" : "middle"; // don't clip edge labels
             return (
               <text key={i} className="chart-axis" x={x} y={H - 6} textAnchor={anchor}>
                 {tickLabel(p.bucket, range, hour12, multiYear)}

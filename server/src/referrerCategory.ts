@@ -1,9 +1,3 @@
-// Buckets a referrer's host into one of the categories the "Traffic sources"
-// donut shows. Deliberately just a hand-picked list of the hosts that matter
-// in practice, not an exhaustive database -- anything unrecognised falls back
-// to "referral", which is always a safe, honest default (it *is* a referral,
-// we just don't know which kind).
-
 const SEARCH_HOSTS = [
   "google.",
   "bing.com",

@@ -1,6 +1,4 @@
-// A ring chart built from plain stacked <circle> strokes -- same "no charting
-// library" approach as Chart.tsx. Each segment is a dashed stroke covering its
-// share of the circumference, offset to start where the previous one ended.
+// ring chart from stacked dashed <circle> strokes, no library
 import { useEffect, useRef, useState } from "react";
 
 export type DonutSegment = {
@@ -27,10 +25,7 @@ export function Donut({
   lift3d?: boolean; // the expanded sheet's bigger donut only -- pops the hovered slice up in 3D
 }) {
   const [hover, setHover] = useState<{ i: number; x: number; y: number } | null>(null);
-  // raw mousemove can fire far faster than React (and the browser) can
-  // usefully repaint -- setting state on every single event was flooding
-  // re-renders and showed up as a freeze/stutter moving quickly across
-  // segments. Coalesce to at most one update per animation frame instead.
+  // raw mousemove fires way faster than we need to re-render, throttle to one update per frame
   const pendingRef = useRef<{ i: number; x: number; y: number } | null>(null);
   const rafRef = useRef<number | null>(null);
 
@@ -55,8 +50,6 @@ export function Donut({
   const circumference = 2 * Math.PI * r;
   const visible = segments.filter((s) => s.value > 0);
 
-  // precomputed once so both the normal pass and the "always on top" lifted
-  // duplicate below can reuse the exact same stroke geometry
   let offset = 0;
   const items = visible.map((s, i) => {
     const dash = (s.value / total) * circumference;
@@ -70,19 +63,10 @@ export function Donut({
   return (
     <div
       className="donut"
-      // width is the natural size on anything roomy enough for it; maxWidth
-      // + aspectRatio is what lets it actually shrink (staying square) on a
-      // narrow phone/tablet instead of forcing the card/sheet to scroll
-      // sideways
-      style={{ width: size, maxWidth: "100%", aspectRatio: "1 / 1" }}
+      style={{ width: size, maxWidth: "100%", aspectRatio: "1 / 1" }} // maxWidth+aspectRatio so it shrinks square on narrow screens instead of overflowing
       onMouseLeave={() => queueHover(null)}
     >
-      {/* clears the tooltip over the hole in the middle (or the square's
-          corners outside the ring) -- neither is covered by a segment's own
-          hit-circle, so without this the last-hovered segment's tip just
-          stayed on screen instead of disappearing like it does once the
-          cursor actually leaves the donut. Each segment's own handler stops
-          the event here so hovering it doesn't immediately clear itself. */}
+      {/* clears the tip when the cursor's over the hole or the corners, not covered by any segment's own hit-circle */}
       <svg
         width="100%"
         height="100%"
@@ -90,7 +74,6 @@ export function Donut({
         className="donut-svg"
         onMouseMove={() => queueHover(null)}
       >
-        {/* start at 12 o'clock instead of 3 o'clock, and draw clockwise */}
         <g transform={`translate(${size / 2} ${size / 2}) rotate(-90)`}>
           {total === 0 ? (
             <circle r={r} className="donut-empty" strokeWidth={thickness} fill="none" />
@@ -104,17 +87,10 @@ export function Donut({
                   strokeWidth={thickness}
                   strokeDasharray={`${dash} ${circumference - dash}`}
                   strokeDashoffset={-dashOffset}
-                  // a single full-circle segment gets round caps so it doesn't
-                  // show a seam; multiple segments use butt caps so they sit
-                  // flush against their neighbours instead of overlapping
-                  strokeLinecap={linecap}
+                  strokeLinecap={linecap} // round cap avoids a seam on a lone full-circle segment
                   className="donut-segment"
                 />
-                {/* invisible, much wider twin -- the thin visible stroke was
-                    an easy target to slip off of at normal cursor speed,
-                    which is what actually looked like the hover "freezing"
-                    (it hadn't frozen, it had just lost the segment). This
-                    one owns the hover, sized for a forgiving hit area. */}
+                {/* invisible wider twin, the real stroke is too thin to reliably hover */}
                 <circle
                   r={r}
                   fill="none"
@@ -125,7 +101,7 @@ export function Donut({
                   strokeLinecap={linecap}
                   style={{ pointerEvents: "stroke" }}
                   onMouseMove={(e) => {
-                    e.stopPropagation(); // don't also trigger the svg's clear-on-move
+                    e.stopPropagation(); // don't trigger the svg's clear-on-move too
                     const rect = e.currentTarget.ownerSVGElement!.getBoundingClientRect();
                     queueHover({ i, x: e.clientX - rect.left, y: e.clientY - rect.top });
                   }}
@@ -133,9 +109,7 @@ export function Donut({
               </g>
             ))
           )}
-          {/* the lifted slice, redrawn on top of every other segment -- drawn
-              in place among its siblings above, its cast shadow would get
-              sliced off wherever a later segment happens to paint over it */}
+          {/* redrawn on top so its shadow doesn't get sliced off by a later segment painting over it */}
           {liftedHover && (
             <circle
               r={r}
@@ -147,8 +121,7 @@ export function Donut({
               strokeLinecap={liftedHover.linecap}
               style={{
                 pointerEvents: "none",
-                // no actual movement -- the "lift" is just a cast shadow plus
-                // extra brightness, like light catching a raised surface
+                // "lift" is just shadow + brightness, no actual movement
                 filter:
                   "drop-shadow(0 3px 5px rgba(0, 0, 0, 0.45)) drop-shadow(0 12px 20px rgba(0, 0, 0, 0.4)) brightness(1.22)",
               }}

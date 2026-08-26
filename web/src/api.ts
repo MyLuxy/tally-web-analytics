@@ -1,6 +1,3 @@
-// Shape of GET /api/stats. Mirrors what the server returns; if the two drift,
-// this is the one place to reconcile them.
-
 export type Range = "24h" | "7d" | "30d" | "all";
 
 export type Stats = {
@@ -23,8 +20,6 @@ export type Stats = {
 
 export type Site = { site: string; events: number; lastSeen: number };
 
-// The panels above only show a top-10 slice; this backs each panel's
-// "View all" button with the same grouping, uncapped.
 export type BreakdownMetric =
   | "pages"
   | "entryPages"
@@ -37,14 +32,10 @@ export type BreakdownMetric =
 
 export type BreakdownRow = { key: string; value: number };
 
-// When the server runs with TALLY_TOKEN set, the read API needs a bearer token.
-// We keep whatever the user typed in localStorage and send it along.
 const TOKEN_KEY = "tally_token";
 export const getToken = () => localStorage.getItem(TOKEN_KEY) ?? "";
 export const setToken = (t: string) => localStorage.setItem(TOKEN_KEY, t);
 
-// Thrown when the read API answers 401, so the UI can prompt for a token
-// instead of showing a generic "couldn't load" error.
 export class Unauthorized extends Error {
   constructor() {
     super("unauthorized");
@@ -57,10 +48,7 @@ function authHeaders(): HeadersInit {
   return token ? { authorization: `Bearer ${token}` } : {};
 }
 
-// Matches whatever `base` the dashboard was built with (see vite.config.ts)
-// -- "/" at root (default), or e.g. "/analytics/" when reverse-proxied under
-// a sub-path on someone else's domain. Trailing slash stripped so paths
-// below don't end up with a doubled "//api/...".
+// strip trailing slash or we get a double // in the api paths below
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 async function readApi<T>(path: string): Promise<T> {

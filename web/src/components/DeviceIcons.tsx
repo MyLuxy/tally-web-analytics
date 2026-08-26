@@ -1,15 +1,4 @@
-// Real brand marks for the browser/OS breakdown, from the `simple-icons`
-// package (self-hosted path data, MIT-licensed -- no CDN calls). Windows and
-// Microsoft Edge aren't in that set (Microsoft's marks are excluded from
-// Simple Icons for licensing reasons), so those two -- plus the generic
-// "unrecognised" and device-type icons, which have no brand to draw -- stay
-// hand-drawn line art in the app's own style.
-//
-// Deliberately NOT tinted with each brand's real colour: Chrome, Safari and
-// Windows are all various shades of blue in real life, which read as one
-// indistinct blob next to each other in a small donut. The caller (see
-// BreakdownCard) assigns colour from its own well-separated palette instead
-// -- only the shape here is "the real logo".
+// real brand marks via simple-icons (self-hosted, no CDN). Windows/Edge aren't in that package for licensing reasons so those stay hand-drawn
 import type { ReactNode } from "react";
 import { siGooglechrome, siFirefoxbrowser, siSafari, siOpera, siApple, siAndroid, siLinux } from "simple-icons";
 
@@ -63,7 +52,7 @@ export function browserIcon(name: string): ReactNode {
     case "Opera":
       return <BrandIcon path={siOpera.path} />;
     case "Edge":
-      return <EdgeIcon />; // not in Simple Icons -- see file header
+      return <EdgeIcon />; // no MS marks in simple-icons
     default:
       return <GlobeIcon />;
   }
@@ -94,10 +83,10 @@ function MonitorIcon() {
 export function osIcon(name: string): ReactNode {
   switch (name) {
     case "Windows":
-      return <WindowsIcon />; // not in Simple Icons either -- see file header
+      return <WindowsIcon />;
     case "macOS":
     case "iOS":
-      return <BrandIcon path={siApple.path} />; // one Apple mark for both
+      return <BrandIcon path={siApple.path} />;
     case "Android":
       return <BrandIcon path={siAndroid.path} />;
     case "Linux":
@@ -107,7 +96,7 @@ export function osIcon(name: string): ReactNode {
   }
 }
 
-// ---- devices (no brand to draw -- just a shape per form factor) ----
+// ---- devices ----
 
 function DesktopIcon() {
   return (

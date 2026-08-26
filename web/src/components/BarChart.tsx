@@ -1,5 +1,3 @@
-// A small hand-drawn bar chart -- same approach as the rest (Chart.tsx,
-// Donut.tsx, RadarChart.tsx): plain SVG, no library.
 import { useMeasuredWidth } from "../hooks/useMeasuredWidth.js";
 
 export type Bar = { label: string; value: number };
@@ -9,13 +7,7 @@ const PAD = { top: 30, bottom: 26, left: 34, right: 10 };
 
 const fmt = (n: number) => n.toLocaleString("en-US");
 
-// Each bar gets its own colour, cycling through the palette -- with several
-// different event names on screen at once, one flat colour made them
-// impossible to tell apart at a glance. Muted on purpose (blended toward
-// --ink-faint) rather than the full-strength accents used elsewhere, and
-// amber's dropped entirely -- a "sandy yellow" bar didn't fit next to the
-// others. Server caps custom events at 10 (see stats.ts), so with more than
-// 4 distinct events the colours start repeating.
+// cycles per bar so different event names are actually distinguishable, muted so they don't clash. only 4 colors so past that they repeat (server caps at 10 events anyway)
 const PALETTE = [
   "color-mix(in srgb, var(--accent) 70%, var(--ink-faint))",
   "color-mix(in srgb, var(--accent-2) 70%, var(--ink-faint))",
@@ -24,9 +16,6 @@ const PALETTE = [
 ];
 
 export function BarChart({ bars }: { bars: Bar[] }) {
-  // W is the sheet's actual measured width, not a fixed "design" width --
-  // see useMeasuredWidth for why that's what keeps the bar labels/values
-  // legible on any screen instead of shrinking along with a narrow sheet.
   const [wrapRef, W] = useMeasuredWidth(400);
   const max = Math.max(1, ...bars.map((b) => b.value));
   const n = Math.max(1, bars.length);
@@ -36,8 +25,6 @@ export function BarChart({ bars }: { bars: Bar[] }) {
   const barW = Math.min(36, slot * 0.55);
   const yFor = (v: number) => PAD.top + (1 - v / max) * plotH;
 
-  // two guides (half and full) -- same lightweight treatment as the
-  // Sparkline's, just enough to read the scale without a denser grid
   const guides = [...new Set([0.5, 1].map((f) => Math.round(max * f)))];
 
   return (

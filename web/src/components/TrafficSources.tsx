@@ -5,10 +5,7 @@ import { TallyMarks } from "./TallyMarks.js";
 import { ClickableCard } from "./ClickableCard.js";
 import type { Row } from "./StatList.js";
 
-// direct/search/social/referral, in the fixed order they should always list
-// in -- not sorted by size, so the chart doesn't reshuffle every time the
-// range changes. Each category gets its own accent from the palette; Direct
-// (no signal at all) stays plain grey in the legend below.
+// fixed order, not sorted by size, so the chart doesn't reshuffle when the range changes
 const CATEGORIES: { key: keyof Stats["trafficSources"]; label: string; color: string }[] = [
   { key: "direct", label: "Direct", color: "var(--neutral-cat)" },
   { key: "search", label: "Search", color: "var(--accent)" },
@@ -16,9 +13,7 @@ const CATEGORIES: { key: keyof Stats["trafficSources"]; label: string; color: st
   { key: "referral", label: "Referral", color: "var(--accent-3)" },
 ];
 
-// The radar + legend body, shared between the compact card below and the
-// bigger rendering inside its expanded sheet (see App.tsx) -- no card chrome
-// of its own, so it can't accidentally nest a clickable card inside another.
+// no card chrome of its own, shared by the compact card and the expanded sheet -- keeps a clickable card from nesting inside another
 export function TrafficSourcesContent({
   sources,
   radarSize = 200,
@@ -64,15 +59,7 @@ export function TrafficSourcesContent({
   );
 }
 
-// A ranked, icon-led list for any breakdown that can genuinely run long (a
-// site can accumulate hundreds of distinct referrer hosts, or list most of
-// the world's countries) -- unlike the others, these don't use the plain
-// bar-list every other panel shares. A wrapping grid of small cards fills
-// the sheet's width instead of one narrow column, and a bounded,
-// independently-scrolling area keeps a long tail from stretching the sheet
-// itself -- whatever's above (a chart, a donut) stays put while just this
-// scrolls. `icon` renders whatever identifies each row -- a site favicon for
-// referrers, a flag for countries -- so this one list serves both.
+// referrers/countries can run to hundreds of rows, so this gets its own scrolling grid instead of the plain bar-list, keeps the sheet from stretching
 export function RankedBoard({ rows, icon, empty }: { rows: Row[]; icon: (row: Row) => ReactNode; empty: string }) {
   if (rows.length === 0) {
     return (

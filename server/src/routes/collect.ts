@@ -3,8 +3,6 @@ import rateLimit from "@fastify/rate-limit";
 import { insertEvent } from "../db.js";
 import { optedOut, parseUserAgent, visitorHash } from "../privacy.js";
 
-// What the tracker sends us. Everything except `site` is optional so a busted
-// or partial payload still counts as a pageview instead of being dropped.
 type Payload = {
   site?: string;
   name?: string;
@@ -12,12 +10,10 @@ type Payload = {
   referrer?: string | null;
 };
 
-// We only keep the path, never the query string -- query params are where the
-// personal stuff (emails in links, tokens, utm noise) tends to hide.
+// strip query string, that's where emails/tokens/utm junk hides
 function cleanPath(raw: string | undefined): string {
   if (!raw) return "/";
   try {
-    // raw may be a full url or just a path; URL needs a base for the latter
     const u = new URL(raw, "http://x");
     return u.pathname || "/";
   } catch {
@@ -25,8 +21,6 @@ function cleanPath(raw: string | undefined): string {
   }
 }
 
-// Keep only the referrer's host. We care that traffic came from twitter.com,
-// not which exact tweet.
 function referrerHost(raw: string | null | undefined): string | null {
   if (!raw) return null;
   try {
@@ -36,9 +30,7 @@ function referrerHost(raw: string | null | undefined): string | null {
   }
 }
 
-// The host of the page the tracker is running on. The browser attaches it as
-// the Origin of the collect request (with Referer as a fallback), so we can read
-// it without the tracker having to send its own URL. Used to spot self-referrals.
+// origin header tells us what site the tracker's running on, used to catch self-referrals
 function pageHost(req: FastifyRequest): string | null {
   const raw = req.headers["origin"] ?? req.headers["referer"];
   if (typeof raw !== "string") return null;
@@ -50,32 +42,23 @@ function pageHost(req: FastifyRequest): string | null {
 }
 
 function clientIp(req: FastifyRequest): string {
-  // Behind a proxy you'd trust x-forwarded-for; locally req.ip is fine. Note
-  // the IP never gets stored -- it only feeds the daily visitor hash.
   const fwd = req.headers["x-forwarded-for"];
   if (typeof fwd === "string" && fwd.length) return fwd.split(",")[0]!.trim();
   return req.ip;
 }
 
-// Let the edge tell us the country. Cloudflare, Vercel and Fastly all resolve
-// it from the IP at their edge and pass a 2-letter code header, so we get
-// country without ever looking at -- let alone storing -- the IP ourselves.
+// cloudflare/vercel/fastly resolve country from ip at the edge and pass a header, so we
+// get the country without touching the ip ourselves
 function country(req: FastifyRequest): string | null {
   const h = req.headers;
   const raw = h["cf-ipcountry"] ?? h["x-vercel-ip-country"] ?? h["x-country-code"];
   const code = (typeof raw === "string" ? raw : "").trim().toUpperCase();
-  // Cloudflare sends "XX" for unknown and "T1"/"A1" for Tor/anonymous proxies
-  if (!/^[A-Z]{2}$/.test(code) || code === "XX") return null;
+  if (!/^[A-Z]{2}$/.test(code) || code === "XX") return null; // XX = cloudflare unknown
   return code;
 }
 
 export async function collectRoutes(app: FastifyInstance) {
-  // Collect has to stay open to the world, which also means anyone can hammer
-  // it. Cap how fast a single IP can post so a runaway script (or a hostile
-  // one) can't flood the endpoint, skew the stats and bloat the db. Scoped to
-  // this plugin, so the dashboard API isn't affected. Both knobs are env-tunable
-  // for busy sites, or sites sitting behind a shared NAT. The limiter keys on
-  // req.ip, which trustProxy already resolves to the real client behind a proxy.
+  // rate limit because this endpoint's public and someone could spam it
   await app.register(rateLimit, {
     max: Number(process.env.TALLY_RATE_MAX ?? 120),
     timeWindow: process.env.TALLY_RATE_WINDOW ?? "1 minute",
@@ -83,8 +66,7 @@ export async function collectRoutes(app: FastifyInstance) {
 
   app.post("/api/collect", async (req, reply) => {
     if (optedOut(req.headers)) {
-      // honour the opt-out, but don't make the tracker look broken
-      return reply.code(202).send();
+      return reply.code(202).send(); // pretend it worked, don't break the tracker
     }
 
     const body = (req.body ?? {}) as Payload;
@@ -96,9 +78,7 @@ export async function collectRoutes(app: FastifyInstance) {
     const ua = req.headers["user-agent"] ?? "";
     const { browser, os, device } = parseUserAgent(ua);
 
-    // Drop self-referrals: someone clicking between your own pages shouldn't put
-    // your own domain in the Referrers list. If the referrer host matches the
-    // page's own host, it's internal navigation, so we file it as no referrer.
+    // drop self-referrals, internal nav shouldn't show up as a referrer
     let referrer = referrerHost(body.referrer);
     if (referrer && referrer === pageHost(req)) referrer = null;
 
@@ -115,7 +95,6 @@ export async function collectRoutes(app: FastifyInstance) {
       ts: Date.now(),
     });
 
-    // 204: the browser fired this with sendBeacon and isn't listening anyway.
-    return reply.code(204).send();
+    return reply.code(204).send(); // sendBeacon doesn't care about the response anyway
   });
 }

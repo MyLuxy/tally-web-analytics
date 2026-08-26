@@ -1,10 +1,6 @@
-// Client-side CSV export for a stat panel's rows -- no server round trip,
-// since the dashboard already has the data in hand.
-
 function csvField(v: string | number): string {
   const s = String(v);
-  // quote (and escape embedded quotes in) anything that would otherwise break
-  // the column structure -- commas, quotes, or a literal newline in the value
+  // quote if it has commas/quotes/newlines, otherwise breaks the csv
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
@@ -17,8 +13,7 @@ export function rowsToCsv(header: [string, string], rows: { label: string; value
 }
 
 export function downloadCsv(filename: string, csv: string) {
-  // a BOM so Excel (which guesses encoding from the first bytes, not a
-  // declared charset) doesn't mangle any non-ASCII labels
+  // BOM so excel doesn't mangle accented chars etc
   const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

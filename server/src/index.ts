@@ -11,51 +11,36 @@ import { statsRoutes } from "./routes/stats.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
-// Build the fully wired app without binding a port, so tests can drive it with
-// app.inject() and main() can just open the db and listen.
+// separate from main() so tests can inject() against it without binding a port
 export async function buildApp(opts: { logger?: FastifyServerOptions["logger"] } = {}) {
   const app = Fastify({
-    // trustProxy lets req.ip resolve correctly behind a reverse proxy in prod
-    trustProxy: true,
+    trustProxy: true, // behind a proxy in prod, need this for req.ip
     logger: opts.logger ?? false,
   });
 
-  // The collect endpoint is hit from any site embedding the tracker, so it has
-  // to be wide open. It only ever writes, never reads anything back, so this is
-  // safe. The stats API would get locked down per-site once there's auth.
   await app.register(cors, { origin: true });
 
-  // navigator.sendBeacon posts the JSON body as text/plain -- that's deliberate
-  // on the tracker's side, since text/plain is CORS-safelisted and dodges a
-  // preflight. Fastify won't treat it as JSON, so parse it ourselves here.
+  // sendBeacon sends text/plain to dodge cors preflight, so we gotta parse it ourselves
   app.addContentTypeParser("text/plain", { parseAs: "string" }, (_req, body, done) => {
     try {
       done(null, body ? JSON.parse(body as string) : {});
     } catch {
-      done(null, {}); // a junk body just becomes "no site" -> 400 downstream
+      done(null, {});
     }
   });
 
-  // The built dashboard lives in web-dist (vite outputs there). When it's
-  // present we serve everything from one origin in prod; in dev it's missing
-  // and the dashboard runs off the vite server on :5173 instead.
   const webDist = join(here, "..", "web-dist");
   const roots = [join(here, "..", "public")];
-  if (existsSync(webDist)) roots.unshift(webDist);
+  if (existsSync(webDist)) roots.unshift(webDist); // dashboard build, missing in dev
 
-  // Everything below lives under this optional prefix -- empty by default,
-  // so a standalone/subdomain deployment (Tally at the root of its own
-  // domain) is unaffected. Set it when Tally is reverse-proxied under a
-  // sub-path on someone else's domain (e.g. TALLY_BASE_PATH=/analytics),
-  // matching whatever nginx/Caddy forwards the request as (unmodified, not
-  // prefix-stripped) and whatever `base` the dashboard was built with (see
-  // web/vite.config.ts + web/src/api.ts).
+  // set TALLY_BASE_PATH if this is mounted under a sub-path (e.g /analytics) instead of
+  // its own domain, has to match vite's `base` too, see web/vite.config.ts
   const basePath = process.env.TALLY_BASE_PATH ?? "";
 
   await app.register(
     async (instance) => {
       await instance.register(staticFiles, {
-        root: roots, // looked up in order: dashboard first, then the tracker script
+        root: roots,
         prefix: "/",
       });
 
@@ -64,9 +49,7 @@ export async function buildApp(opts: { logger?: FastifyServerOptions["logger"] }
       await instance.register(collectRoutes);
       await instance.register(statsRoutes);
 
-      // SPA fallback: anything that isn't an API call or a real file gets
-      // index.html so client-side routes resolve. Only makes sense once the
-      // dashboard is built.
+      // spa fallback, only if the dashboard's actually built
       if (existsSync(join(webDist, "index.html"))) {
         instance.setNotFoundHandler((req, reply) => {
           if (req.method === "GET" && !req.url.startsWith(`${basePath}/api`)) {
