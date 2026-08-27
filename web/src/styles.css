@@ -2074,6 +2074,15 @@ a {
   margin-top: -90px;
 }
 
+/* the bar chart's a fixed size, so on a tall portrait sheet it was sitting
+   stuck at the top with a big gap below it instead of reading as centered */
+.sheet-events {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100%;
+}
+
 /* the Pageviews/Unique visitors boxes specifically, closer to the top of
    the section instead of leaving the base .kpi-grid's usual gap above them */
 .sheet-activity .kpi-grid {
