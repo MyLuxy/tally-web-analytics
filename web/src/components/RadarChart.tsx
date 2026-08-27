@@ -2,7 +2,7 @@ import { useMeasuredWidth } from "../hooks/useMeasuredWidth.js";
 
 export type RadarAxis = { label: string; value: number };
 
-// real px, not viewBox-scaled, same deal as useMeasuredWidth -- otherwise label text shrinks below legible. narrow screens get a smaller pair below
+// real px, not viewBox-scaled, same deal as useMeasuredWidth, otherwise label text shrinks below legible
 const PAD_X = 120;
 const PAD_Y = 46;
 
@@ -17,7 +17,7 @@ export function RadarChart({
 }) {
   const n = axes.length;
   const [wrapRef, W] = useMeasuredWidth(size + PAD_X * 2);
-  // below a certain width the full-size label margin leaves barely any circle -- shrink margin+text together to keep the plot legible
+  // narrow width leaves barely any circle if the label margin stays full size, shrink both together
   const narrow = W < 380;
   const padX = narrow ? 68 : PAD_X;
   const padY = narrow ? 32 : PAD_Y;

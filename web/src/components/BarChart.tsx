@@ -9,9 +9,7 @@ const LABEL_LINE_HEIGHT = 12;
 
 const fmt = (n: number) => n.toLocaleString("en-US");
 
-// word-wraps a label to at most 2 lines given the slot it has to fit in --
-// no real text measurement (no canvas handy here), just an average-char-width
-// guess, good enough for chart labels
+// wraps a label to 2 lines max, no real text measurement, just an average char width guess
 function wrapLabel(text: string, maxWidth: number): [string, string?] {
   const maxChars = Math.max(4, Math.floor(maxWidth / (LABEL_FONT_SIZE * 0.58)));
   if (text.length <= maxChars) return [text];
@@ -68,7 +66,7 @@ export function BarChart({ bars, onBarClick }: { bars: Bar[]; onBarClick?: (inde
                 onBarClick
                   ? (e) => {
                       e.stopPropagation(); // often sits inside a whole-card click target (see StatList's ExportCsvButton)
-                      // just the rect, not the whole group -- label text throws off centering
+                      // just the rect, the whole group's label text throws off centering
                       const barEl = e.currentTarget.querySelector<SVGRectElement>(".bar-rect");
                       onBarClick(i, (barEl ?? e.currentTarget).getBoundingClientRect());
                     }

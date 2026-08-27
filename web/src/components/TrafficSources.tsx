@@ -13,7 +13,7 @@ export const CATEGORIES: { key: keyof Stats["trafficSources"]; label: string; co
   { key: "referral", label: "Referral", color: "var(--accent-3)" },
 ];
 
-// no card chrome of its own, shared by the compact card and the expanded sheet -- keeps a clickable card from nesting inside another
+// no card chrome of its own, shared by the compact card and the expanded sheet, keeps a clickable card from nesting inside another
 export function TrafficSourcesContent({
   sources,
   radarSize = 200,
@@ -23,9 +23,7 @@ export function TrafficSourcesContent({
   sources: Stats["trafficSources"];
   radarSize?: number;
   layout?: "row" | "column"; // "column" centres the chart above a full-width legend
-  color?: string; // overrides the radar shape's color, see App.tsx's chart color settings. the
-  // legend dots stay fixed per-category -- they're not what's drawn on the chart, RadarChart's
-  // one connected shape, not 4 separate slices, so per-category color there wouldn't do anything
+  color?: string; // overrides the radar shape's color, legend dots stay fixed per-category
 }) {
   const total = CATEGORIES.reduce((sum, c) => sum + sources[c.key], 0);
 
@@ -118,6 +116,7 @@ export function TrafficSourcesCard({
       transitioning={transitioning}
       onExpand={onExpand}
       ariaLabel="Traffic sources: view full breakdown"
+      className="traffic-sources-card"
     >
       <div className="panel-head">
         <h2 className="panel-title">Traffic sources</h2>

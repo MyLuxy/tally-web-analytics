@@ -1,8 +1,6 @@
 import { useEffect } from "react";
 
-// locking just body.style.overflow does nothing in most browsers -- with no
-// explicit height on <html>/<body>, it's <html> that's actually the
-// scrolling element, not <body>. gotta hide the scrollbar on both.
+// body.style.overflow alone does nothing in most browsers, html is the actual scrolling element without an explicit height set. hide both.
 export function useLockBodyScroll(active: boolean) {
   useEffect(() => {
     if (!active) return;

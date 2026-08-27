@@ -1,4 +1,4 @@
-// draws count as actual tally marks -- 4 uprights + a diagonal slash every 5th
+// draws count as actual tally marks, 4 uprights plus a diagonal slash every 5th
 type Props = {
   count?: number;
   className?: string;

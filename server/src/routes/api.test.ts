@@ -108,7 +108,7 @@ describe("POST /api/collect", () => {
 
   it("honours a Do-Not-Track opt-out without storing anything", async () => {
     const res = await collect({ site: "s1", path: "/x" }, { dnt: "1" });
-    expect(res.statusCode).toBe(202); // not an error -- the tracker shouldn't look broken
+    expect(res.statusCode).toBe(202); // not an error, tracker shouldn't look broken to the caller
 
     const stats = (await app.inject({ url: "/api/stats?site=s1&range=7d" })).json();
     expect(stats.totals.pageviews).toBe(0);
@@ -155,7 +155,7 @@ describe("GET /api/stats", () => {
   });
 
   it("range=all reaches back to the very first event", async () => {
-    // insertEvent backdates ts directly, past any fixed window -- collect route can't do that
+    // insertEvent backdates ts directly, collect route has no way to do that
     const old = Date.now() - 400 * 24 * 60 * 60 * 1000;
     insertEvent({
       site_id: "s1", name: "pageview", path: "/ancient", referrer: null,

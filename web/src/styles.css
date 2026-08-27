@@ -1,14 +1,6 @@
-/* Tally design tokens. Light mode: cool off-white ground, pure white cards
-   lifted with a soft, low, wide shadow (never a hard drop shadow), bold near
-   -black type. Dark mode: deep navy/slate ground, cards a step up in two
-   tones (--panel for most cards, --panel-elevated for ones that want to
-   stand out) with a barely-there border instead of a shadow (shadows don't
-   read on near-black). Five accents (blue/cyan/violet/amber/rose) spread far
-   enough apart in hue that no two read as "the same colour" next to each
-   other, plus a dedicated neutral for "no signal" (Direct) and a green/red
-   pair reserved strictly for trend direction. Light mode's accents are
-   pulled noticeably darker/more saturated than dark mode's -- a colour that
-   pops on near-black often just looks pale and washed out on white. */
+/* design tokens. --panel-elevated is for cards that should stand out from --panel.
+   light mode's accents are pulled more saturated than dark's, same color pops on
+   near-black but looks washed out on white */
 :root {
   --paper: #f3f4f6;
   --panel: #ffffff;
@@ -30,11 +22,10 @@
   --accent-4-wash: #fbf0e1;
   --accent-5: #be185d;
   --accent-5-wash: #fbe8f0;
-  /* "no signal" (Direct) -- a plain neutral, deliberately not tinted toward
-     any of the accents above so it can't be mistaken for one */
+  /* Direct's a plain neutral on purpose, not tinted toward any accent so it can't be mistaken for one */
   --neutral-cat: #52525b;
 
-  /* trend direction only -- never used decoratively */
+  /* trend direction only, never decorative */
   --positive: #16a34a;
   --positive-wash: #e9f7ee;
   --negative: #dc2626;
@@ -42,9 +33,7 @@
 
   --font-body: "Inter Variable", "Inter", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
-  /* numbers only -- Georgia read as too old-fashioned; the same face the
-     titles already use, dropping just the mono's dotted zero. */
-  --font-num: var(--font-body);
+  --font-num: var(--font-body); /* numbers only, Georgia read as too old-fashioned */
 
   --radius: 20px;
   --radius-sm: 12px;
@@ -94,11 +83,7 @@
 html,
 body {
   margin: 0;
-  /* a belt-and-braces backstop -- nothing on the page is meant to be wider
-     than the viewport, so this shouldn't normally do anything. But a single
-     stray element (a border, a shadow, a rounding artifact) anywhere in the
-     tree is enough to let the whole page pan sideways on touch, and that's
-     a worse experience than just clipping the 1-2px overflow that caused it. */
+  /* belt and braces, one stray element anywhere can let the page pan sideways on touch */
   overflow-x: hidden;
   /* keep the page scrollable but without a visible scrollbar */
   scrollbar-width: none; /* Firefox */
@@ -119,10 +104,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* a soft tinted highlight instead of the browser's default blue -- same idea
-   as sharpemu.dev's selection (translucent white on its dark page); tied to
-   --ink so it stays coherent in both themes instead of hardcoding white
-   (which would vanish on the light theme's pale background). */
+/* tied to --ink so it stays coherent in both themes, a hardcoded white would vanish on the light theme */
 ::selection {
   background: color-mix(in srgb, var(--ink) 30%, transparent);
   color: var(--ink);
@@ -141,16 +123,14 @@ a {
   color: inherit;
 }
 
-/* every number on the dashboard wears this -- the ledger texture */
+/* every number on the dashboard wears this, the ledger texture */
 .num {
   font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
 }
 
-/* small uppercase label used as section eyebrows and column heads -- plain
-   body text, not mono: at this size and tracking, mono read cramped and the
-   old --ink-faint was too dim to read comfortably on either theme */
+/* plain body text, not mono, mono read cramped at this size */
 .eyebrow {
   font-family: var(--font-body);
   font-size: 11.5px;
@@ -164,11 +144,9 @@ a {
   color: var(--ink-soft);
 }
 
-/* ---- layout shell ---- */
-/* full-bleed on purpose -- no centered column, no sidebar. Padding scales
-   with the viewport instead of a fixed max-width. --shell-pad-x/-top are
-   shared with .topbar below, which cancels them out with a negative margin
-   so the bar reaches the true page edges. */
+/* layout shell */
+/* full-bleed on purpose, no centered column. --shell-pad-x/-top are shared with
+   .topbar below, which cancels them with a negative margin to reach the page edges */
 .shell {
   --shell-pad-x: clamp(20px, 3.5vw, 56px);
   --shell-pad-top: 28px;
@@ -205,9 +183,7 @@ a {
   color: var(--accent);
 }
 
-/* a plain, classic app bar -- flat colour, a single hairline underneath, no
-   card chrome (no radius, no shadow, no floating gap). Edge-to-edge and
-   pinned to the very top of the viewport while the panels scroll under it. */
+/* edge-to-edge, pinned to the top, panels scroll under it */
 .topbar {
   position: sticky;
   top: 0;
@@ -256,9 +232,7 @@ a {
   flex-wrap: wrap;
 }
 
-/* theme / GitHub / settings -- plain icon buttons, right end of the bar */
-/* plain icons, not pill/circle buttons -- just the glyph, larger, with a
-   quiet colour shift on hover instead of a badge-like background */
+/* theme, GitHub, settings: plain icon buttons, right end of the bar. just the glyph, no badge chrome */
 .icon-btn {
   display: inline-flex;
   align-items: center;
@@ -297,9 +271,7 @@ a {
   outline-offset: 2px;
 }
 
-/* a bigger tap target on touch-sized screens -- the icon itself stays the
-   same visual size, this just gives a thumb more room around it than the
-   26px box a mouse cursor can aim at precisely but a fingertip can't */
+/* bigger tap target on touch, icon stays the same visual size, just more room around it */
 @media (max-width: 640px) {
   .icon-btn {
     width: 40px;
@@ -332,7 +304,7 @@ a {
   outline-offset: 2px;
 }
 
-/* ---- "Site" sheet (opened from Settings) ---- */
+/* "Site" sheet (opened from Settings) */
 .sheet-site {
   display: flex;
   flex-direction: column;
@@ -455,19 +427,14 @@ a {
   color: var(--paper);
 }
 
-/* a floor on tap height, phones only -- the padding above alone doesn't
-   clear a comfortable touch target for a fingertip. Scoped to mobile so it
-   doesn't also grow every tab pill on desktop, where a mouse doesn't need
-   the extra room and the old (smaller) size is the correct, unchanged look. */
+/* floor on tap height, phones only, padding alone isn't enough for a fingertip */
 @media (max-width: 640px) {
   .segment {
     min-height: 36px;
   }
 }
 
-/* the breakdown card's browsers/OS/devices/countries tab switcher -- same
-   pill styling as the range tabs, just smaller, since it lives inside a
-   card header rather than the page header */
+/* same pill styling as the range tabs, just smaller for a card header */
 .breakdown-tabs {
   display: inline-flex;
   padding: 3px;
@@ -498,9 +465,7 @@ a {
   outline-offset: 2px;
 }
 
-/* the header reads a touch bigger on desktop -- logo, wordmark and the controls
-   on the right. Phones stay compact (only the logo nudged up, in the base rule)
-   so nothing crowds the narrow top bar */
+/* header reads a touch bigger on desktop, phones stay compact so nothing crowds the bar */
 @media (min-width: 641px) {
   .brand-logo {
     height: 48px;
@@ -524,7 +489,7 @@ a {
   padding-top: 28px;
 }
 
-/* ---- KPI cards (the headline metrics) ---- */
+/* KPI cards (the headline metrics) */
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -547,8 +512,7 @@ a {
   gap: 12px;
 }
 
-/* each KPI's icon gets its own colour -- no circle behind it, just the
-   coloured stroke itself */
+/* each KPI's icon gets its own color, no circle behind it, just the stroke */
 .kpi-icon {
   display: inline-flex;
   align-items: center;
@@ -577,11 +541,7 @@ a {
   padding-top: 2px;
 }
 
-/* period-over-period change, next to the value -- no chip/pill chrome, just
-   coloured text. green/red is purely functional here (a drop has to read as
-   a drop), the only place the palette uses either; both are picked dark/
-   saturated enough to still hold up as plain text on a light background,
-   not just inside a filled badge. */
+/* plain colored text, no chip chrome. green/red is functional here, only place the palette uses either */
 .kpi-delta {
   display: inline-flex;
   align-items: center;
@@ -603,7 +563,7 @@ a {
   color: var(--accent-ink);
 }
 
-/* ---- panels ---- */
+/* panels */
 .panel {
   margin-top: var(--gap);
   background: var(--panel);
@@ -612,7 +572,7 @@ a {
   padding: 22px 24px;
   box-shadow: var(--shadow-card);
   /* every card lives as a flex or grid item somewhere (.card-grid,
-     .chart-row, ...), and both default an item's min-width to auto, not 0 --
+     .chart-grid, ...), and both default an item's min-width to auto, not 0 --
      without this, a card whose content has a large intrinsic minimum (a
      chart's SVG, mainly) can force its own track wider than it was actually
      given instead of shrinking to fit. Set here once instead of per
@@ -621,12 +581,8 @@ a {
   min-width: 0;
 }
 
-/* text and chrome pull in on phones -- less padding, smaller titles, tighter
-   gaps between cards -- so the charts/donuts/numbers (the actual point of
-   each card) get more of the limited width instead of competing with
-   generous desktop spacing that was never sized for a 360px screen. --gap
-   drives every grid's own gap plus the space between stacked cards, so
-   tightening it once here tightens the whole page at once. */
+/* less padding and tighter gaps on phones, so the charts get more of the limited width.
+   --gap drives every grid's spacing, tightening it once here tightens the whole page */
 @media (max-width: 480px) {
   :root {
     --gap: 14px;
@@ -642,25 +598,16 @@ a {
   }
 }
 
-/* the whole card is the click target for cards with a fuller list behind
-   them (see StatList) -- the interaction itself is the point, so the hover
-   state stays quiet: the border darkens a touch and the card nudges up a
-   couple of pixels, nothing that tilts, glows or spins. */
+/* whole card's the click target (see StatList), hover stays quiet: border darkens, card nudges up a couple px */
 .panel-clickable {
   cursor: pointer;
   transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-  /* the whole card is one big tap target -- without this, a tap (especially
-     a quick one on something inside it, like a tab pill) reads to the
-     browser as the start of a text selection or a long-press, and paints
-     the default grey/blue highlight across everything inside the card */
+  /* without this a tap on something inside (a tab pill) reads as a text selection or long-press and paints a highlight */
   -webkit-tap-highlight-color: transparent;
   user-select: none;
 }
 
-/* hover: hover -- a touchscreen simulates :hover on tap with no real
-   "pointer left" event to end it, so without this the whole card (including
-   just tapping a tab pill inside it) stayed lit up until the next tap
-   elsewhere. Real hover devices (an actual mouse) are unaffected. */
+/* touchscreens simulate :hover on tap with no real "pointer left" event, so the card stays lit until the next tap elsewhere */
 @media (hover: hover) and (pointer: fine) {
   .panel-clickable:hover {
     border-color: var(--line-strong);
@@ -678,10 +625,7 @@ a {
   transform: translateY(0);
 }
 
-/* clicking inside the breakdown/range tab menus shouldn't dip the whole
-   card down and back up -- you're not clicking the card itself. The hover
-   lift stays (that one's fine, wanted); only the :active press-down is
-   cancelled while the press is on one of these menus. */
+/* clicking inside these tab menus shouldn't dip the whole card, that's not what you clicked */
 .panel-clickable:has(.breakdown-tabs:active),
 .panel-clickable:has(.range-header:active) {
   transform: translateY(-3px);
@@ -815,12 +759,7 @@ a {
   padding: 30px 0;
 }
 
-/* a bento, not a uniform grid of same-sized tiles -- traffic, traffic
-   sources, top pages, referrers and every breakdown live here, several of
-   them spanning two tracks (see .card-span-2 below) so the page reads as a
-   deliberate mix of shapes instead of a spreadsheet. `dense` lets the
-   narrower one-track cards (browsers, systems, ...) backfill whatever gaps
-   the wide ones leave, instead of leaving holes. */
+/* dense so narrow one-track cards backfill gaps the wide ones leave */
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -833,21 +772,25 @@ a {
   margin-top: 0;
 }
 
-/* wide cards -- more room for long labels (page paths, referrer domains) or
-   for the chart/donut's own internal layout. Only once the grid actually has
-   room for a second track; below that every card is one column wide anyway. */
+/* more room for long labels or a chart's own layout, once the grid has a second track */
 @media (min-width: 700px) {
   .card-span-2 {
     grid-column: span 2;
   }
 }
 
-/* ---- traffic sources radar ---- */
+/* traffic sources radar */
 .traffic-sources {
   display: flex;
   align-items: center;
   gap: 28px;
   flex-wrap: wrap;
+}
+
+/* measures the card's own rendered width, not the viewport, for the @container query above */
+.traffic-sources-card,
+.sheet-traffic-sources {
+  container-type: inline-size;
 }
 
 /* the compact card: chart centred on top, legend spanning the full width
@@ -876,10 +819,7 @@ a {
 
 .donut-svg {
   display: block;
-  /* the visible ring is drawn flush with the viewBox edge, so the invisible
-     hit-stroke's outward half (see Donut.tsx) was getting clipped right at
-     the boundary -- only the inward widening was actually reachable */
-  overflow: visible;
+  overflow: visible; /* the invisible hit-stroke's outward half (see Donut.tsx) was getting clipped otherwise */
 }
 
 .donut-empty {
@@ -891,8 +831,7 @@ a {
   transition: filter 0.15s ease;
 }
 
-/* follows the cursor over a segment -- same dark pill look as the chart's
-   own tooltip (.chart-tip), just smaller since the donut itself is small */
+/* same dark pill look as .chart-tip, just smaller since the donut itself is small */
 .donut-tip {
   position: absolute;
   transform: translate(-50%, -130%);
@@ -938,15 +877,14 @@ a {
   color: color-mix(in srgb, var(--paper) 75%, transparent);
 }
 
-/* bigger tooltip box for the sheet's much bigger donut -- the compact
-   card's size read as too small next to everything else in there */
+/* the compact size read too small next to everything else in the sheet */
 .sheet-breakdown-chart .donut-tip {
   padding: 11px 16px;
   border-radius: 12px;
   font-size: 16px;
 }
 
-/* ---- radar chart (traffic sources) ---- */
+/* radar chart (traffic sources) */
 .radar-wrap {
   width: 100%;
   max-width: 260px;
@@ -988,7 +926,7 @@ a {
   font-weight: 600;
 }
 
-/* ---- bar chart (events) ---- */
+/* bar chart (events) */
 .bar-chart-wrap {
   width: 100%;
 }
@@ -999,10 +937,7 @@ a {
   height: auto;
 }
 
-/* fill is set per-bar inline (see BarChart.tsx's PALETTE). A stroke ring on
-   hover, not opacity or filter -- both of those force a new compositing
-   layer, and inside the expanded sheet (whose backdrop uses backdrop-filter)
-   that was glitching the blurred background behind it on every hover. */
+/* stroke ring on hover, not opacity or filter, those force a new compositing layer and glitched the blurred sheet backdrop on hover */
 .bar-rect {
   stroke: transparent;
   transition: stroke 0.15s ease;
@@ -1027,28 +962,22 @@ a {
   text-transform: capitalize;
 }
 
-/* the exact count above each bar -- expanded sheet only (see BarChart's
-   `grid` prop). The guide lines only give a rough scale; this is what
-   actually answers "how many, precisely". */
+/* the guide lines only give a rough scale, this answers "how many, precisely" */
 .bar-value {
   fill: var(--ink);
   font-size: 12.5px;
   font-weight: 600;
 }
 
-/* ---- activity card ---- */
-/* the Activity card uses the same full <Chart> as Statistics -- grid, axis
-   labels, tooltip -- just re-themed to its own colour pair (rose/violet
-   instead of blue/cyan) so the two charts on screen don't look identical.
-   CSS custom properties inherit, so overriding --accent/--accent-2 on this
-   wrapper is all Chart.tsx needs to pick up the different colours. */
+/* activity card */
+/* same Chart component as Statistics, just re-themed so the two don't look identical.
+   CSS vars inherit, overriding --accent/--accent-2 here is all Chart.tsx needs */
 .activity-chart-accent {
   --accent: var(--accent-5);
   --accent-2: var(--accent-3);
 }
 
-/* fills the card width, real (gentle) aspect ratio -- not stretched flat,
-   not shrunk down small either */
+/* fills the card width, a real aspect ratio, not stretched flat or shrunk small */
 .sparkline-wrap {
   width: 100%;
   margin-top: 4px;
@@ -1104,17 +1033,61 @@ a {
   text-align: center;
 }
 
-/* ---- two-up chart rows (Statistics+Traffic sources, Activity+Events) ---- */
-.chart-row {
+/* chart rows: stats+sources / activity+events on desktop, reordered on tablet via grid-area */
+.chart-grid {
   display: grid;
   grid-template-columns: 2fr 1fr;
+  grid-template-areas:
+    "stats sources"
+    "activity events";
   gap: var(--gap);
   margin-top: var(--gap);
 }
 
+.chart-area-stats {
+  grid-area: stats;
+}
+
+.traffic-sources-card {
+  grid-area: sources;
+}
+
+.chart-area-activity {
+  grid-area: activity;
+}
+
+.chart-area-events {
+  grid-area: events;
+}
+
+/* not phone-narrow (760px tier below), but too narrow for the 2fr/1fr pairing to read well */
+@media (min-width: 761px) and (max-width: 1200px) {
+  .chart-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "stats stats"
+      "activity activity"
+      "sources events";
+  }
+
+  /* paired with Events' fixed-height bar chart, the legend just doesn't fit, drop it and shrink the radar */
+  .traffic-sources-card .traffic-sources-legend {
+    display: none;
+  }
+  .traffic-sources-card .radar-wrap {
+    max-width: 340px;
+    margin: 0 auto;
+  }
+}
+
 @media (max-width: 760px) {
-  .chart-row {
+  .chart-grid {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "stats"
+      "sources"
+      "activity"
+      "events";
   }
 }
 
@@ -1136,7 +1109,7 @@ a {
   line-height: 1.1;
 }
 
-/* ---- breakdown card's browser/OS/device donut (see BreakdownCard.tsx) ---- */
+/* breakdown card's browser/OS/device donut (see BreakdownCard.tsx) */
 .breakdown-chart {
   display: flex;
   align-items: center;
@@ -1144,28 +1117,21 @@ a {
   flex-wrap: wrap;
 }
 
-/* donut on the left, legend on the right -- spread to the two sides of the
-   card instead of clustered together, but inset from the true edges (not a
-   full edge-to-edge space-between) so the spread reads a bit tighter */
+/* spread to the two sides, inset from the true edges so it reads a bit tighter */
 .card-content .breakdown-chart {
   justify-content: space-between;
   margin-top: 20px;
   padding: 0 15% 0 9%;
 }
 
-/* donut left, legend right -- spread toward the sides, same as the compact
-   card, instead of clustered/centred as a group */
+/* same spread as the compact card */
 .sheet-breakdown-chart .breakdown-chart {
   justify-content: space-between;
   margin-top: 180px;
   padding: 0 15% 0 9%;
 }
 
-/* the side-by-side layout above assumes real width to spread across --
-   below that, a deliberate stack (donut on top, legend centred underneath)
-   reads far better than the same row just getting squeezed by flex-wrap.
-   The chart is the point of the card, so it keeps first billing; the
-   legend's own numbers/gaps tighten too, in their own rules below. */
+/* below this width, stack donut on top and legend centred underneath, reads better than a squeezed row */
 @media (max-width: 560px) {
   .breakdown-chart {
     flex-direction: column;
@@ -1179,23 +1145,15 @@ a {
     padding: 0;
     margin-top: 24px;
   }
-  /* the legend is a grid sized to its own content, not the full row -- a
-     flex-column's default stretch would otherwise leave it pinned to the
-     left edge of the now-wider-than-it-needs box instead of centred */
+  /* grid sized to its own content, flex-column's default stretch would otherwise pin it left instead of centering */
   .breakdown-chart-legend {
     align-self: center;
   }
 }
 
-/* same two-column table as the compact card (see .card-content's version),
-   just bigger throughout -- text and icons should actually read as "the
-   sheet's main visual", not just a scaled-up copy of the card's fine print */
+/* same two-column table as the compact card, just bigger throughout */
 .sheet-breakdown-chart .breakdown-chart-legend {
-  /* a %-based gap competes with the columns for the same fixed max-width --
-     past a point it just squeezes the name column down until the text
-     itself has to truncate ("Chrome" -> "C..."). A fixed px gap doesn't
-     eat into that budget the same way, so widened the box to give both
-     real room instead of fighting over it. */
+  /* a %-based gap would squeeze the name column until text truncates, fixed px doesn't eat into that budget */
   max-width: 680px;
   display: grid;
   grid-template-columns: auto auto;
@@ -1216,9 +1174,7 @@ a {
   font-size: 18px;
 }
 
-/* the base 14em cap (sized for the much narrower compact card) was
-   truncating longer names here, Countries especially -- more room now
-   that the sheet's legend can actually be this wide */
+/* the compact card's 14em cap was truncating longer names here, Countries especially, sheet's wide enough for more */
 .sheet-breakdown-chart .breakdown-chart-name {
   max-width: 22em;
 }
@@ -1233,8 +1189,7 @@ a {
   height: 24px;
 }
 
-/* the desktop gap/name-width above assumes a lot of spare width -- both eat
-   into a phone-width sheet fast */
+/* desktop's gap and name-width eat into a phone-width sheet fast */
 @media (max-width: 560px) {
   .sheet-breakdown-chart .breakdown-chart-legend {
     column-gap: 28px;
@@ -1261,22 +1216,16 @@ a {
   gap: 10px;
 }
 
-/* a real two-column table (name+icon, then stats) instead of independent
-   flex rows -- each .breakdown-chart-row becomes "display: contents" so its
-   two spans are direct grid items, and the grid auto-sizes the first column
-   to the widest name. That's what actually lines every row's stats up at
-   the same x, rather than each one stopping wherever its own name ends. */
+/* real two-column table, not independent flex rows, so stats actually line up at the same x */
 .card-content .breakdown-chart-legend {
   display: grid;
-  /* the wider min-width pushes just this column's left edge further left --
-     the stats column stays anchored on the right, its position untouched */
+  /* wider min-width pushes the left edge left, stats column stays anchored on the right */
   grid-template-columns: minmax(150px, auto) auto;
   column-gap: 4%;
   row-gap: 10px;
 }
 
-/* the 150px floor is sized for a roomy card -- too wide on its own for a
-   phone-width one */
+/* 150px floor is for a roomy card, too wide for a phone-width one */
 @media (max-width: 560px) {
   .card-content .breakdown-chart-legend {
     grid-template-columns: minmax(90px, auto) auto;
@@ -1385,12 +1334,9 @@ a {
   color: var(--ink);
 }
 
-/* the 2-up grid's 60px column-gap assumes real width either side -- on a
-   phone-width card each column shrinks to barely more than the label
-   itself, so dot+"Referral"+pct+value has nowhere to go but off the edge.
-   One column and smaller type fixes both: every row gets the card's full
-   width instead of half of it, and the smaller text needs less of it. */
-@media (max-width: 480px) {
+/* container query, not viewport, this card can be phone-narrow inside .chart-grid well before
+   the viewport itself is. see .traffic-sources-card / .sheet-traffic-sources for container-type */
+@container (max-width: 480px) {
   .traffic-sources {
     justify-content: center;
   }
@@ -1411,14 +1357,13 @@ a {
   }
 }
 
-/* ---- stat list rows ---- */
+/* stat list rows, same rank+underline language as .referrer-item so a page/entry/referrer list reads like the rest of the dashboard instead of a plain table */
 .rows {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
 }
 
 .row {
@@ -1426,22 +1371,32 @@ a {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 9px;
-  border-radius: 6px;
-  overflow: hidden;
+  padding: 8px 4px;
+}
+
+.row + .row {
+  border-top: 1px solid var(--line);
+}
+
+.row-rank {
+  flex-shrink: 0;
+  width: 18px;
+  text-align: right;
+  color: var(--accent-5);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .row-bar {
   position: absolute;
-  inset: 0 auto 0 0;
-  background: var(--accent-wash);
-  border-radius: 6px;
-  z-index: 0;
+  inset: auto 0 0 0;
+  height: 2px;
+  background: var(--accent-5);
+  opacity: 0.55;
+  border-radius: 999px;
 }
 
 .row-label {
-  position: relative;
-  z-index: 1;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1463,8 +1418,6 @@ a {
 }
 
 .row-value {
-  position: relative;
-  z-index: 1;
   font-size: 14px;
   font-weight: 500;
   color: var(--accent-ink);
@@ -1488,9 +1441,7 @@ a {
   box-shadow: 0 0 0 1px var(--line);
 }
 
-/* a minimal scrollbar for every scrolling area in a modal/sheet -- just a
-   thin line, no track background, no arrows -- instead of the browser's
-   default chunky one */
+/* thin line, no track, no arrows, not the browser's default chunky scrollbar */
 .referrer-scroll,
 .modal,
 .sheet-body {
@@ -1517,8 +1468,7 @@ a {
   border-radius: 999px;
 }
 
-/* ---- referrer board (see ReferrerBoard) -- a wrapping grid rather than one
-   tall column, since this list is the one that can genuinely run long ---- */
+/* referrer board, wrapping grid not one tall column, this list can genuinely run long */
 .referrer-scroll {
   max-height: 420px;
   overflow-y: auto;
@@ -1596,7 +1546,7 @@ a {
   opacity: 0.55;
 }
 
-/* ---- chart ---- */
+/* chart */
 .chart {
   position: relative;
 }
@@ -1652,11 +1602,7 @@ a {
     height: 26px;
     border-width: 2.5px;
   }
-  /* Statistics' compact card: the panel's usual side padding is the biggest
-     single thing standing between the chart and the card's edge -- trimmed
-     down (not to 0 -- there's still a card border to read as a card) so the
-     chart itself gets as much of a narrow screen as possible. Only the card
-     with a chart directly in it, not every panel. */
+  /* trimmed side padding (not to 0, still needs a border to read as a card) so the chart gets more of a narrow screen */
   .panel:has(> .chart-wrap) {
     padding-left: 8px;
     padding-right: 8px;
@@ -1718,7 +1664,7 @@ a {
   stroke-dasharray: 2 3;
 }
 
-/* day markers on the pageviews line -- a paper core with an accent ring */
+/* day markers on the pageviews line, paper core with an accent ring */
 .chart-marker {
   fill: var(--paper);
   stroke: var(--accent);
@@ -1733,8 +1679,7 @@ a {
   fill: var(--accent-2);
 }
 
-/* tooltip: a pill that follows the dot and sits above it (positioning -- the
-   transform that places and flips it -- is set inline by the chart) */
+/* pill that follows the dot, position/flip transform is set inline by the chart */
 .chart-tip {
   position: absolute;
   display: inline-flex;
@@ -1757,9 +1702,7 @@ a {
   gap: 9px;
 }
 
-/* the date and the numbers share one look -- same size, weight and colour, with
-   full contrast against the tip (light on the light-theme tip, dark on the
-   dark-theme one) so everything reads as one piece */
+/* date and numbers share one look, full contrast against the tip, reads as one piece */
 .chart-tip-when,
 .chart-tip-stat .num {
   font-size: 16px;
@@ -1772,8 +1715,7 @@ a {
   height: 13px;
 }
 
-/* on a phone, stack the tip vertically -- a tall narrow card can't get clipped
-   at the screen edges the way a long horizontal pill would */
+/* stacked vertically on a phone, a long horizontal pill would clip at the screen edges */
 @media (max-width: 480px) {
   .chart-tip {
     flex-direction: column;
@@ -1824,7 +1766,7 @@ a {
   background: var(--accent-2);
 }
 
-/* ---- empty + error states ---- */
+/* empty + error states */
 .empty {
   margin-top: 64px;
   text-align: center;
@@ -1847,7 +1789,7 @@ a {
   max-width: 30rem;
 }
 
-/* token gate -- shown when the server runs with TALLY_TOKEN set */
+/* shown when the server runs with TALLY_TOKEN set */
 .token-form {
   display: flex;
   gap: 8px;
@@ -1920,7 +1862,7 @@ a {
   }
 }
 
-/* ---- modals (settings + events) ---- */
+/* modals (settings + events) */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -1956,8 +1898,7 @@ a {
   display: none; /* Chrome, Safari */
 }
 
-/* ---- CSV export confirm (see ExportCsvButton) -- same Modal chrome and
-   width as Settings, just its own content ---- */
+/* CSV export confirm (see ExportCsvButton), same Modal chrome and width as Settings, just its own content */
 .confirm-actions {
   display: flex;
   justify-content: flex-end;
@@ -2042,8 +1983,7 @@ a {
   padding: 20px 22px 22px;
 }
 
-/* ---- expand sheet: what a compact card (see ClickableCard) opens into.
-   Full-screen, not a small centered box -- see App.tsx's ExpandSheet. ---- */
+/* expand sheet: what a compact card (see ClickableCard) opens into, full-screen not a small centered box, see App.tsx's ExpandSheet */
 .sheet-backdrop {
   position: fixed;
   inset: 0;
@@ -2060,8 +2000,7 @@ a {
      see the ::view-transition-old/new(root) rule below. */
 }
 
-/* a large dialog, not literally edge-to-edge -- capped so it reads as a
-   card floating over the dashboard rather than a whole new screen */
+/* a large dialog, not literally edge-to-edge, capped so it reads as a card floating over the dashboard rather than a whole new screen */
 .sheet {
   width: 100%;
   height: 100%;
@@ -2125,16 +2064,12 @@ a {
   justify-content: center;
 }
 
-/* a flex item's default min-width is auto, not 0 -- meaning it won't shrink
-   below its content's own intrinsic width. The chart inside can (and on a
-   narrow phone, does) want to be wider than that, which pushed this whole
-   sheet wider than the screen instead of the chart just shrinking to fit. */
+/* flex items don't shrink below their content's intrinsic width by default, so on narrow phones the chart was pushing this whole sheet wider than the screen */
 .sheet-traffic {
   min-width: 0;
 }
 
-/* Activity's centred position (via the rule above) sat a bit too low --
-   nudge it up from centre without touching Traffic, which was fine there */
+/* Activity sat a bit too low centered, nudge it up without touching Traffic, which was fine there */
 .sheet-activity {
   margin-top: -90px;
 }
@@ -2176,37 +2111,18 @@ a {
   animation-timing-function: cubic-bezier(0.22, 1.12, 0.36, 1);
 }
 
-/* the title and the card's main visual (chart/radar/rows -- see .card-content
-   below) get their own named group instead of crossfading as part of the
-   whole card. Each one then morphs its own position/size independently --
-   the title visibly grows into the sheet's, the chart/list visibly resizes
-   into place -- rather than the whole card being one flat image dissolving
-   into another. A fixed (not per-card) name is fine: only one card is ever
-   `.card-transitioning` at a time, and only one sheet is ever mounted. */
+/* title and main visual (see .card-content below) get their own named transition group so they morph into place instead of the whole card just crossfading. one fixed name is fine since only one card transitions at a time */
 .panel-clickable.card-transitioning .panel-title,
 .sheet-title {
   view-transition-name: sheet-title;
 }
-/* :not(.card-content-list)/:not(.sheet-content-list) -- a row list (Top
-   pages, Entry pages, Referrers) doesn't get this. Its compact preview (5
-   rows, from the dashboard's own capped fetch) and its expanded sheet (up
-   to 500 rows, a separate fetch, so not even guaranteed the exact same
-   max/proportions) aren't "the same visual, bigger" the way a donut or
-   chart card's content is -- morphing between two lists with genuinely
-   different content and bar proportions read as the bars jumping mid-
-   transition instead of a real scale-up. These just cross-fade with the
-   rest of the (unnamed) snapshot instead. */
+/* row lists (Top pages, Entry pages, Referrers) skip this transition, the compact preview and expanded sheet are separate fetches with different row counts, so morphing between them just looks like the bars jumping instead of a real scale up */
 .panel-clickable.card-transitioning .card-content:not(.card-content-list),
 .sheet-content:not(.sheet-content-list) {
   view-transition-name: sheet-content;
 }
 
-/* nothing behind the sheet actually changes -- the dashboard grid is
-   identical before and after, and the backdrop scrim just pops with it
-   (see .sheet-backdrop for why it isn't animated on its own). Without this,
-   the browser still crossfades its own before/after screenshot of that whole
-   background, which reads as a stray flash of fading laid over the card's
-   resize. */
+/* nothing behind the sheet actually changes, without this the browser still crossfades its own before/after screenshot of the whole background and it reads as a stray flash over the card's resize */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation: none;
@@ -2300,9 +2216,7 @@ a {
   gap: 12px;
 }
 
-/* self-sufficient flex row -- .setting also brings display:flex, but the bar
-   popup's row doesn't use .setting (no card chrome wanted there), so this
-   can't rely on it and needs its own */
+/* needs its own display:flex, the bar popup's row skips .setting (no card chrome wanted there) so it can't just inherit it */
 .event-setting-row {
   display: flex;
   align-items: center;
@@ -2533,8 +2447,7 @@ a {
   flex-shrink: 0;
 }
 
-/* the breakdown colors modal's row -- same shape as event-name-input but plain
-   text, nothing to type (see the "no renaming" request that started this) */
+/* same shape as event-name-input, just plain text, nothing to type here */
 .breakdown-color-name {
   display: flex;
   align-items: center;
@@ -2693,7 +2606,7 @@ a {
     width: 100%;
   }
   .theme-opt {
-    padding: 11px 0; /* ~44px tall -- a proper thumb-friendly tap target */
+    padding: 11px 0; /* ~44px tall, a proper thumb-friendly tap target */
     font-size: 14px;
   }
   .theme-opt svg {

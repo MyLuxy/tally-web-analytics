@@ -226,7 +226,7 @@ export function Chart({
           <path className="chart-line-visitors" d={linePath("visitors")} style={visitorsColor ? { stroke: visitorsColor } : undefined} />
           <path className="chart-line-views" d={linePath("pageviews")} style={viewsColor ? { stroke: viewsColor } : undefined} />
 
-          {/* marker per point, only for 7d/30d -- 24h just glides */}
+          {/* marker per point, only for 7d/30d, 24h just glides */}
           {snap &&
             series.map((p, i) => (
               <circle

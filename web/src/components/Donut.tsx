@@ -26,7 +26,7 @@ export function Donut({
   thickness?: number;
   centerLabel?: string;
   centerSub?: string;
-  lift3d?: boolean; // the expanded sheet's bigger donut only -- pops the hovered slice up in 3D
+  lift3d?: boolean; // the expanded sheet's bigger donut only, pops the hovered slice up in 3D
   onSegmentClick?: (segment: DonutSegment, clientX: number, clientY: number) => void;
 }) {
   const [hover, setHover] = useState<{ i: number; x: number; y: number } | null>(null);

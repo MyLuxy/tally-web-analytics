@@ -26,7 +26,7 @@ export function Modal({
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  // portal to body -- a transformed ancestor (some cards have hover transforms) breaks position:fixed otherwise
+  // portal to body, a transformed ancestor (some cards have hover transforms) breaks position:fixed otherwise
   return createPortal(
     <div
       className={`modal-overlay${className ? ` ${className}` : ""}`}

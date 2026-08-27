@@ -19,8 +19,6 @@ function IconBase({ children }: { children: ReactNode }) {
   );
 }
 
-// ---- browsers ----
-
 function GlobeIcon() {
   return (
     <IconBase>
@@ -58,8 +56,6 @@ export function browserIcon(name: string): ReactNode {
   }
 }
 
-// ---- operating systems ----
-
 function WindowsIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
@@ -95,8 +91,6 @@ export function osIcon(name: string): ReactNode {
       return <MonitorIcon />;
   }
 }
-
-// ---- devices ----
 
 function DesktopIcon() {
   return (

@@ -7,7 +7,7 @@ import { TallyMarks } from "./components/TallyMarks.js";
 import { Chart } from "./components/Chart.js";
 import { Sparkline } from "./components/Sparkline.js";
 import { BarChart } from "./components/BarChart.js";
-import { ExportCsvButton, Rows, StatList } from "./components/StatList.js";
+import { ExportCsvButton, Rows } from "./components/StatList.js";
 import { BreakdownCard, BreakdownChart } from "./components/BreakdownCard.js";
 import type { BreakdownTab } from "./components/BreakdownCard.js";
 import { RankedBoard, TrafficSourcesCard, TrafficSourcesContent } from "./components/TrafficSources.js";
@@ -22,6 +22,8 @@ import type { Row } from "./components/StatList.js";
 type ExpandTarget = BreakdownMetric | "traffic" | "trafficSources" | "activity" | "site";
 
 type PlatformKey = "browsers" | "systems" | "devices" | "countries";
+
+type ContentKey = "pages" | "entryPages" | "referrers";
 
 type EventSetting = { label?: string; color?: string };
 
@@ -55,15 +57,13 @@ function defaultBreakdownColor(i: number): string {
   return CHART_PALETTE_HEX[i % CHART_PALETTE_HEX.length] ?? "#3b82f6";
 }
 
-// hex twins of the line-chart accent vars (Chart.tsx/Sparkline lean on the same two).
-// the compact Activity card's sparkline actually defaults to a different css var
-// (accent-5) than its own expanded chart does -- pre-existing quirk, not
-// worth carrying into the settings picker, one seed color's simpler
+// hex twins of the line chart accent vars, Chart.tsx and Sparkline lean on the same two
 const HEX_ACCENT = "#3b82f6"; // pageviews, both Statistics and Activity's chart
 const HEX_ACCENT_2 = "#22d3ee"; // visitors
 
 // hex twin of the radar shape's default color (--accent-3, see RadarChart's .radar-area)
 const RADAR_DEFAULT_COLOR = "#a78bfa";
+const CONTENT_LINE_DEFAULT_COLOR = "#f472b6"; // hex twin of --accent-5, the rows' default rank+underline color
 
 // Statistics and Activity are both just a pageviews + visitors line, same shape
 const LINE_CHART_ITEMS = [
@@ -71,8 +71,7 @@ const LINE_CHART_ITEMS = [
   { key: "visitors", label: "Visitors", defaultColor: HEX_ACCENT_2 },
 ];
 
-// separate map from eventSettings -- keyed by tab too since "browsers" and
-// "countries" don't share a namespace, no name-editing here, colors only
+// keyed by tab too, colors only here, no name editing
 function loadBreakdownColors(): Record<string, string> {
   try {
     return JSON.parse(localStorage.getItem("tally_breakdown_colors") ?? "{}");
@@ -146,9 +145,7 @@ function referrerFaviconIcon(row: Row) {
   return <LazyFavicon domain={domain} />;
 }
 
-// only mounts the real <img> when its row is about to scroll into view, otherwise
-// hundreds of favicons in a long list tanks perf. loading="lazy" alone isn't enough,
-// it still creates the DOM node
+// mounts the img only once the row's about to scroll into view, loading="lazy" alone still creates the dom node for hundreds of rows
 function LazyFavicon({ domain }: { domain: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   const [visible, setVisible] = useState(false);
@@ -235,6 +232,7 @@ export function App() {
   const [breakdownRows, setBreakdownRows] = useState<Row[] | null>(null);
   const [breakdownError, setBreakdownError] = useState<string | null>(null);
   const [breakdownTab, setBreakdownTab] = useState<PlatformKey>("browsers");
+  const [contentTab, setContentTab] = useState<ContentKey>("pages");
   const [sourceRows, setSourceRows] = useState<Row[] | null>(null);
   const [sourceError, setSourceError] = useState<string | null>(null);
   // index.html already set this on <html> before mount to avoid a flash, just syncing state
@@ -251,6 +249,7 @@ export function App() {
   const [trafficColorsOpen, setTrafficColorsOpen] = useState(false);
   const [activityColorsOpen, setActivityColorsOpen] = useState(false);
   const [sourceColorsOpen, setSourceColorsOpen] = useState(false);
+  const [contentColorsOpen, setContentColorsOpen] = useState(false);
   const [barPopover, setBarPopover] = useState<{ name: string; top: number; left: number } | null>(null);
   const barPopoverRef = useRef<HTMLDivElement>(null);
   useLockBodyScroll(barPopover !== null);
@@ -327,8 +326,7 @@ export function App() {
     setBarPopover({ name, top, left });
   }
 
-  // same close-on-outside/Escape/scroll as ColorPicker, but also has to ignore
-  // clicks in ColorPicker's own popover -- different portal, not a child of ours
+  // same close-on-outside/Escape/scroll as ColorPicker, ignores clicks in its popover too (different portal, not our child)
   useEffect(() => {
     if (!barPopover) return;
     const onDoc = (e: MouseEvent) => {
@@ -441,9 +439,7 @@ export function App() {
     return () => ctrl.abort();
   }, [site, reload]);
 
-  // keeps the numbers current without ever touching loading/error -- runs
-  // regardless of whether a modal's open, doesn't reset anything, a failed
-  // tick just tries again in another 30s instead of showing an error banner
+  // silent refresh, never touches loading/error, a failed tick just tries again in 30s
   useEffect(() => {
     if (!site || locked) return;
     const id = window.setInterval(() => {
@@ -513,9 +509,7 @@ export function App() {
     withViewTransition(() => {
       setExpanded(target);
       setTransitioningKey(null);
-      // clear synchronously or the old (possibly taller) list flashes for a frame before
-      // the new data loads in
-      setBreakdownRows(null);
+      setBreakdownRows(null); // clear synchronously or the old list flashes for a frame
       setBreakdownError(null);
     });
   }
@@ -594,6 +588,32 @@ export function App() {
     },
   ];
   const activePlatformTab = platformTabs.find((t) => t.key === breakdownTab)!;
+
+  const contentTabs: BreakdownTab[] = [
+    {
+      key: "pages",
+      label: "Top pages",
+      empty: "No pages recorded.",
+      info: "Your most-visited pages in the selected time range, ranked by pageviews.",
+      rows: (data?.topPages ?? []).map((p) => ({ label: p.path, value: p.views })),
+    },
+    {
+      key: "entryPages",
+      label: "Entry pages",
+      empty: "No entry pages recorded.",
+      info: "The first page each visitor landed on, where your traffic actually enters the site, as opposed to every page it later views.",
+      rows: (data?.entryPages ?? []).map((p) => ({ label: p.path, value: p.views })),
+    },
+    {
+      key: "referrers",
+      label: "Referrers",
+      empty: "All traffic came in direct.",
+      info: "Where your visitors came from: the external site or search engine that linked them to you.",
+      rows: (data?.topReferrers ?? []).map((r) => ({ label: r.source, value: r.views })),
+      rowIcon: referrerFaviconIcon,
+    },
+  ];
+  const activeContentTab = contentTabs.find((t) => t.key === contentTab)!;
 
   return (
     <div className="shell">
@@ -686,16 +706,15 @@ export function App() {
             />
           </section>
 
-          {/* Statistics (wide) + Traffic sources (narrow) -- the range picker
-              lives inside the Statistics card itself now, not the top bar,
-              since it's the one thing that actually controls this chart. */}
-          <div className="chart-row">
+          {/* one grid, not two rows, so the tablet tier can reorder via grid-area */}
+          <div className="chart-grid">
             <ClickableCard
               cardKey="traffic"
               expanded={expanded === "traffic"}
               transitioning={transitioningKey === "traffic"}
               onExpand={() => openCard("traffic")}
               ariaLabel="Traffic: view full chart"
+              className="chart-area-stats"
             >
               <div className="panel-head">
                 <h2 className="panel-title">Statistics</h2>
@@ -730,23 +749,20 @@ export function App() {
                 color={breakdownColors["trafficSources:radar"]}
               />
             )}
-          </div>
 
-          {/* Activity (always the last 24h) + Events */}
-          <div className="chart-row">
             <ClickableCard
               cardKey="activity"
               expanded={expanded === "activity"}
               transitioning={transitioningKey === "activity"}
               onExpand={() => openCard("activity")}
               ariaLabel="Activity: view details"
+              className="chart-area-activity"
             >
               <div className="panel-head">
                 <h2 className="panel-title">Activity</h2>
                 <span className="eyebrow">last 24h</span>
               </div>
-              {/* a plain preview, not the full Statistics chart -- clicking
-                  the card is what gets the grid/axis/tooltip version */}
+              {/* plain preview here, clicking the card gets the full grid/axis/tooltip version */}
               <div className="card-content">
                 {activityData && (
                   <Sparkline series={activityData.series} hour12={hour12} color={breakdownColors["activity:pageviews"]} />
@@ -774,6 +790,7 @@ export function App() {
               transitioning={transitioningKey === "events"}
               onExpand={() => openCard("events")}
               ariaLabel="Events: view all"
+              className="chart-area-events"
             >
               <div className="panel-head">
                 <h2 className="panel-title">Events</h2>
@@ -781,9 +798,7 @@ export function App() {
               </div>
               {data && data.events.length > 0 ? (
                 <div className="card-content">
-                  {/* the compact card's cramped, cap it tighter than the top-10 the server already sends.
-                      no onBarClick here -- a bar click should expand the card like anywhere else on
-                      it, the per-bar settings popup only makes sense once you're already in the sheet */}
+                  {/* cap tighter than the server's top-10, this card's cramped. no onBarClick, that only makes sense once you're in the sheet */}
                   <BarChart bars={eventBars.slice(0, isMobile ? 3 : 5)} />
                 </div>
               ) : (
@@ -795,43 +810,18 @@ export function App() {
             </ClickableCard>
           </div>
 
-          {/* every card below is compact and clickable -- one dense grid so
-              the breakdowns fit together as a single bento of tiles */}
+          {/* dense grid, so narrower cards backfill gaps instead of leaving holes */}
           <div className="card-grid">
-            <StatList
-              cardKey="pages"
-              expanded={expanded === "pages"}
-              transitioning={transitioningKey === "pages"}
-              title="Top pages"
-              info="Your most-visited pages in the selected time range, ranked by pageviews."
-              empty="No pages recorded."
-              rows={(data?.topPages ?? []).map((p) => ({ label: p.path, value: p.views }))}
-              onExpand={() => openCard("pages")}
-              className="card-span-2"
+            <BreakdownCard
+              tabs={contentTabs}
+              activeKey={contentTab}
+              onTabChange={(key) => setContentTab(key as ContentKey)}
+              expandedKey={expanded}
+              transitioningKey={transitioningKey}
+              onExpand={(key) => openCard(key as ExpandTarget)}
+              rowColor={breakdownColors["content:lines"]}
             />
-            <StatList
-              cardKey="entryPages"
-              expanded={expanded === "entryPages"}
-              transitioning={transitioningKey === "entryPages"}
-              title="Entry pages"
-              info="The first page each visitor landed on, where your traffic actually enters the site, as opposed to every page it later views."
-              empty="No entry pages recorded."
-              rows={(data?.entryPages ?? []).map((p) => ({ label: p.path, value: p.views }))}
-              onExpand={() => openCard("entryPages")}
-            />
-            <StatList
-              cardKey="referrers"
-              expanded={expanded === "referrers"}
-              transitioning={transitioningKey === "referrers"}
-              title="Referrers"
-              info="Where your visitors came from: the external site or search engine that linked them to you."
-              empty="All traffic came in direct."
-              rows={(data?.topReferrers ?? []).map((r) => ({ label: r.source, value: r.views }))}
-              onExpand={() => openCard("referrers")}
-              className="card-span-2"
-              icon={referrerFaviconIcon}
-            />
-            {/* no onSliceClick here -- same deal as the events bar chart above, a slice click expands the card */}
+            {/* no onSliceClick here, same deal as the events bar chart above */}
             <BreakdownCard
               tabs={platformTabs}
               activeKey={breakdownTab}
@@ -1090,9 +1080,7 @@ export function App() {
       {sourceColorsOpen && (
         <Modal title="Chart colors" onClose={() => setSourceColorsOpen(false)} className="modal-overlay-nested">
           <h3 className="event-settings-title">Change color</h3>
-          {/* one color, not four -- the radar's a single connected shape, not per-category
-              slices, so this is the only thing actually drawn on the chart itself. the
-              legend dots below it stay fixed, they're not what this controls */}
+          {/* radar's one connected shape, not per-category slices, so just one color. legend dots below stay fixed */}
           <div className="event-settings-list">
             <div className="setting event-setting-row">
               <ColorPicker
@@ -1107,6 +1095,35 @@ export function App() {
                   type="button"
                   className="export-btn event-setting-reset"
                   onClick={() => resetBreakdownColor("trafficSources:radar")}
+                  aria-label="Reset to default"
+                  title="Reset to default"
+                >
+                  <CloseIcon />
+                </button>
+              )}
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {contentColorsOpen && (
+        <Modal title="Chart colors" onClose={() => setContentColorsOpen(false)} className="modal-overlay-nested">
+          <h3 className="event-settings-title">Change color</h3>
+          {/* one color for the rank number + underline bar, shared across all three tabs */}
+          <div className="event-settings-list">
+            <div className="setting event-setting-row">
+              <ColorPicker
+                className="event-color-input"
+                value={breakdownColors["content:lines"] ?? CONTENT_LINE_DEFAULT_COLOR}
+                onChange={(hex) => setBreakdownColor("content:lines", hex)}
+                label="Line color"
+              />
+              <span className="breakdown-color-name">Line color</span>
+              {breakdownColors["content:lines"] && (
+                <button
+                  type="button"
+                  className="export-btn event-setting-reset"
+                  onClick={() => resetBreakdownColor("content:lines")}
                   aria-label="Reset to default"
                   title="Reset to default"
                 >
@@ -1297,8 +1314,22 @@ export function App() {
                   <ExportCsvButton title={VIEW_ALL_CONFIG[expanded].title} rows={breakdownRows} />
                 )}
               </>
-            ) : breakdownRows && breakdownRows.length > 0 ? (
-              <ExportCsvButton title={VIEW_ALL_CONFIG[expanded].title} rows={breakdownRows} />
+            ) : expanded === "pages" || expanded === "entryPages" || expanded === "referrers" ? (
+              <>
+                <button
+                  type="button"
+                  className="export-btn"
+                  onClick={() => setContentColorsOpen(true)}
+                  aria-label="Line color"
+                  aria-haspopup="dialog"
+                  title="Line color"
+                >
+                  <GearIcon />
+                </button>
+                {breakdownRows && breakdownRows.length > 0 && (
+                  <ExportCsvButton title={VIEW_ALL_CONFIG[expanded].title} rows={breakdownRows} />
+                )}
+              </>
             ) : undefined
           }
         >
@@ -1427,10 +1458,7 @@ export function App() {
                   <p className="ink-soft">No custom events recorded.</p>
                 </div>
               )}
-              {/* the chart above is only the top 10 (same as the compact card,
-                  just with a readable grid) -- whatever's left of the full,
-                  higher-capped breakdown list shows underneath, same pattern
-                  as trafficSources' "All referrers" */}
+              {/* chart's top 10 same as the compact card, the rest of the higher cap shows below, same pattern as trafficSources' "All referrers" */}
               {breakdownRows && breakdownRows.length > 10 && (
                 <>
                   <h3 className="sheet-subhead">More events</h3>
@@ -1449,8 +1477,7 @@ export function App() {
                     aria-selected={t.key === breakdownTab}
                     className="segment"
                     onClick={() => {
-                      // no view transition here, just swapping tabs. clear breakdownRows
-                      // too or the old tab's rows flash for a frame before refetch
+                      // no view transition, just a tab swap, still gotta clear breakdownRows or the old tab flashes
                       setBreakdownTab(t.key as PlatformKey);
                       setExpanded(t.key as ExpandTarget);
                       setBreakdownRows(null);
@@ -1474,19 +1501,10 @@ export function App() {
                   lift3d
                 />
               </div>
-              {/* the chart above is only the top 10 (same as the compact card) --
-                  rarely more than that for browsers/OS/devices, but countries
-                  routinely has far more, so whatever's left of the full,
-                  higher-capped breakdown list shows underneath. Countries gets
-                  the same ranked-grid-with-flags treatment as "All referrers"
-                  (see RankedBoard) since it's the one that can genuinely run
-                  long; the others keep the plain list, they rarely need it. */}
+              {/* chart's top 10 same as the compact card, countries routinely has more so it gets the rest below */}
               {breakdownRows && breakdownRows.length > (activePlatformTab.chart?.length ?? 0) && (
                 <>
-                  {/* countries repeats the ones already shown in the donut above,
-                      instead of picking up where it left off -- one continuous,
-                      complete ranked list reads more sensibly here than a second
-                      list that mysteriously starts at #11 */}
+                  {/* countries shows the full list from #1, not resuming at #11, reads better than a second list starting mid-way */}
                   <h3 className="sheet-subhead">
                     {breakdownTab === "countries" ? "All countries" : `More ${activePlatformTab.label.toLowerCase()}`}
                   </h3>
@@ -1498,24 +1516,47 @@ export function App() {
                 </>
               )}
             </div>
-          ) : breakdownError ? (
-            <div className="notice notice-error">
-              <strong>Couldn't load the full list.</strong> {breakdownError}
+          ) : expanded === "pages" || expanded === "entryPages" || expanded === "referrers" ? (
+            <div className="sheet-breakdown">
+              <div className="breakdown-tabs sheet-breakdown-tabs" role="tablist" aria-label="Content">
+                {contentTabs.map((t) => (
+                  <button
+                    key={t.key}
+                    type="button"
+                    role="tab"
+                    aria-selected={t.key === contentTab}
+                    className="segment"
+                    onClick={() => {
+                      setContentTab(t.key as ContentKey);
+                      setExpanded(t.key as ExpandTarget);
+                      setBreakdownRows(null);
+                      setBreakdownError(null);
+                    }}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+              {breakdownError ? (
+                <div className="notice notice-error">
+                  <strong>Couldn't load the full list.</strong> {breakdownError}
+                </div>
+              ) : breakdownRows === null ? (
+                <div className="modal-loading" role="status" aria-label="Loading">
+                  <span className="spinner" />
+                </div>
+              ) : (
+                <div className="sheet-content sheet-content-list">
+                  <Rows
+                    rows={breakdownRows}
+                    empty={activeContentTab.empty}
+                    icon={activeContentTab.rowIcon}
+                    color={breakdownColors["content:lines"]}
+                  />
+                </div>
+              )}
             </div>
-          ) : breakdownRows === null ? (
-            <div className="modal-loading" role="status" aria-label="Loading">
-              <span className="spinner" />
-            </div>
-          ) : (
-            // sheet-content-list opts out of the shared transition, see StatList.tsx
-            <div className="sheet-content sheet-content-list">
-              <Rows
-                rows={breakdownRows}
-                empty={VIEW_ALL_CONFIG[expanded].empty}
-                icon={expanded === "referrers" ? referrerFaviconIcon : undefined}
-              />
-            </div>
-          )}
+          ) : null}
         </ExpandSheet>
       )}
     </div>
@@ -1690,7 +1731,7 @@ function KpiCard({
   delta,
 }: {
   icon: ReactNode;
-  iconVar: string; // a CSS custom property name, e.g. "--accent" -- the icon circle's colour
+  iconVar: string; // css custom property name for the icon circle's color, e.g. "--accent"
   label: string;
   value: number;
   decimals?: number;
@@ -1750,8 +1791,7 @@ function RatioIcon() {
   );
 }
 
-// full-screen sheet a compact card expands into, grows out of the card's rect
-// via view-transition-name where supported
+// full-screen sheet a compact card expands into, grows out of the card's rect via view-transition-name
 function ExpandSheet({
   cardKey,
   title,

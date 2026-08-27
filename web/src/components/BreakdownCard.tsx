@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { ClickableCard } from "./ClickableCard.js";
 import { Donut } from "./Donut.js";
 import { TallyMarks } from "./TallyMarks.js";
-import { ExportCsvButton, Rows } from "./StatList.js";
+import { ExportCsvButton, InfoDot, Rows } from "./StatList.js";
 import type { Row } from "./StatList.js";
 
 const PREVIEW_ROWS = 5;
@@ -13,12 +13,14 @@ export type BreakdownTab = {
   label: string;
   rows: Row[];
   empty: string;
+  info?: string; // one-liner shown next to the export button, plain-list tabs only
+  rowIcon?: (row: Row) => ReactNode; // per-row icon for plain-list tabs, e.g. a referrer's favicon
   // donut+legend instead of a bar list, for the tabs with just a few named buckets (browsers/OS/devices/countries)
   chart?: { name: string; value: number; code?: string }[];
   icon?: (name: string, code?: string) => ReactNode;
 };
 
-// fixed palette, not real brand colors -- Chrome/Safari/Windows are all blue-ish and clumped together otherwise
+// fixed palette, not real brand colors, Chrome/Safari/Windows are all blue-ish and clump together otherwise
 const CHART_PALETTE = [
   "var(--accent)", // blue
   "var(--accent-4)", // amber
@@ -45,7 +47,7 @@ export function BreakdownChart({
   onSliceClick?: (name: string, code: string | undefined, clientX: number, clientY: number) => void;
   size?: number;
   thickness?: number;
-  lift3d?: boolean; // the expanded sheet only -- see Donut
+  lift3d?: boolean; // the expanded sheet only, see Donut
 }) {
   const total = data.reduce((sum, d) => sum + d.value, 0);
 
@@ -111,6 +113,7 @@ export function BreakdownCard({
   onExpand,
   colorFor,
   onSliceClick,
+  rowColor,
 }: {
   tabs: BreakdownTab[];
   activeKey: string;
@@ -120,6 +123,7 @@ export function BreakdownCard({
   onExpand: (key: string) => void;
   colorFor?: (name: string, code?: string) => string | undefined;
   onSliceClick?: (name: string, code: string | undefined, clientX: number, clientY: number) => void;
+  rowColor?: string; // overrides the rank+underline color for row tabs (chart tabs use colorFor instead)
 }) {
   const active = tabs.find((t) => t.key === activeKey) ?? tabs[0]!;
   const isExpanded = expandedKey === active.key;
@@ -153,12 +157,14 @@ export function BreakdownCard({
           ))}
         </div>
         <div className="panel-head-actions">
+          {!active.chart && active.info && <InfoDot text={active.info} />}
           {/* donut tabs export from the expanded sheet instead, this preview's only a partial list */}
           {!active.chart && active.rows.length > 0 && <ExportCsvButton title={active.label} rows={active.rows} />}
         </div>
       </div>
 
-      <div className="card-content">
+      {/* row tabs skip the shared view transition, a 5-row preview morphing into a 500-row list just looks like the bars jumping */}
+      <div className={active.chart ? "card-content" : "card-content card-content-list"}>
         {active.chart ? (
           <BreakdownChart
             data={active.chart.slice(0, PREVIEW_CHART_ITEMS)}
@@ -169,7 +175,7 @@ export function BreakdownCard({
             lift3d
           />
         ) : (
-          <Rows rows={active.rows.slice(0, PREVIEW_ROWS)} empty={active.empty} />
+          <Rows rows={active.rows.slice(0, PREVIEW_ROWS)} empty={active.empty} icon={active.rowIcon} color={rowColor} />
         )}
       </div>
     </ClickableCard>
