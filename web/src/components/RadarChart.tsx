@@ -9,9 +9,11 @@ const PAD_Y = 46;
 export function RadarChart({
   axes,
   size = 220,
+  color,
 }: {
   axes: RadarAxis[];
   size?: number;
+  color?: string; // overrides the shape's fill/stroke, see App.tsx's chart color settings
 }) {
   const n = axes.length;
   const [wrapRef, W] = useMeasuredWidth(size + PAD_X * 2);
@@ -56,9 +58,17 @@ export function RadarChart({
           return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} className="radar-axis-line" />;
         })}
 
-        {hasData && <path d={dataPath} className="radar-area" />}
+        {hasData && (
+          <path
+            d={dataPath}
+            className="radar-area"
+            style={color ? { fill: `color-mix(in srgb, ${color} 30%, transparent)`, stroke: color } : undefined}
+          />
+        )}
         {hasData &&
-          dataPoints.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r={3} className="radar-dot" />)}
+          dataPoints.map((p, i) => (
+            <circle key={i} cx={p.x} cy={p.y} r={3} className="radar-dot" style={color ? { fill: color } : undefined} />
+          ))}
 
         {axes.map((a, i) => {
           const p = pointAt(i, 1);

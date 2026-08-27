@@ -6,7 +6,7 @@ import { ClickableCard } from "./ClickableCard.js";
 import type { Row } from "./StatList.js";
 
 // fixed order, not sorted by size, so the chart doesn't reshuffle when the range changes
-const CATEGORIES: { key: keyof Stats["trafficSources"]; label: string; color: string }[] = [
+export const CATEGORIES: { key: keyof Stats["trafficSources"]; label: string; color: string }[] = [
   { key: "direct", label: "Direct", color: "var(--neutral-cat)" },
   { key: "search", label: "Search", color: "var(--accent)" },
   { key: "social", label: "Social", color: "var(--accent-4)" },
@@ -18,10 +18,14 @@ export function TrafficSourcesContent({
   sources,
   radarSize = 200,
   layout = "row",
+  color,
 }: {
   sources: Stats["trafficSources"];
   radarSize?: number;
   layout?: "row" | "column"; // "column" centres the chart above a full-width legend
+  color?: string; // overrides the radar shape's color, see App.tsx's chart color settings. the
+  // legend dots stay fixed per-category -- they're not what's drawn on the chart, RadarChart's
+  // one connected shape, not 4 separate slices, so per-category color there wouldn't do anything
 }) {
   const total = CATEGORIES.reduce((sum, c) => sum + sources[c.key], 0);
 
@@ -36,7 +40,7 @@ export function TrafficSourcesContent({
 
   return (
     <div className={`traffic-sources${layout === "column" ? " traffic-sources-column" : ""}`}>
-      <RadarChart size={radarSize} axes={CATEGORIES.map((c) => ({ label: c.label, value: sources[c.key] }))} />
+      <RadarChart size={radarSize} axes={CATEGORIES.map((c) => ({ label: c.label, value: sources[c.key] }))} color={color} />
       <ul className="traffic-sources-legend">
         {CATEGORIES.map((c) => {
           const value = sources[c.key];
@@ -99,11 +103,13 @@ export function TrafficSourcesCard({
   expanded,
   transitioning,
   onExpand,
+  color,
 }: {
   sources: Stats["trafficSources"];
   expanded: boolean;
   transitioning: boolean;
   onExpand: () => void;
+  color?: string;
 }) {
   return (
     <ClickableCard
@@ -117,7 +123,7 @@ export function TrafficSourcesCard({
         <h2 className="panel-title">Traffic sources</h2>
       </div>
       <div className="card-content">
-        <TrafficSourcesContent sources={sources} radarSize={380} layout="column" />
+        <TrafficSourcesContent sources={sources} radarSize={380} layout="column" color={color} />
       </div>
     </ClickableCard>
   );

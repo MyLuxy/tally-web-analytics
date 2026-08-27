@@ -100,10 +100,14 @@ export function Chart({
   series,
   range,
   hour12,
+  viewsColor,
+  visitorsColor,
 }: {
   series: Point[];
   range: Range;
   hour12: boolean;
+  viewsColor?: string; // custom override for both lines, see App.tsx's chart color settings
+  visitorsColor?: string;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [wrapRef, W] = useMeasuredWidth(720);
@@ -204,8 +208,8 @@ export function Chart({
         >
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.22" />
-              <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
+              <stop offset="0%" stopColor={viewsColor ?? "var(--accent)"} stopOpacity="0.22" />
+              <stop offset="100%" stopColor={viewsColor ?? "var(--accent)"} stopOpacity="0" />
             </linearGradient>
           </defs>
 
@@ -219,13 +223,20 @@ export function Chart({
           ))}
 
           <path className="chart-area" d={areaPath} fill={`url(#${gradientId})`} />
-          <path className="chart-line-visitors" d={linePath("visitors")} />
-          <path className="chart-line-views" d={linePath("pageviews")} />
+          <path className="chart-line-visitors" d={linePath("visitors")} style={visitorsColor ? { stroke: visitorsColor } : undefined} />
+          <path className="chart-line-views" d={linePath("pageviews")} style={viewsColor ? { stroke: viewsColor } : undefined} />
 
           {/* marker per point, only for 7d/30d -- 24h just glides */}
           {snap &&
             series.map((p, i) => (
-              <circle key={`m${i}`} className="chart-marker" cx={xFor(i)} cy={yFor(p.pageviews)} r={2} />
+              <circle
+                key={`m${i}`}
+                className="chart-marker"
+                cx={xFor(i)}
+                cy={yFor(p.pageviews)}
+                r={2}
+                style={viewsColor ? { stroke: viewsColor } : undefined}
+              />
             ))}
 
           {ticks.map(({ p, i }) => {
@@ -241,8 +252,8 @@ export function Chart({
           {show && (
             <g>
               <line className="chart-cursor" x1={dotX} x2={dotX} y1={PAD.top} y2={baseline} />
-              <circle className="chart-dot-visitors" cx={dotX} cy={visitorsY} r={3.5} />
-              <circle className="chart-dot-views" cx={dotX} cy={viewsY} r={4} />
+              <circle className="chart-dot-visitors" cx={dotX} cy={visitorsY} r={3.5} style={visitorsColor ? { fill: visitorsColor } : undefined} />
+              <circle className="chart-dot-views" cx={dotX} cy={viewsY} r={4} style={viewsColor ? { fill: viewsColor } : undefined} />
             </g>
           )}
         </svg>
@@ -254,11 +265,11 @@ export function Chart({
           >
             <span className="chart-tip-when num">{tipWhen(near.bucket, range, hour12)}</span>
             <span className="chart-tip-stat">
-              <span className="dot dot-views" />
+              <span className="dot dot-views" style={viewsColor ? { background: viewsColor } : undefined} />
               <span className="num">{fmt(near.pageviews)}</span>
             </span>
             <span className="chart-tip-stat">
-              <span className="dot dot-visitors" />
+              <span className="dot dot-visitors" style={visitorsColor ? { background: visitorsColor } : undefined} />
               <span className="num">{fmt(near.visitors)}</span>
             </span>
           </div>
@@ -266,8 +277,8 @@ export function Chart({
       </div>
 
       <div className="chart-legend">
-        <span className="legend-item"><span className="dot dot-views" /> Pageviews</span>
-        <span className="legend-item"><span className="dot dot-visitors" /> Visitors</span>
+        <span className="legend-item"><span className="dot dot-views" style={viewsColor ? { background: viewsColor } : undefined} /> Pageviews</span>
+        <span className="legend-item"><span className="dot dot-visitors" style={visitorsColor ? { background: visitorsColor } : undefined} /> Visitors</span>
       </div>
     </div>
   );

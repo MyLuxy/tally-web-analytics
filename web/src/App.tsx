@@ -55,6 +55,22 @@ function defaultBreakdownColor(i: number): string {
   return CHART_PALETTE_HEX[i % CHART_PALETTE_HEX.length] ?? "#3b82f6";
 }
 
+// hex twins of the line-chart accent vars (Chart.tsx/Sparkline lean on the same two).
+// the compact Activity card's sparkline actually defaults to a different css var
+// (accent-5) than its own expanded chart does -- pre-existing quirk, not
+// worth carrying into the settings picker, one seed color's simpler
+const HEX_ACCENT = "#3b82f6"; // pageviews, both Statistics and Activity's chart
+const HEX_ACCENT_2 = "#22d3ee"; // visitors
+
+// hex twin of the radar shape's default color (--accent-3, see RadarChart's .radar-area)
+const RADAR_DEFAULT_COLOR = "#a78bfa";
+
+// Statistics and Activity are both just a pageviews + visitors line, same shape
+const LINE_CHART_ITEMS = [
+  { key: "pageviews", label: "Pageviews", defaultColor: HEX_ACCENT },
+  { key: "visitors", label: "Visitors", defaultColor: HEX_ACCENT_2 },
+];
+
 // separate map from eventSettings -- keyed by tab too since "browsers" and
 // "countries" don't share a namespace, no name-editing here, colors only
 function loadBreakdownColors(): Record<string, string> {
@@ -232,6 +248,9 @@ export function App() {
   const [eventSettingsOpen, setEventSettingsOpen] = useState(false);
   const [breakdownColors, setBreakdownColors] = useState<Record<string, string>>(loadBreakdownColors);
   const [breakdownColorsOpen, setBreakdownColorsOpen] = useState(false);
+  const [trafficColorsOpen, setTrafficColorsOpen] = useState(false);
+  const [activityColorsOpen, setActivityColorsOpen] = useState(false);
+  const [sourceColorsOpen, setSourceColorsOpen] = useState(false);
   const [barPopover, setBarPopover] = useState<{ name: string; top: number; left: number } | null>(null);
   const barPopoverRef = useRef<HTMLDivElement>(null);
   useLockBodyScroll(barPopover !== null);
@@ -685,7 +704,15 @@ export function App() {
                 </div>
               </div>
               <div className="chart-wrap card-content">
-                {data && <Chart series={data.series} range={range} hour12={hour12} />}
+                {data && (
+                  <Chart
+                    series={data.series}
+                    range={range}
+                    hour12={hour12}
+                    viewsColor={breakdownColors["traffic:pageviews"]}
+                    visitorsColor={breakdownColors["traffic:visitors"]}
+                  />
+                )}
                 {loading && (
                   <div className="chart-loading" role="status" aria-label="Loading">
                     <span className="spinner" />
@@ -700,6 +727,7 @@ export function App() {
                 expanded={expanded === "trafficSources"}
                 transitioning={transitioningKey === "trafficSources"}
                 onExpand={() => openCard("trafficSources")}
+                color={breakdownColors["trafficSources:radar"]}
               />
             )}
           </div>
@@ -720,7 +748,9 @@ export function App() {
               {/* a plain preview, not the full Statistics chart -- clicking
                   the card is what gets the grid/axis/tooltip version */}
               <div className="card-content">
-                {activityData && <Sparkline series={activityData.series} hour12={hour12} />}
+                {activityData && (
+                  <Sparkline series={activityData.series} hour12={hour12} color={breakdownColors["activity:pageviews"]} />
+                )}
                 <div className="activity-stats">
                   <div>
                     <span className="activity-stat-value num">
@@ -989,6 +1019,105 @@ export function App() {
         </Modal>
       )}
 
+      {trafficColorsOpen && (
+        <Modal title="Chart colors" onClose={() => setTrafficColorsOpen(false)} className="modal-overlay-nested">
+          <h3 className="event-settings-title">Change colors</h3>
+          <div className="event-settings-list">
+            {LINE_CHART_ITEMS.map((item) => {
+              const key = `traffic:${item.key}`;
+              const current = breakdownColors[key];
+              return (
+                <div className="setting event-setting-row" key={key}>
+                  <ColorPicker
+                    className="event-color-input"
+                    value={current ?? item.defaultColor}
+                    onChange={(hex) => setBreakdownColor(key, hex)}
+                    label={`Color for ${item.label}`}
+                  />
+                  <span className="breakdown-color-name">{item.label}</span>
+                  {current && (
+                    <button
+                      type="button"
+                      className="export-btn event-setting-reset"
+                      onClick={() => resetBreakdownColor(key)}
+                      aria-label={`Reset ${item.label} to default`}
+                      title="Reset to default"
+                    >
+                      <CloseIcon />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </Modal>
+      )}
+
+      {activityColorsOpen && (
+        <Modal title="Chart colors" onClose={() => setActivityColorsOpen(false)} className="modal-overlay-nested">
+          <h3 className="event-settings-title">Change colors</h3>
+          <div className="event-settings-list">
+            {LINE_CHART_ITEMS.map((item) => {
+              const key = `activity:${item.key}`;
+              const current = breakdownColors[key];
+              return (
+                <div className="setting event-setting-row" key={key}>
+                  <ColorPicker
+                    className="event-color-input"
+                    value={current ?? item.defaultColor}
+                    onChange={(hex) => setBreakdownColor(key, hex)}
+                    label={`Color for ${item.label}`}
+                  />
+                  <span className="breakdown-color-name">{item.label}</span>
+                  {current && (
+                    <button
+                      type="button"
+                      className="export-btn event-setting-reset"
+                      onClick={() => resetBreakdownColor(key)}
+                      aria-label={`Reset ${item.label} to default`}
+                      title="Reset to default"
+                    >
+                      <CloseIcon />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </Modal>
+      )}
+
+      {sourceColorsOpen && (
+        <Modal title="Chart colors" onClose={() => setSourceColorsOpen(false)} className="modal-overlay-nested">
+          <h3 className="event-settings-title">Change color</h3>
+          {/* one color, not four -- the radar's a single connected shape, not per-category
+              slices, so this is the only thing actually drawn on the chart itself. the
+              legend dots below it stay fixed, they're not what this controls */}
+          <div className="event-settings-list">
+            <div className="setting event-setting-row">
+              <ColorPicker
+                className="event-color-input"
+                value={breakdownColors["trafficSources:radar"] ?? RADAR_DEFAULT_COLOR}
+                onChange={(hex) => setBreakdownColor("trafficSources:radar", hex)}
+                label="Chart color"
+              />
+              <span className="breakdown-color-name">Chart color</span>
+              {breakdownColors["trafficSources:radar"] && (
+                <button
+                  type="button"
+                  className="export-btn event-setting-reset"
+                  onClick={() => resetBreakdownColor("trafficSources:radar")}
+                  aria-label="Reset to default"
+                  title="Reset to default"
+                >
+                  <CloseIcon />
+                </button>
+              )}
+            </div>
+          </div>
+        </Modal>
+      )}
+
       {barPopover &&
         createPortal(
           <div
@@ -1100,8 +1229,42 @@ export function App() {
           }
           onClose={closeCard}
           actions={
-            expanded === "traffic" || expanded === "activity" || expanded === "site" ? undefined : expanded === "trafficSources" ? (
-              sourceRows && sourceRows.length > 0 ? <ExportCsvButton title="Traffic sources" rows={sourceRows} /> : undefined
+            expanded === "site" ? undefined : expanded === "traffic" ? (
+              <button
+                type="button"
+                className="export-btn"
+                onClick={() => setTrafficColorsOpen(true)}
+                aria-label="Chart colors"
+                aria-haspopup="dialog"
+                title="Chart colors"
+              >
+                <GearIcon />
+              </button>
+            ) : expanded === "activity" ? (
+              <button
+                type="button"
+                className="export-btn"
+                onClick={() => setActivityColorsOpen(true)}
+                aria-label="Chart colors"
+                aria-haspopup="dialog"
+                title="Chart colors"
+              >
+                <GearIcon />
+              </button>
+            ) : expanded === "trafficSources" ? (
+              <>
+                <button
+                  type="button"
+                  className="export-btn"
+                  onClick={() => setSourceColorsOpen(true)}
+                  aria-label="Chart colors"
+                  aria-haspopup="dialog"
+                  title="Chart colors"
+                >
+                  <GearIcon />
+                </button>
+                {sourceRows && sourceRows.length > 0 && <ExportCsvButton title="Traffic sources" rows={sourceRows} />}
+              </>
             ) : expanded === "events" ? (
               <>
                 <button
@@ -1178,7 +1341,15 @@ export function App() {
           ) : expanded === "traffic" ? (
             <div className="sheet-traffic">
               <div className="chart-wrap sheet-content">
-                {data && <Chart series={data.series} range={range} hour12={hour12} />}
+                {data && (
+                  <Chart
+                    series={data.series}
+                    range={range}
+                    hour12={hour12}
+                    viewsColor={breakdownColors["traffic:pageviews"]}
+                    visitorsColor={breakdownColors["traffic:visitors"]}
+                  />
+                )}
                 {loading && (
                   <div className="chart-loading" role="status" aria-label="Loading">
                     <span className="spinner" />
@@ -1207,14 +1378,29 @@ export function App() {
                   />
                 </section>
                 <div className="chart-wrap activity-chart-accent">
-                  {activityData && <Chart series={activityData.series} range="24h" hour12={hour12} />}
+                  {activityData && (
+                    <Chart
+                      series={activityData.series}
+                      range="24h"
+                      hour12={hour12}
+                      viewsColor={breakdownColors["activity:pageviews"]}
+                      visitorsColor={breakdownColors["activity:visitors"]}
+                    />
+                  )}
                 </div>
               </div>
             </div>
           ) : expanded === "trafficSources" ? (
             <div className="sheet-traffic-sources">
               <div className="sheet-content">
-                {data && <TrafficSourcesContent sources={data.trafficSources} radarSize={460} layout="column" />}
+                {data && (
+                  <TrafficSourcesContent
+                    sources={data.trafficSources}
+                    radarSize={460}
+                    layout="column"
+                    color={breakdownColors["trafficSources:radar"]}
+                  />
+                )}
               </div>
               <h3 className="sheet-subhead">All referrers</h3>
               {sourceError ? (

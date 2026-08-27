@@ -6,7 +6,15 @@ const PAD = { top: 6, right: 8, bottom: 18, left: 34 };
 
 const fmt = (n: number) => n.toLocaleString("en-US");
 
-export function Sparkline({ series, hour12 }: { series: Stats["series"]; hour12: boolean }) {
+export function Sparkline({
+  series,
+  hour12,
+  color,
+}: {
+  series: Stats["series"];
+  hour12: boolean;
+  color?: string; // custom override, see App.tsx's chart color settings
+}) {
   const [wrapRef, W] = useMeasuredWidth(600);
   const n = series.length;
   const innerW = W - PAD.left - PAD.right;
@@ -46,8 +54,12 @@ export function Sparkline({ series, hour12 }: { series: Stats["series"]; hour12:
           </g>
         ))}
 
-        <path d={areaPath} className="sparkline-area" />
-        {n > 1 && <path d={linePath} className="sparkline-line" />}
+        <path
+          d={areaPath}
+          className="sparkline-area"
+          style={color ? { fill: `color-mix(in srgb, ${color} 18%, transparent)` } : undefined}
+        />
+        {n > 1 && <path d={linePath} className="sparkline-line" style={color ? { stroke: color } : undefined} />}
 
         {ticks.map(({ p, i }) => {
           const x = xFor(i);
