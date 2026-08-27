@@ -51,7 +51,11 @@ export function Donut({
   }
 
   const total = segments.reduce((sum, s) => sum + s.value, 0);
+  const shadowScale = thickness / 48;
   const r = (size - thickness) / 2;
+  // butt-capped segments should tile the circle exactly, but rounding leaves a hairline
+  // seam between some of them, a tiny overlap covers it without being visible itself
+  const SEAM_OVERLAP = 1.5;
   const circumference = 2 * Math.PI * r;
   const visible = segments.filter((s) => s.value > 0);
 
@@ -90,7 +94,7 @@ export function Donut({
                   fill="none"
                   stroke={s.color}
                   strokeWidth={thickness}
-                  strokeDasharray={`${dash} ${circumference - dash}`}
+                  strokeDasharray={`${Math.min(dash + SEAM_OVERLAP, circumference)} ${Math.max(0, circumference - dash - SEAM_OVERLAP)}`}
                   strokeDashoffset={-dashOffset}
                   strokeLinecap={linecap} // round cap avoids a seam on a lone full-circle segment
                   className="donut-segment"
@@ -129,14 +133,15 @@ export function Donut({
               fill="none"
               stroke={liftedHover.s.color}
               strokeWidth={thickness}
-              strokeDasharray={`${liftedHover.dash} ${circumference - liftedHover.dash}`}
+              strokeDasharray={`${Math.min(liftedHover.dash + SEAM_OVERLAP, circumference)} ${Math.max(0, circumference - liftedHover.dash - SEAM_OVERLAP)}`}
               strokeDashoffset={-liftedHover.dashOffset}
               strokeLinecap={liftedHover.linecap}
               style={{
                 pointerEvents: "none",
-                // "lift" is just shadow + brightness, no actual movement
-                filter:
-                  "drop-shadow(0 3px 5px rgba(0, 0, 0, 0.45)) drop-shadow(0 12px 20px rgba(0, 0, 0, 0.4)) brightness(1.22)",
+                // "lift" is just shadow + brightness, no actual movement. scaled off
+                // thickness (tuned against the sheet's 48px) or a smaller donut's
+                // shadow spills past its own thin slices into the neighbors
+                filter: `drop-shadow(0 ${3 * shadowScale}px ${5 * shadowScale}px rgba(0, 0, 0, 0.45)) drop-shadow(0 ${12 * shadowScale}px ${20 * shadowScale}px rgba(0, 0, 0, 0.4)) brightness(1.22)`,
               }}
             />
           )}
