@@ -7,6 +7,7 @@ export type DonutSegment = {
   value: number;
   color: string; // any CSS colour expression, e.g. "var(--accent)" or a color-mix()
   icon?: ReactNode; // shown next to the label in the hover tip, see BreakdownChart
+  code?: string; // stable id for color-key lookups where label alone isn't (countries), see App.tsx
 };
 
 const fmt = (n: number) => n.toLocaleString("en-US");
@@ -18,6 +19,7 @@ export function Donut({
   centerLabel,
   centerSub,
   lift3d = false,
+  onSegmentClick,
 }: {
   segments: DonutSegment[];
   size?: number;
@@ -25,6 +27,7 @@ export function Donut({
   centerLabel?: string;
   centerSub?: string;
   lift3d?: boolean; // the expanded sheet's bigger donut only -- pops the hovered slice up in 3D
+  onSegmentClick?: (segment: DonutSegment, clientX: number, clientY: number) => void;
 }) {
   const [hover, setHover] = useState<{ i: number; x: number; y: number } | null>(null);
   // raw mousemove fires way faster than we need to re-render, throttle to one update per frame
@@ -101,12 +104,20 @@ export function Donut({
                   strokeDasharray={`${dash} ${circumference - dash}`}
                   strokeDashoffset={-dashOffset}
                   strokeLinecap={linecap}
-                  style={{ pointerEvents: "stroke" }}
+                  style={{ pointerEvents: "stroke", cursor: onSegmentClick ? "pointer" : undefined }}
                   onMouseMove={(e) => {
                     e.stopPropagation(); // don't trigger the svg's clear-on-move too
                     const rect = e.currentTarget.ownerSVGElement!.getBoundingClientRect();
                     queueHover({ i, x: e.clientX - rect.left, y: e.clientY - rect.top });
                   }}
+                  onClick={
+                    onSegmentClick
+                      ? (e) => {
+                          e.stopPropagation();
+                          onSegmentClick(s, e.clientX, e.clientY);
+                        }
+                      : undefined
+                  }
                 />
               </g>
             ))

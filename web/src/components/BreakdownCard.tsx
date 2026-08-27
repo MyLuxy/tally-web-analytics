@@ -32,6 +32,8 @@ export function BreakdownChart({
   data,
   icon,
   empty,
+  colorFor,
+  onSliceClick,
   size = 140,
   thickness = 20,
   lift3d = false,
@@ -39,6 +41,8 @@ export function BreakdownChart({
   data: { name: string; value: number; code?: string }[];
   icon?: (name: string, code?: string) => ReactNode;
   empty: string;
+  colorFor?: (name: string, code?: string) => string | undefined; // custom override, see App.tsx's breakdownColors
+  onSliceClick?: (name: string, code: string | undefined, clientX: number, clientY: number) => void;
   size?: number;
   thickness?: number;
   lift3d?: boolean; // the expanded sheet only -- see Donut
@@ -54,15 +58,25 @@ export function BreakdownChart({
     );
   }
 
-  const items = data.map((d, i) => ({ ...d, color: CHART_PALETTE[i % CHART_PALETTE.length]! }));
+  const items = data.map((d, i) => ({
+    ...d,
+    color: colorFor?.(d.name, d.code) ?? CHART_PALETTE[i % CHART_PALETTE.length]!,
+  }));
 
   return (
     <div className="breakdown-chart">
       <Donut
-        segments={items.map((it) => ({ label: it.name, value: it.value, color: it.color, icon: icon?.(it.name, it.code) }))}
+        segments={items.map((it) => ({
+          label: it.name,
+          value: it.value,
+          color: it.color,
+          icon: icon?.(it.name, it.code),
+          code: it.code,
+        }))}
         size={size}
         thickness={thickness}
         lift3d={lift3d}
+        onSegmentClick={onSliceClick ? (seg, x, y) => onSliceClick(seg.label, seg.code, x, y) : undefined}
       />
       <ul className="breakdown-chart-legend">
         {items.map((it) => {
@@ -95,6 +109,8 @@ export function BreakdownCard({
   expandedKey,
   transitioningKey,
   onExpand,
+  colorFor,
+  onSliceClick,
 }: {
   tabs: BreakdownTab[];
   activeKey: string;
@@ -102,6 +118,8 @@ export function BreakdownCard({
   expandedKey: string | null; // which tab's sheet is open, if any
   transitioningKey: string | null; // which tab currently owns the transition name
   onExpand: (key: string) => void;
+  colorFor?: (name: string, code?: string) => string | undefined;
+  onSliceClick?: (name: string, code: string | undefined, clientX: number, clientY: number) => void;
 }) {
   const active = tabs.find((t) => t.key === activeKey) ?? tabs[0]!;
   const isExpanded = expandedKey === active.key;
@@ -142,7 +160,14 @@ export function BreakdownCard({
 
       <div className="card-content">
         {active.chart ? (
-          <BreakdownChart data={active.chart.slice(0, PREVIEW_CHART_ITEMS)} icon={active.icon} empty={active.empty} lift3d />
+          <BreakdownChart
+            data={active.chart.slice(0, PREVIEW_CHART_ITEMS)}
+            icon={active.icon}
+            empty={active.empty}
+            colorFor={colorFor}
+            onSliceClick={onSliceClick}
+            lift3d
+          />
         ) : (
           <Rows rows={active.rows.slice(0, PREVIEW_ROWS)} empty={active.empty} />
         )}

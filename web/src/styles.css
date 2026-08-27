@@ -2533,6 +2533,33 @@ a {
   flex-shrink: 0;
 }
 
+/* the breakdown colors modal's row -- same shape as event-name-input but plain
+   text, nothing to type (see the "no renaming" request that started this) */
+.breakdown-color-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.breakdown-color-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--ink-soft);
+}
+
+.breakdown-color-icon svg,
+.breakdown-color-icon .flag {
+  width: 16px;
+  height: 16px;
+}
+
 /* light / dark segmented switch: a black-on-white (and, in dark mode, white-on
    black) thumb that slides under the active option with a little overshoot, so
    it reads as a physical switch being flicked. */

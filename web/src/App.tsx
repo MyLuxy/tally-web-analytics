@@ -48,6 +48,23 @@ function withEventNames(rows: Row[], settings: Record<string, EventSetting>): Ro
   });
 }
 
+// hex twins of BreakdownCard's CHART_PALETTE (same color-mix() problem as events)
+const CHART_PALETTE_HEX = ["#3b82f6", "#f59e0b", "#a78bfa", "#f472b6", "#22d3ee", "#a1a1aa"];
+
+function defaultBreakdownColor(i: number): string {
+  return CHART_PALETTE_HEX[i % CHART_PALETTE_HEX.length] ?? "#3b82f6";
+}
+
+// separate map from eventSettings -- keyed by tab too since "browsers" and
+// "countries" don't share a namespace, no name-editing here, colors only
+function loadBreakdownColors(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem("tally_breakdown_colors") ?? "{}");
+  } catch {
+    return {};
+  }
+}
+
 // uses the View Transitions API where supported (not firefox yet) so the card grows
 // into the sheet instead of just swapping
 function withViewTransition(fn: () => void, after?: () => void) {
@@ -213,9 +230,16 @@ export function App() {
   );
   const [eventSettings, setEventSettings] = useState<Record<string, EventSetting>>(loadEventSettings);
   const [eventSettingsOpen, setEventSettingsOpen] = useState(false);
+  const [breakdownColors, setBreakdownColors] = useState<Record<string, string>>(loadBreakdownColors);
+  const [breakdownColorsOpen, setBreakdownColorsOpen] = useState(false);
   const [barPopover, setBarPopover] = useState<{ name: string; top: number; left: number } | null>(null);
   const barPopoverRef = useRef<HTMLDivElement>(null);
   useLockBodyScroll(barPopover !== null);
+  const [slicePopover, setSlicePopover] = useState<
+    { key: string; id: string; name: string; top: number; left: number } | null
+  >(null);
+  const slicePopoverRef = useRef<HTMLDivElement>(null);
+  useLockBodyScroll(slicePopover !== null);
 
   const themeMounted = useRef(false);
   useEffect(() => {
@@ -249,6 +273,26 @@ export function App() {
       delete next[name];
       return next;
     });
+  }
+
+  useEffect(() => {
+    localStorage.setItem("tally_breakdown_colors", JSON.stringify(breakdownColors));
+  }, [breakdownColors]);
+
+  function setBreakdownColor(key: string, color: string) {
+    setBreakdownColors((prev) => ({ ...prev, [key]: color }));
+  }
+
+  function resetBreakdownColor(key: string) {
+    setBreakdownColors((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  }
+
+  function breakdownColorFor(name: string, code?: string): string | undefined {
+    return breakdownColors[`${breakdownTab}:${code ?? name}`];
   }
 
   function openBarPopover(index: number, rect: DOMRect) {
@@ -289,6 +333,42 @@ export function App() {
       document.removeEventListener("scroll", onScroll, true);
     };
   }, [barPopover]);
+
+  function openSlicePopover(name: string, code: string | undefined, clientX: number, clientY: number) {
+    const id = code ?? name;
+    const key = `${breakdownTab}:${id}`;
+    // reuses .bar-settings-pop, same width/height ballpark
+    const width = 320;
+    const estHeight = 150;
+    const left = Math.min(Math.max(clientX, 12 + width / 2), window.innerWidth - 12 - width / 2);
+    const top = Math.min(Math.max(clientY, 12 + estHeight / 2), window.innerHeight - 12 - estHeight / 2);
+    setSlicePopover({ key, id, name, top, left });
+  }
+
+  // same deal as barPopover's effect above
+  useEffect(() => {
+    if (!slicePopover) return;
+    const onDoc = (e: MouseEvent) => {
+      const t = e.target as HTMLElement;
+      if (slicePopoverRef.current?.contains(t) || t.closest(".color-picker-pop")) return;
+      setSlicePopover(null);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSlicePopover(null);
+    };
+    const onScroll = (e: Event) => {
+      if (slicePopoverRef.current?.contains(e.target as Node)) return;
+      setSlicePopover(null);
+    };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("scroll", onScroll, true);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("scroll", onScroll, true);
+    };
+  }, [slicePopover]);
 
   useEffect(() => {
     fetchSites()
@@ -423,6 +503,7 @@ export function App() {
 
   function closeCard() {
     setBarPopover(null);
+    setSlicePopover(null);
     const target = expanded;
     withViewTransition(
       () => {
@@ -721,10 +802,15 @@ export function App() {
             <BreakdownCard
               tabs={platformTabs}
               activeKey={breakdownTab}
-              onTabChange={(key) => setBreakdownTab(key as PlatformKey)}
+              onTabChange={(key) => {
+                setBreakdownTab(key as PlatformKey);
+                setSlicePopover(null); // stale tab's color key otherwise
+              }}
               expandedKey={expanded}
               transitioningKey={transitioningKey}
               onExpand={(key) => openCard(key as ExpandTarget)}
+              colorFor={breakdownColorFor}
+              onSliceClick={openSlicePopover}
             />
           </div>
         </main>
@@ -858,6 +944,49 @@ export function App() {
         </Modal>
       )}
 
+      {breakdownColorsOpen && (
+        <Modal title="Chart colors" onClose={() => setBreakdownColorsOpen(false)} className="modal-overlay-nested">
+          <h3 className="event-settings-title">Change colors</h3>
+          {activePlatformTab.chart && activePlatformTab.chart.length > 0 ? (
+            <div className="event-settings-list">
+              {activePlatformTab.chart.map((item, i) => {
+                const key = `${breakdownTab}:${item.code ?? item.name}`;
+                const current = breakdownColors[key];
+                return (
+                  <div className="setting event-setting-row" key={key}>
+                    <ColorPicker
+                      className="event-color-input"
+                      value={current ?? defaultBreakdownColor(i)}
+                      onChange={(hex) => setBreakdownColor(key, hex)}
+                      label={`Color for ${item.name}`}
+                    />
+                    <span className="breakdown-color-name">
+                      {activePlatformTab.icon && (
+                        <span className="breakdown-color-icon">{activePlatformTab.icon(item.name, item.code)}</span>
+                      )}
+                      {item.name}
+                    </span>
+                    {current && (
+                      <button
+                        type="button"
+                        className="export-btn event-setting-reset"
+                        onClick={() => resetBreakdownColor(key)}
+                        aria-label={`Reset ${item.name} to default`}
+                        title="Reset to default"
+                      >
+                        <CloseIcon />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="ink-soft">No data yet.</p>
+          )}
+        </Modal>
+      )}
+
       {barPopover &&
         createPortal(
           <div
@@ -904,6 +1033,48 @@ export function App() {
           document.body,
         )}
 
+      {slicePopover &&
+        createPortal(
+          <div
+            ref={slicePopoverRef}
+            className="bar-settings-pop"
+            role="dialog"
+            aria-label={`Color for ${slicePopover.name}`}
+            style={{ top: slicePopover.top, left: slicePopover.left }}
+          >
+            <div className="bar-settings-head">
+              <span className="bar-settings-name" title={slicePopover.name}>{slicePopover.name}</span>
+              <button
+                type="button"
+                className="export-btn"
+                onClick={() => setSlicePopover(null)}
+                aria-label="Close"
+                title="Close"
+              >
+                <CloseIcon />
+              </button>
+            </div>
+            <div className="event-setting-row">
+              <ColorPicker
+                className="event-color-input"
+                value={
+                  breakdownColors[slicePopover.key] ??
+                  defaultBreakdownColor((activePlatformTab.chart ?? []).findIndex((it) => (it.code ?? it.name) === slicePopover.id))
+                }
+                onChange={(hex) => setBreakdownColor(slicePopover.key, hex)}
+                label={`Color for ${slicePopover.name}`}
+              />
+              <span className="breakdown-color-name">{slicePopover.name}</span>
+            </div>
+            {breakdownColors[slicePopover.key] && (
+              <button type="button" className="bar-settings-reset" onClick={() => resetBreakdownColor(slicePopover.key)}>
+                Reset to default
+              </button>
+            )}
+          </div>,
+          document.body,
+        )}
+
       {expanded && (
         <ExpandSheet
           cardKey={expanded}
@@ -943,6 +1114,22 @@ export function App() {
                 </button>
                 {breakdownRows && breakdownRows.length > 0 && (
                   <ExportCsvButton title={VIEW_ALL_CONFIG[expanded].title} rows={withEventNames(breakdownRows, eventSettings)} />
+                )}
+              </>
+            ) : expanded === "browsers" || expanded === "systems" || expanded === "devices" || expanded === "countries" ? (
+              <>
+                <button
+                  type="button"
+                  className="export-btn"
+                  onClick={() => setBreakdownColorsOpen(true)}
+                  aria-label="Chart colors"
+                  aria-haspopup="dialog"
+                  title="Chart colors"
+                >
+                  <GearIcon />
+                </button>
+                {breakdownRows && breakdownRows.length > 0 && (
+                  <ExportCsvButton title={VIEW_ALL_CONFIG[expanded].title} rows={breakdownRows} />
                 )}
               </>
             ) : breakdownRows && breakdownRows.length > 0 ? (
@@ -1080,6 +1267,7 @@ export function App() {
                       setExpanded(t.key as ExpandTarget);
                       setBreakdownRows(null);
                       setBreakdownError(null);
+                      setSlicePopover(null);
                     }}
                   >
                     {t.label}
@@ -1091,6 +1279,8 @@ export function App() {
                   data={activePlatformTab.chart ?? []}
                   icon={activePlatformTab.icon}
                   empty={activePlatformTab.empty}
+                  colorFor={breakdownColorFor}
+                  onSliceClick={openSlicePopover}
                   size={380}
                   thickness={48}
                   lift3d
