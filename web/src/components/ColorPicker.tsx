@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { hexToHsv, hsvToHex, isHex } from "../lib/color.js";
+import { useLockBodyScroll } from "../hooks/useLockBodyScroll.js";
 
 // same colors as BarChart's palette, just real hex here instead of color-mix()
 const PRESETS = ["#6c8cff", "#ff8c6c", "#6cffb0", "#e06cff", "#ffd66c", "#6cd6ff", "#ff6c8c", "#a3ff6c"];
@@ -23,6 +24,7 @@ export function ColorPicker({
   const btnRef = useRef<HTMLButtonElement>(null);
   const popRef = useRef<HTMLDivElement>(null);
   const svRef = useRef<HTMLDivElement>(null);
+  useLockBodyScroll(open);
 
   function openAt() {
     const rect = btnRef.current?.getBoundingClientRect();

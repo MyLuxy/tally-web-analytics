@@ -16,6 +16,7 @@ import { Modal } from "./components/Modal.js";
 import { ColorPicker } from "./components/ColorPicker.js";
 import { browserIcon, deviceIcon, osIcon } from "./components/DeviceIcons.js";
 import { useIsMobile } from "./hooks/useIsMobile.js";
+import { useLockBodyScroll } from "./hooks/useLockBodyScroll.js";
 import type { Row } from "./components/StatList.js";
 
 type ExpandTarget = BreakdownMetric | "traffic" | "trafficSources" | "activity" | "site";
@@ -214,6 +215,7 @@ export function App() {
   const [eventSettingsOpen, setEventSettingsOpen] = useState(false);
   const [barPopover, setBarPopover] = useState<{ name: string; top: number; left: number } | null>(null);
   const barPopoverRef = useRef<HTMLDivElement>(null);
+  useLockBodyScroll(barPopover !== null);
 
   const themeMounted = useRef(false);
   useEffect(() => {
@@ -1374,17 +1376,14 @@ function ExpandSheet({
   actions?: ReactNode;
   children: ReactNode;
 }) {
+  useLockBodyScroll(true);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
-    };
+    return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
   const fallbackAnim = // firefox etc still get a fade/scale-in instead of the grow effect

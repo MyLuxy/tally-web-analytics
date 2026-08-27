@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useLockBodyScroll } from "../hooks/useLockBodyScroll.js";
 
 export function Modal({
   title,
@@ -15,17 +16,14 @@ export function Modal({
   actions?: ReactNode;
   className?: string;
 }) {
+  useLockBodyScroll(true);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
-    };
+    return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
   // portal to body -- a transformed ancestor (some cards have hover transforms) breaks position:fixed otherwise
