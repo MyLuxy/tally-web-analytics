@@ -15,6 +15,7 @@ import { ClickableCard } from "./components/ClickableCard.js";
 import { Modal } from "./components/Modal.js";
 import { ColorPicker } from "./components/ColorPicker.js";
 import { browserIcon, deviceIcon, osIcon } from "./components/DeviceIcons.js";
+import { useIsMobile } from "./hooks/useIsMobile.js";
 import type { Row } from "./components/StatList.js";
 
 type ExpandTarget = BreakdownMetric | "traffic" | "trafficSources" | "activity" | "site";
@@ -182,6 +183,7 @@ const VIEW_ALL_CONFIG: Record<
 };
 
 export function App() {
+  const isMobile = useIsMobile();
   const [sites, setSites] = useState<Site[]>([]);
   const [site, setSite] = useState<string | null>(null);
   const [range, setRange] = useState<Range>("7d");
@@ -653,7 +655,8 @@ export function App() {
               </div>
               {data && data.events.length > 0 ? (
                 <div className="card-content">
-                  <BarChart bars={eventBars} onBarClick={openBarPopover} />
+                  {/* the compact card's cramped, cap it tighter than the top-10 the server already sends */}
+                  <BarChart bars={eventBars.slice(0, isMobile ? 3 : 5)} onBarClick={openBarPopover} />
                 </div>
               ) : (
                 <div className="panel-empty">
