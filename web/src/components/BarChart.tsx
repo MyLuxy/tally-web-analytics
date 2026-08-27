@@ -3,9 +3,26 @@ import { useMeasuredWidth } from "../hooks/useMeasuredWidth.js";
 export type Bar = { label: string; value: number; color?: string };
 
 const H = 240;
-const PAD = { top: 30, bottom: 26, left: 34, right: 10 };
+const PAD = { top: 30, bottom: 38, left: 34, right: 10 }; // bottom's got room for 2 lines of label now
+const LABEL_FONT_SIZE = 10;
+const LABEL_LINE_HEIGHT = 12;
 
 const fmt = (n: number) => n.toLocaleString("en-US");
+
+// word-wraps a label to at most 2 lines given the slot it has to fit in --
+// no real text measurement (no canvas handy here), just an average-char-width
+// guess, good enough for chart labels
+function wrapLabel(text: string, maxWidth: number): [string, string?] {
+  const maxChars = Math.max(4, Math.floor(maxWidth / (LABEL_FONT_SIZE * 0.58)));
+  if (text.length <= maxChars) return [text];
+
+  let splitAt = text.lastIndexOf(" ", maxChars);
+  if (splitAt <= 0) splitAt = maxChars;
+  const first = text.slice(0, splitAt).trim();
+  let second = text.slice(splitAt).trim();
+  if (second.length > maxChars) second = `${second.slice(0, maxChars - 1)}…`;
+  return [first, second];
+}
 
 // cycles per bar so different event names are actually distinguishable, muted so they don't clash. only 4 colors so past that they repeat (server caps at 10 events anyway)
 const PALETTE = [
@@ -84,8 +101,12 @@ export function BarChart({ bars, onBarClick }: { bars: Bar[]; onBarClick?: (inde
                 className="bar-rect"
                 fill={b.color || PALETTE[i % PALETTE.length]}
               />
-              <text x={cx} y={H - 8} textAnchor="middle" className="bar-label">
-                {b.label}
+              <text x={cx} y={H - PAD.bottom + 14} textAnchor="middle" className="bar-label">
+                {wrapLabel(b.label, slot - 4).map((line, li) => (
+                  <tspan key={li} x={cx} dy={li === 0 ? 0 : LABEL_LINE_HEIGHT}>
+                    {line}
+                  </tspan>
+                ))}
               </text>
             </g>
           );
