@@ -7,11 +7,13 @@ export function Modal({
   onClose,
   children,
   actions,
+  className,
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
   actions?: ReactNode;
+  className?: string;
 }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -29,7 +31,7 @@ export function Modal({
   // portal to body -- a transformed ancestor (some cards have hover transforms) breaks position:fixed otherwise
   return createPortal(
     <div
-      className="modal-overlay"
+      className={`modal-overlay${className ? ` ${className}` : ""}`}
       role="presentation"
       onClick={(e) => {
         e.stopPropagation(); // portal clicks still bubble through the React tree, would close whatever's underneath too

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { flushSync } from "react-dom";
+import { flushSync, createPortal } from "react-dom";
 import type { CSSProperties, ReactNode } from "react";
 import type { BreakdownMetric, Range, Site, Stats } from "./api.js";
 import { fetchBreakdown, fetchSites, fetchStats, getToken, setToken, Unauthorized } from "./api.js";
@@ -13,12 +13,38 @@ import type { BreakdownTab } from "./components/BreakdownCard.js";
 import { RankedBoard, TrafficSourcesCard, TrafficSourcesContent } from "./components/TrafficSources.js";
 import { ClickableCard } from "./components/ClickableCard.js";
 import { Modal } from "./components/Modal.js";
+import { ColorPicker } from "./components/ColorPicker.js";
 import { browserIcon, deviceIcon, osIcon } from "./components/DeviceIcons.js";
 import type { Row } from "./components/StatList.js";
 
 type ExpandTarget = BreakdownMetric | "traffic" | "trafficSources" | "activity" | "site";
 
 type PlatformKey = "browsers" | "systems" | "devices" | "countries";
+
+type EventSetting = { label?: string; color?: string };
+
+// hex twins of BarChart's PALETTE, color-mix() isn't real paintable hex
+const DEFAULT_EVENT_COLORS = ["#6c8cff", "#ff8c6c", "#6cffb0", "#e06cff"];
+
+function defaultEventColor(i: number): string {
+  return DEFAULT_EVENT_COLORS[i % DEFAULT_EVENT_COLORS.length] ?? "#6c8cff";
+}
+
+// keyed by raw event name, so it survives renames of the display label itself
+function loadEventSettings(): Record<string, EventSetting> {
+  try {
+    return JSON.parse(localStorage.getItem("tally_event_settings") ?? "{}");
+  } catch {
+    return {};
+  }
+}
+
+function withEventNames(rows: Row[], settings: Record<string, EventSetting>): Row[] {
+  return rows.map((r) => {
+    const custom = typeof r.label === "string" ? settings[r.label]?.label?.trim() : undefined;
+    return custom ? { ...r, label: custom } : r;
+  });
+}
 
 // uses the View Transitions API where supported (not firefox yet) so the card grows
 // into the sheet instead of just swapping
@@ -182,6 +208,10 @@ export function App() {
   const [hour12, setHour12] = useState(
     () => localStorage.getItem("tally_hour12") !== "false",
   );
+  const [eventSettings, setEventSettings] = useState<Record<string, EventSetting>>(loadEventSettings);
+  const [eventSettingsOpen, setEventSettingsOpen] = useState(false);
+  const [barPopover, setBarPopover] = useState<{ name: string; top: number; left: number } | null>(null);
+  const barPopoverRef = useRef<HTMLDivElement>(null);
 
   const themeMounted = useRef(false);
   useEffect(() => {
@@ -200,6 +230,61 @@ export function App() {
   useEffect(() => {
     localStorage.setItem("tally_hour12", String(hour12));
   }, [hour12]);
+
+  useEffect(() => {
+    localStorage.setItem("tally_event_settings", JSON.stringify(eventSettings));
+  }, [eventSettings]);
+
+  function setEventSetting(name: string, patch: EventSetting) {
+    setEventSettings((prev) => ({ ...prev, [name]: { ...prev[name], ...patch } }));
+  }
+
+  function resetEventSetting(name: string) {
+    setEventSettings((prev) => {
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
+  }
+
+  function openBarPopover(index: number, rect: DOMRect) {
+    const name = data?.events[index]?.name;
+    if (!name) return;
+    // top/left is the center point, css does the actual centering via translate(-50%,-50%)
+    const width = 320; // occhio, deve matchare .bar-settings-pop nel css
+    const estHeight = 180;
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const left = Math.min(Math.max(cx, 12 + width / 2), window.innerWidth - 12 - width / 2);
+    const top = Math.min(Math.max(cy, 12 + estHeight / 2), window.innerHeight - 12 - estHeight / 2);
+    setBarPopover({ name, top, left });
+  }
+
+  // same close-on-outside/Escape/scroll as ColorPicker, but also has to ignore
+  // clicks in ColorPicker's own popover -- different portal, not a child of ours
+  useEffect(() => {
+    if (!barPopover) return;
+    const onDoc = (e: MouseEvent) => {
+      const t = e.target as HTMLElement;
+      if (barPopoverRef.current?.contains(t) || t.closest(".color-picker-pop")) return;
+      setBarPopover(null);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setBarPopover(null);
+    };
+    const onScroll = (e: Event) => {
+      if (barPopoverRef.current?.contains(e.target as Node)) return;
+      setBarPopover(null);
+    };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("scroll", onScroll, true);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("scroll", onScroll, true);
+    };
+  }, [barPopover]);
 
   useEffect(() => {
     fetchSites()
@@ -320,6 +405,7 @@ export function App() {
   }
 
   function closeCard() {
+    setBarPopover(null);
     const target = expanded;
     withViewTransition(
       () => {
@@ -345,6 +431,12 @@ export function App() {
   const prevPerVisitor = prev && prev.visitors > 0 ? prev.pageviews / prev.visitors : 0;
 
   const currentSiteInfo = sites.find((s) => s.site === site);
+
+  const eventBars = (data?.events ?? []).map((e) => ({
+    label: eventSettings[e.name]?.label?.trim() || e.name,
+    value: e.count,
+    color: eventSettings[e.name]?.color,
+  }));
 
   const platformTabs: BreakdownTab[] = [
     {
@@ -561,7 +653,7 @@ export function App() {
               </div>
               {data && data.events.length > 0 ? (
                 <div className="card-content">
-                  <BarChart bars={data.events.map((e) => ({ label: e.name, value: e.count }))} />
+                  <BarChart bars={eventBars} onBarClick={openBarPopover} />
                 </div>
               ) : (
                 <div className="panel-empty">
@@ -704,6 +796,96 @@ export function App() {
         </Modal>
       )}
 
+      {eventSettingsOpen && (
+        <Modal title="Event settings" onClose={() => setEventSettingsOpen(false)} className="modal-overlay-nested">
+          <h3 className="event-settings-title">Change names and colors</h3>
+          {data && data.events.length > 0 ? (
+            <div className="event-settings-list">
+              {data.events.map((e, i) => {
+                const s = eventSettings[e.name] ?? {};
+                return (
+                  <div className="setting event-setting-row" key={e.name}>
+                    <ColorPicker
+                      className="event-color-input"
+                      value={s.color ?? defaultEventColor(i)}
+                      onChange={(hex) => setEventSetting(e.name, { color: hex })}
+                      label={`Color for ${e.name}`}
+                    />
+                    <input
+                      type="text"
+                      className="event-name-input"
+                      placeholder={e.name}
+                      value={s.label ?? ""}
+                      onChange={(ev) => setEventSetting(e.name, { label: ev.target.value })}
+                      aria-label={`Display name for ${e.name}`}
+                    />
+                    {(s.label || s.color) && (
+                      <button
+                        type="button"
+                        className="export-btn event-setting-reset"
+                        onClick={() => resetEventSetting(e.name)}
+                        aria-label={`Reset ${e.name} to default`}
+                        title="Reset to default"
+                      >
+                        <CloseIcon />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="ink-soft">No events yet, nothing to customize. Fire one from your site with tally('name').</p>
+          )}
+        </Modal>
+      )}
+
+      {barPopover &&
+        createPortal(
+          <div
+            ref={barPopoverRef}
+            className="bar-settings-pop"
+            role="dialog"
+            aria-label={`Settings for ${barPopover.name}`}
+            style={{ top: barPopover.top, left: barPopover.left }}
+          >
+            <div className="bar-settings-head">
+              <span className="bar-settings-name" title={barPopover.name}>{barPopover.name}</span>
+              <button
+                type="button"
+                className="export-btn"
+                onClick={() => setBarPopover(null)}
+                aria-label="Close"
+                title="Close"
+              >
+                <CloseIcon />
+              </button>
+            </div>
+            <div className="event-setting-row">
+              <ColorPicker
+                className="event-color-input"
+                value={eventSettings[barPopover.name]?.color ?? defaultEventColor((data?.events ?? []).findIndex((e) => e.name === barPopover.name))}
+                onChange={(hex) => setEventSetting(barPopover.name, { color: hex })}
+                label={`Color for ${barPopover.name}`}
+              />
+              <input
+                type="text"
+                className="event-name-input"
+                placeholder={barPopover.name}
+                value={eventSettings[barPopover.name]?.label ?? ""}
+                onChange={(ev) => setEventSetting(barPopover.name, { label: ev.target.value })}
+                aria-label={`Display name for ${barPopover.name}`}
+              />
+            </div>
+            {(eventSettings[barPopover.name]?.label || eventSettings[barPopover.name]?.color) && (
+              <button type="button" className="bar-settings-reset" onClick={() => resetEventSetting(barPopover.name)}>
+                Reset to default
+              </button>
+            )}
+          </div>,
+          document.body,
+        )}
+
       {expanded && (
         <ExpandSheet
           cardKey={expanded}
@@ -729,6 +911,22 @@ export function App() {
           actions={
             expanded === "traffic" || expanded === "activity" || expanded === "site" ? undefined : expanded === "trafficSources" ? (
               sourceRows && sourceRows.length > 0 ? <ExportCsvButton title="Traffic sources" rows={sourceRows} /> : undefined
+            ) : expanded === "events" ? (
+              <>
+                <button
+                  type="button"
+                  className="export-btn"
+                  onClick={() => setEventSettingsOpen(true)}
+                  aria-label="Event settings"
+                  aria-haspopup="dialog"
+                  title="Event settings"
+                >
+                  <GearIcon />
+                </button>
+                {breakdownRows && breakdownRows.length > 0 && (
+                  <ExportCsvButton title={VIEW_ALL_CONFIG[expanded].title} rows={withEventNames(breakdownRows, eventSettings)} />
+                )}
+              </>
             ) : breakdownRows && breakdownRows.length > 0 ? (
               <ExportCsvButton title={VIEW_ALL_CONFIG[expanded].title} rows={breakdownRows} />
             ) : undefined
@@ -828,7 +1026,7 @@ export function App() {
             <div className="sheet-events">
               {data && data.events.length > 0 ? (
                 <div className="sheet-content">
-                  <BarChart bars={data.events.map((e) => ({ label: e.name, value: e.count }))} />
+                  <BarChart bars={eventBars} onBarClick={openBarPopover} />
                 </div>
               ) : (
                 <div className="panel-empty">
@@ -843,7 +1041,7 @@ export function App() {
               {breakdownRows && breakdownRows.length > 10 && (
                 <>
                   <h3 className="sheet-subhead">More events</h3>
-                  <Rows rows={breakdownRows.slice(10)} empty="" />
+                  <Rows rows={withEventNames(breakdownRows.slice(10), eventSettings)} empty="" />
                 </>
               )}
             </div>
@@ -1220,7 +1418,7 @@ function ExpandSheet({
 
 function GearIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <circle cx="12" cy="12" r="3" />
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />

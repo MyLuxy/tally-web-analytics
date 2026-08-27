@@ -995,6 +995,11 @@ a {
   stroke-opacity: 0.35;
 }
 
+.bar-group-clickable {
+  cursor: pointer;
+  outline: none;
+}
+
 .bar-label {
   fill: var(--ink-faint);
   font-family: var(--font-body);
@@ -1909,6 +1914,11 @@ a {
   backdrop-filter: blur(2px);
 }
 
+/* event settings opens from inside the Events sheet (z-index: 60), needs to sit above it */
+.modal-overlay-nested {
+  z-index: 65;
+}
+
 .modal {
   width: 100%;
   max-width: 540px;
@@ -2256,6 +2266,252 @@ a {
 .setting-action:hover .setting-chevron {
   color: var(--accent-ink);
   transform: translateX(2px);
+}
+
+.event-settings-title {
+  margin: 0 0 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.event-settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* self-sufficient flex row -- .setting also brings display:flex, but the bar
+   popup's row doesn't use .setting (no card chrome wanted there), so this
+   can't rely on it and needs its own */
+.event-setting-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.event-color-input {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+
+.event-color-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* portaled to body so .modal's overflow-y:auto can't clip it, see ColorPicker */
+.color-picker-pop {
+  position: fixed;
+  z-index: 70;
+  width: 208px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  box-shadow: 0 18px 40px -10px rgba(0, 0, 0, 0.35);
+}
+
+.color-picker-sv {
+  position: relative;
+  width: 100%;
+  height: 120px;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  cursor: crosshair;
+  touch-action: none;
+  overflow: hidden;
+}
+
+.color-picker-sv-white,
+.color-picker-sv-black {
+  position: absolute;
+  inset: 0;
+}
+
+.color-picker-sv-white {
+  background: linear-gradient(to right, #fff, transparent);
+}
+
+.color-picker-sv-black {
+  background: linear-gradient(to top, #000, transparent);
+}
+
+.color-picker-sv-thumb {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.4);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.color-picker-hue {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+  cursor: pointer;
+}
+
+.color-picker-hue::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--panel);
+  border: 2px solid var(--ink);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
+.color-picker-hue::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--panel);
+  border: 2px solid var(--ink);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
+.color-picker-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.color-picker-preview {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+}
+
+.color-picker-hex {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-family: var(--font-mono);
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  text-transform: lowercase;
+}
+
+.color-picker-hex:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.color-picker-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.color-picker-preset {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.color-picker-preset:hover {
+  transform: scale(1.1);
+}
+
+/* opens when you click a bar directly in BarChart, same portal trick as .color-picker-pop */
+.bar-settings-pop {
+  position: fixed;
+  z-index: 70;
+  width: 320px; /* deve matchare openBarPopover in App.tsx */
+  transform: translate(-50%, -50%);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  box-shadow: 0 18px 40px -10px rgba(0, 0, 0, 0.35);
+}
+
+.bar-settings-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.bar-settings-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bar-settings-reset {
+  align-self: flex-start;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.bar-settings-reset:hover {
+  color: var(--accent-ink);
+  background: var(--accent-wash);
+}
+
+.event-name-input {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 12px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+}
+
+.event-name-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.event-name-input::placeholder {
+  color: var(--ink-faint);
+}
+
+.event-setting-reset {
+  flex-shrink: 0;
 }
 
 /* light / dark segmented switch: a black-on-white (and, in dark mode, white-on
