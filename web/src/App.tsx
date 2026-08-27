@@ -751,8 +751,10 @@ export function App() {
               </div>
               {data && data.events.length > 0 ? (
                 <div className="card-content">
-                  {/* the compact card's cramped, cap it tighter than the top-10 the server already sends */}
-                  <BarChart bars={eventBars.slice(0, isMobile ? 3 : 5)} onBarClick={openBarPopover} />
+                  {/* the compact card's cramped, cap it tighter than the top-10 the server already sends.
+                      no onBarClick here -- a bar click should expand the card like anywhere else on
+                      it, the per-bar settings popup only makes sense once you're already in the sheet */}
+                  <BarChart bars={eventBars.slice(0, isMobile ? 3 : 5)} />
                 </div>
               ) : (
                 <div className="panel-empty">
@@ -799,6 +801,7 @@ export function App() {
               className="card-span-2"
               icon={referrerFaviconIcon}
             />
+            {/* no onSliceClick here -- same deal as the events bar chart above, a slice click expands the card */}
             <BreakdownCard
               tabs={platformTabs}
               activeKey={breakdownTab}
@@ -810,7 +813,6 @@ export function App() {
               transitioningKey={transitioningKey}
               onExpand={(key) => openCard(key as ExpandTarget)}
               colorFor={breakdownColorFor}
-              onSliceClick={openSlicePopover}
             />
           </div>
         </main>
