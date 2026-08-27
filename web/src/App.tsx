@@ -342,6 +342,19 @@ export function App() {
     return () => ctrl.abort();
   }, [site, reload]);
 
+  // keeps the numbers current without ever touching loading/error -- runs
+  // regardless of whether a modal's open, doesn't reset anything, a failed
+  // tick just tries again in another 30s instead of showing an error banner
+  useEffect(() => {
+    if (!site || locked) return;
+    const id = window.setInterval(() => {
+      if (document.hidden) return; // backgrounded tab, don't bother
+      fetchStats(site, range).then(setData).catch(() => {});
+      fetchStats(site, "24h").then(setActivityData).catch(() => {});
+    }, 30_000);
+    return () => window.clearInterval(id);
+  }, [site, range, locked]);
+
   useEffect(() => {
     if (
       !site ||
