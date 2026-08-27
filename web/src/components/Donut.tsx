@@ -1,10 +1,12 @@
 // ring chart from stacked dashed <circle> strokes, no library
+import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 
 export type DonutSegment = {
   label: string;
   value: number;
   color: string; // any CSS colour expression, e.g. "var(--accent)" or a color-mix()
+  icon?: ReactNode; // shown next to the label in the hover tip, see BreakdownChart
 };
 
 const fmt = (n: number) => n.toLocaleString("en-US");
@@ -137,7 +139,14 @@ export function Donut({
       )}
       {hover && (
         <div className="donut-tip" style={{ left: hover.x, top: hover.y }}>
-          <strong>{visible[hover.i]!.label}</strong>
+          <strong>
+            {visible[hover.i]!.icon && (
+              <span className="donut-tip-icon" style={{ color: visible[hover.i]!.color }}>
+                {visible[hover.i]!.icon}
+              </span>
+            )}
+            {visible[hover.i]!.label}
+          </strong>
           <span>
             {fmt(visible[hover.i]!.value)} · {total > 0 ? Math.round((visible[hover.i]!.value / total) * 100) : 0}%
           </span>

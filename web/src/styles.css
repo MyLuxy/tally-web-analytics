@@ -912,7 +912,26 @@ a {
 }
 
 .donut-tip strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-weight: 600;
+}
+
+.donut-tip-icon {
+  display: inline-flex;
+}
+
+.donut-tip-icon svg,
+.donut-tip-icon .flag {
+  width: 13px;
+  height: 13px;
+}
+
+.sheet-breakdown-chart .donut-tip-icon svg,
+.sheet-breakdown-chart .donut-tip-icon .flag {
+  width: 16px;
+  height: 16px;
 }
 
 .donut-tip span {

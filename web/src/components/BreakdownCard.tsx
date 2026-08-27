@@ -59,7 +59,7 @@ export function BreakdownChart({
   return (
     <div className="breakdown-chart">
       <Donut
-        segments={items.map((it) => ({ label: it.name, value: it.value, color: it.color }))}
+        segments={items.map((it) => ({ label: it.name, value: it.value, color: it.color, icon: icon?.(it.name, it.code) }))}
         size={size}
         thickness={thickness}
         lift3d={lift3d}
