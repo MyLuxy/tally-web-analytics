@@ -64,6 +64,9 @@ export function BreakdownChart({
     ...d,
     color: colorFor?.(d.name, d.code) ?? CHART_PALETTE[i % CHART_PALETTE.length]!,
   }));
+  const max = Math.max(1, ...items.map((it) => it.value));
+  const leader = items[0];
+  const leaderPct = leader ? Math.round((leader.value / total) * 100) : 0;
 
   return (
     <div className="breakdown-chart">
@@ -79,6 +82,8 @@ export function BreakdownChart({
         thickness={thickness}
         lift3d={lift3d}
         onSegmentClick={onSliceClick ? (seg, x, y) => onSliceClick(seg.label, seg.code, x, y) : undefined}
+        centerLabel={leader ? `${leaderPct}%` : undefined}
+        centerSub={leader?.name}
       />
       <ul className="breakdown-chart-legend">
         {items.map((it) => {
@@ -94,6 +99,12 @@ export function BreakdownChart({
               <span className="breakdown-chart-stats">
                 <span className="breakdown-chart-pct num">{pct}%</span>
                 <span className="breakdown-chart-value num">{it.value.toLocaleString("en-US")}</span>
+              </span>
+              <span className="breakdown-chart-bar-track">
+                <span
+                  className="breakdown-chart-bar"
+                  style={{ width: `${(it.value / max) * 100}%`, background: it.color }}
+                />
               </span>
             </li>
           );
@@ -172,6 +183,8 @@ export function BreakdownCard({
             empty={active.empty}
             colorFor={colorFor}
             onSliceClick={onSliceClick}
+            size={200}
+            thickness={28}
             lift3d
           />
         ) : (

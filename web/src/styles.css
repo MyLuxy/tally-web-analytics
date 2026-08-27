@@ -1103,17 +1103,33 @@ a {
 }
 
 .donut-center-value {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
   color: var(--ink);
   line-height: 1.1;
+}
+
+.donut-center-sub {
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sheet-breakdown-chart .donut-center-value {
+  font-size: 40px;
+}
+
+.sheet-breakdown-chart .donut-center-sub {
+  max-width: 160px;
+  font-size: 14px;
 }
 
 /* breakdown card's browser/OS/device donut (see BreakdownCard.tsx) */
 .breakdown-chart {
   display: flex;
   align-items: center;
-  gap: 26px;
+  gap: 32px;
   flex-wrap: wrap;
 }
 
@@ -1207,29 +1223,35 @@ a {
 }
 
 .breakdown-chart-legend {
-  min-width: 170px;
+  min-width: 190px;
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
-/* real two-column table, not independent flex rows, so stats actually line up at the same x */
+/* real table, not independent flex rows, so stats line up at the same x. third
+   column's a mini bar per row, same color as its donut slice, so a wide card
+   doesn't just sit there half empty next to a small fixed-size donut */
 .card-content .breakdown-chart-legend {
   display: grid;
   /* wider min-width pushes the left edge left, stats column stays anchored on the right */
-  grid-template-columns: minmax(150px, auto) auto;
+  grid-template-columns: minmax(190px, auto) auto 1fr;
+  align-items: center;
   column-gap: 4%;
-  row-gap: 10px;
+  row-gap: 12px;
 }
 
-/* 150px floor is for a roomy card, too wide for a phone-width one */
+/* 90px floor and no bar column, a phone-width card doesn't have room for a third column */
 @media (max-width: 560px) {
   .card-content .breakdown-chart-legend {
     grid-template-columns: minmax(90px, auto) auto;
     column-gap: 6%;
+  }
+  .card-content .breakdown-chart-bar-track {
+    display: none;
   }
 }
 
@@ -1255,10 +1277,16 @@ a {
   flex-shrink: 0;
 }
 
+.breakdown-chart-icon svg,
+.breakdown-chart-icon .flag {
+  width: 21px;
+  height: 21px;
+}
+
 .breakdown-chart-name {
   min-width: 0;
   max-width: 14em;
-  font-size: 14px;
+  font-size: 18px;
   color: var(--ink);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1273,14 +1301,33 @@ a {
 }
 
 .breakdown-chart-pct {
-  font-size: 12.5px;
+  font-size: 15px;
   color: var(--ink-soft);
 }
 
 .breakdown-chart-value {
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 500;
   color: var(--ink);
+}
+
+.breakdown-chart-bar-track {
+  min-width: 40px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.breakdown-chart-bar {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+}
+
+/* the sheet already gives the donut and legend plenty of room, this column's compact-card only */
+.sheet-breakdown-chart .breakdown-chart-bar-track {
+  display: none;
 }
 
 .traffic-sources-legend {
