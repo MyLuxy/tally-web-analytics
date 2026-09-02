@@ -20,7 +20,7 @@ addresses or persistent identifiers ever hit the database.
 </p>
 
 <p align="center">
-  <img src="docs/dashboard.png" alt="The Tally dashboard, showing pageviews, a traffic chart and breakdowns" width="520">
+  <img src="docs/Preview.gif" alt="The Tally dashboard, showing pageviews, a traffic chart and breakdowns">
 </p>
 
 ---
